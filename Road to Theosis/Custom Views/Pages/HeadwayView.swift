@@ -441,8 +441,8 @@ private struct RecentActivityRow: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                if showsPrayerTiming && entry.prayerMinutes > 0 {
-                    Text("\(entry.prayerMinutes)m prayer")
+                if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+                    Text("\(entry.prayerDurationText) prayer")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(entry.kind.tint)
                 }

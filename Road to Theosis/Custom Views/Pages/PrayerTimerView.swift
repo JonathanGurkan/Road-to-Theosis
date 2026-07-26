@@ -184,7 +184,7 @@ struct PrayerTimerView: View {
                         .font(.largeTitle.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Text("\(savedPrayerMinutes)m will be added to your timeline.")
+                    Text("\(savedPrayerDurationText) will be added to your timeline.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -234,6 +234,10 @@ struct PrayerTimerView: View {
         max(1, Int(ceil(Double(max(elapsedSeconds, 1)) / 60.0)))
     }
 
+    private var savedPrayerDurationText: String {
+        LogEntry.formatPrayerDuration(seconds: elapsedSeconds)
+    }
+
     private func startSessionIfNeeded() {
         guard !hasStartedSession else { return }
         startedAt = .now
@@ -275,6 +279,7 @@ struct PrayerTimerView: View {
             sinTitle: nil,
             note: prayerNote.trimmingCharacters(in: .whitespacesAndNewlines),
             prayerMinutes: savedPrayerMinutes,
+            prayerDurationSeconds: elapsedSeconds,
             occurredAt: startedAt
         )
 

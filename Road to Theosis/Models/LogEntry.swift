@@ -87,7 +87,7 @@ struct LogEntry: Identifiable {
         Self.formatPrayerDuration(seconds: prayerDurationSeconds)
     }
 
-    private static func formatPrayerDuration(seconds: Int) -> String {
+    static func formatPrayerDuration(seconds: Int) -> String {
         let clampedSeconds = max(seconds, 0)
 
         guard clampedSeconds >= 60 else {
