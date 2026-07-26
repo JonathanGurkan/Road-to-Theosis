@@ -16,6 +16,7 @@ struct PrayerTimerView: View {
     @State private var startedAt = Date()
     @State private var hasStartedSession = false
     @State private var hasStoppedSession = false
+    @State private var isShowingDiscardConfirmation = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -56,7 +57,7 @@ struct PrayerTimerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     if hasStoppedSession {
                         Button("Cancel") {
-                            dismiss()
+                            isShowingDiscardConfirmation = true
                         }
                     }
                 }
@@ -81,6 +82,18 @@ struct PrayerTimerView: View {
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active, isRunning else { return }
             refreshElapsedSeconds()
+        }
+        .confirmationDialog(
+            "Discard prayer session?",
+            isPresented: $isShowingDiscardConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Discard Session", role: .destructive) {
+                discardSession()
+            }
+            Button("Keep Praying", role: .cancel) { }
+        } message: {
+            Text("This prayer session will not be saved to your timeline.")
         }
     }
 
@@ -110,14 +123,27 @@ struct PrayerTimerView: View {
 
             Spacer(minLength: 20)
 
-            Button {
-                stopSession()
-            } label: {
-                Text("Stop Session")
-                    .font(.headline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
+            HStack(spacing: 16) {
+                Button {
+                    stopSession()
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 72, height: 54)
+                }
+                .ifAvailableGlassProminent(tint: backgroundTheme.glowColor)
+                .accessibilityLabel("Stop session and add notes")
+
+                Button(role: .cancel) {
+                    isShowingDiscardConfirmation = true
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 72, height: 54)
+                }
+                .ifAvailableGlass(tint: .red)
+                .accessibilityLabel("Discard prayer session")
             }
-            .ifAvailableGlassProminent(tint: backgroundTheme.glowColor)
             .padding(.horizontal, 28)
             .padding(.bottom, 28)
         }
@@ -139,7 +165,7 @@ struct PrayerTimerView: View {
                     .monospacedDigit()
                     .foregroundStyle(.primary)
 
-                Text("Foreground timer")
+                Text("Time elapsed")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(backgroundTheme.glowColor)
                     .textCase(.uppercase)
@@ -270,6 +296,14 @@ struct PrayerTimerView: View {
     private func refreshElapsedSeconds() {
         guard prayerTimerCountingMode == .background else { return }
         elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt)))
+    }
+
+    private func discardSession() {
+        isRunning = false
+        if shouldKeepScreenAwake {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+        dismiss()
     }
 
     private func saveSession() {
