@@ -102,30 +102,11 @@ struct PrayerTimerView: View {
             }
             .padding(.horizontal, 28)
 
-            ZStack {
-                Circle()
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(backgroundTheme.glowColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 8) {
-                    Text(formatElapsedTime(currentElapsedSeconds))
-                        .font(.system(size: 58, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.primary)
-
-                    Text(prayerTimerCountingMode == .background ? "Counting elapsed time" : "Foreground timer")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(backgroundTheme.glowColor)
-                        .textCase(.uppercase)
-                }
+            if prayerTimerCountingMode == .background {
+                backgroundEncouragement
+            } else {
+                foregroundTimerRing
             }
-            .frame(width: 238, height: 238)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Prayer timer, \(formatElapsedTime(currentElapsedSeconds)) elapsed")
 
             Spacer(minLength: 20)
 
@@ -140,6 +121,54 @@ struct PrayerTimerView: View {
             .padding(.horizontal, 28)
             .padding(.bottom, 28)
         }
+    }
+
+    private var foregroundTimerRing: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(backgroundTheme.glowColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            VStack(spacing: 8) {
+                Text(formatElapsedTime(currentElapsedSeconds))
+                    .font(.system(size: 58, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+
+                Text("Foreground timer")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(backgroundTheme.glowColor)
+                    .textCase(.uppercase)
+            }
+        }
+        .frame(width: 238, height: 238)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Prayer timer, \(formatElapsedTime(currentElapsedSeconds)) elapsed")
+    }
+
+    private var backgroundEncouragement: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "hands.sparkles.fill")
+                .font(.system(size: 46, weight: .semibold))
+                .foregroundStyle(backgroundTheme.glowColor)
+
+            Text("God is with you in this moment.")
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.primary)
+
+            Text("Set the phone aside, breathe, and keep your heart on prayer.")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 34)
+        .accessibilityElement(children: .combine)
     }
 
     private var notesView: some View {
