@@ -88,10 +88,10 @@ struct PrayerTimerView: View {
             isPresented: $isShowingDiscardConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Discard Session", role: .destructive) {
+            Button("Yes", role: .destructive) {
                 discardSession()
             }
-            Button("Keep Praying", role: .cancel) { }
+            Button("No, keep Praying", role: .cancel) { }
         } message: {
             Text("This prayer session will not be saved to your timeline.")
         }
@@ -150,26 +150,16 @@ struct PrayerTimerView: View {
     }
 
     private var foregroundTimerRing: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(backgroundTheme.glowColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            VStack(spacing: 8) {
-                Text(formatElapsedTime(currentElapsedSeconds))
-                    .font(.system(size: 58, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.primary)
-
-                Text("Time elapsed")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(backgroundTheme.glowColor)
-                    .textCase(.uppercase)
-            }
+        VStack() {
+            Text("Time elapsed")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(backgroundTheme.glowColor)
+                .textCase(.uppercase)
+            
+            Text(formatElapsedTime(currentElapsedSeconds))
+                .font(.system(size: 58, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.primary)
         }
         .frame(width: 238, height: 238)
         .accessibilityElement(children: .combine)
@@ -179,7 +169,7 @@ struct PrayerTimerView: View {
     private var backgroundEncouragement: some View {
         VStack(spacing: 14) {
             Image(systemName: "hands.sparkles.fill")
-                .font(.system(size: 46, weight: .semibold))
+                .font(.system(size: 62, weight: .semibold))
                 .foregroundStyle(backgroundTheme.glowColor)
 
             Text("God is with you in this moment.")

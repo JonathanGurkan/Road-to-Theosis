@@ -93,7 +93,7 @@ private struct SettingsLinkRow: View {
     let systemImage: String
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .fill(Color(uiColor: .secondarySystemFill))
@@ -238,22 +238,6 @@ private struct PrayerSettingsPage: View {
                             title: prayerTimerCountingMode.displayName,
                             subtitle: prayerTimerCountingMode.description
                         )
-                    }
-
-                    Section("Timer") {
-                        Button {
-                            isShowingPrayerTimer = true
-                        } label: {
-                            SettingsLinkRow(
-                                title: "Start timed prayer",
-                                subtitle: "Open the focused prayer timer from here.",
-                                systemImage: "timer"
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .tint(backgroundTheme.glowColor)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                     }
 
                     Section("Notes") {

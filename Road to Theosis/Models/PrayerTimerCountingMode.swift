@@ -9,9 +9,9 @@ enum PrayerTimerCountingMode: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .foreground:
-            return "Foreground only"
+            return "Show timer"
         case .background:
-            return "Count in background"
+            return "Start in background"
         }
     }
 
@@ -20,7 +20,7 @@ enum PrayerTimerCountingMode: String, CaseIterable, Identifiable {
         case .foreground:
             return "Counts while the timer screen is active."
         case .background:
-            return "Counts elapsed time even after the app moves to the background."
+            return "Counts elapsed time without a visual timer screen. The timer will continue to count even after the app is closed to the background"
         }
     }
 
