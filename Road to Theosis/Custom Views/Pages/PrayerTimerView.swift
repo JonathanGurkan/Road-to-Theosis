@@ -11,9 +11,11 @@ struct PrayerTimerView: View {
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     @State private var elapsedSeconds: Int = 0
-    @State private var isRunning = false
+    @State private var isRunning = true
     @State private var prayerNote = ""
     @State private var startedAt = Date()
+    @State private var hasStartedSession = false
+    @State private var hasStoppedSession = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -40,30 +42,29 @@ struct PrayerTimerView: View {
             ZStack {
                 AppBackgroundView(theme: backgroundTheme)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        heroCard
-                        timerCard
-                        intentionCard
-                        controlCard
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 24)
+                if hasStoppedSession {
+                    notesView
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                } else {
+                    focusView
+                        .transition(.opacity)
                 }
             }
-            .navigationTitle("Prayer Focus")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(hasStoppedSession ? .visible : .hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
+                    if hasStoppedSession {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
             }
         }
         .interactiveDismissDisabled(isRunning)
         .onAppear {
+            startSessionIfNeeded()
             if shouldKeepScreenAwake {
                 UIApplication.shared.isIdleTimerDisabled = true
             }
@@ -83,105 +84,116 @@ struct PrayerTimerView: View {
         }
     }
 
-    private var heroCard: some View {
-        AppSurfaceCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Non-distracting mode", systemImage: "moon.stars.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(backgroundTheme.glowColor)
-                    .textCase(.uppercase)
+    private var focusView: some View {
+        VStack(spacing: 34) {
+            Spacer(minLength: 24)
 
-                Text(isRunning ? "Stay with the prayer" : "Set a quiet window")
-                    .font(.title.weight(.semibold))
+            VStack(spacing: 10) {
+                Text("Keep focusing on prayer")
+                    .font(.largeTitle.weight(.semibold))
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
-                Text(isRunning ? "Leave the phone and pray. Stop the session when you are done, and it will be added to the timeline." : "Start the session, leave the phone, and pray without distraction. When you stop, the time is saved.")
+                Text(prayerTimerCountingMode.runningInstruction)
                     .font(.subheadline)
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-        }
-    }
+            .padding(.horizontal, 28)
 
-    private var timerCard: some View {
-        AppSurfaceCard {
-            VStack(alignment: .center, spacing: 16) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+            ZStack {
+                Circle()
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 12)
 
-                    Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(backgroundTheme.glowColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(backgroundTheme.glowColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
 
-                    VStack(spacing: 6) {
-                        Text(formatElapsedTime(currentElapsedSeconds))
-                            .font(.system(size: 54, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.primary)
+                VStack(spacing: 8) {
+                    Text(formatElapsedTime(currentElapsedSeconds))
+                        .font(.system(size: 58, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
 
-                        Text(isRunning ? "Running" : "Ready")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(backgroundTheme.glowColor)
-                    }
+                    Text(prayerTimerCountingMode == .background ? "Counting elapsed time" : "Foreground timer")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(backgroundTheme.glowColor)
+                        .textCase(.uppercase)
                 }
-                .frame(width: 220, height: 220)
-
-                Text(isRunning ? prayerTimerCountingMode.runningInstruction : prayerTimerCountingMode.readyInstruction)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
+            .frame(width: 238, height: 238)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Prayer timer, \(formatElapsedTime(currentElapsedSeconds)) elapsed")
+
+            Spacer(minLength: 20)
+
+            Button {
+                stopSession()
+            } label: {
+                Text("Stop Session")
+                    .font(.headline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .ifAvailableGlassProminent(tint: backgroundTheme.glowColor)
+            .padding(.horizontal, 28)
+            .padding(.bottom, 28)
         }
     }
 
-    private var intentionCard: some View {
-        AppSurfaceCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Intention")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
+    private var notesView: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Prayer session")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(backgroundTheme.glowColor)
+                        .textCase(.uppercase)
 
-                TextField("What are you bringing to prayer?", text: $prayerNote, axis: .vertical)
-                    .textFieldStyle(.plain)
+                    Text("Add notes if needed")
+                        .font(.largeTitle.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text("\(savedPrayerMinutes)m will be added to your timeline.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                TextEditor(text: $prayerNote)
+                    .frame(minHeight: 170)
                     .padding(12)
                     .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                     )
-                    .disabled(isRunning)
-                    .opacity(isRunning ? 0.8 : 1)
-            }
-        }
-    }
+                    .scrollContentBackground(.hidden)
 
-    private var controlCard: some View {
-        AppSurfaceCard {
-            VStack(spacing: 12) {
-                if isRunning {
+                VStack(spacing: 10) {
                     Button {
-                        Task {
-                            await finishSession()
-                        }
+                        saveSession()
                     } label: {
-                        Text("Stop and Save")
+                        Text("Save Session")
+                            .font(.headline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                     }
                     .ifAvailableGlassProminent(tint: backgroundTheme.glowColor)
-                } else {
+
                     Button {
-                        Task {
-                            await startSession()
-                        }
+                        prayerNote = ""
+                        saveSession()
                     } label: {
-                        Text("Start Prayer Timer")
+                        Text("Skip Notes")
+                            .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                     }
-                    .ifAvailableGlassProminent(tint: backgroundTheme.glowColor)
+                    .ifAvailableGlass(tint: backgroundTheme.glowColor)
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 28)
+            .padding(.bottom, 28)
         }
     }
 
@@ -189,11 +201,28 @@ struct PrayerTimerView: View {
         min(1, Double(currentElapsedSeconds) / 3600.0)
     }
 
-    @MainActor
-    private func startSession() async {
+    private var savedPrayerMinutes: Int {
+        max(1, Int(ceil(Double(max(elapsedSeconds, 1)) / 60.0)))
+    }
+
+    private func startSessionIfNeeded() {
+        guard !hasStartedSession else { return }
         startedAt = .now
         elapsedSeconds = 0
         isRunning = true
+        hasStoppedSession = false
+        hasStartedSession = true
+    }
+
+    private func stopSession() {
+        refreshElapsedSeconds()
+        elapsedSeconds = currentElapsedSeconds
+        isRunning = false
+        hasStoppedSession = true
+
+        if shouldKeepScreenAwake {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
     }
 
     private func tickElapsedSeconds() {
@@ -210,17 +239,13 @@ struct PrayerTimerView: View {
         elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt)))
     }
 
-    @MainActor
-    private func finishSession() async {
-        refreshElapsedSeconds()
-        let prayerMinutes = max(1, Int(ceil(Double(max(currentElapsedSeconds, 1)) / 60.0)))
-
+    private func saveSession() {
         let entry = LogEntry(
             kind: .prayer,
             sectionTitle: "Prayer",
             sinTitle: nil,
             note: prayerNote.trimmingCharacters(in: .whitespacesAndNewlines),
-            prayerMinutes: prayerMinutes,
+            prayerMinutes: savedPrayerMinutes,
             occurredAt: startedAt
         )
 
