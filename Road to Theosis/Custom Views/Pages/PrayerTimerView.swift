@@ -6,7 +6,9 @@ struct PrayerTimerView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onSave: (LogEntry) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("keepScreenAwakeDuringPrayer") private var keepScreenAwakeDuringPrayer = true
+    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     @State private var elapsedSeconds: Int = 0
     @State private var isRunning = false
@@ -14,6 +16,24 @@ struct PrayerTimerView: View {
     @State private var startedAt = Date()
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var prayerTimerCountingMode: PrayerTimerCountingMode {
+        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+    }
+
+    private var currentElapsedSeconds: Int {
+        switch prayerTimerCountingMode {
+        case .foreground:
+            return elapsedSeconds
+        case .background:
+            guard isRunning else { return elapsedSeconds }
+            return max(0, Int(Date().timeIntervalSince(startedAt)))
+        }
+    }
+
+    private var shouldKeepScreenAwake: Bool {
+        prayerTimerCountingMode == .foreground && keepScreenAwakeDuringPrayer
+    }
 
     var body: some View {
         NavigationStack {
@@ -44,18 +64,22 @@ struct PrayerTimerView: View {
         }
         .interactiveDismissDisabled(isRunning)
         .onAppear {
-            if keepScreenAwakeDuringPrayer {
+            if shouldKeepScreenAwake {
                 UIApplication.shared.isIdleTimerDisabled = true
             }
         }
         .onDisappear {
-            if keepScreenAwakeDuringPrayer {
+            if shouldKeepScreenAwake {
                 UIApplication.shared.isIdleTimerDisabled = false
             }
         }
         .onReceive(timer) { _ in
             guard isRunning else { return }
-            elapsedSeconds += 1
+            tickElapsedSeconds()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active, isRunning else { return }
+            refreshElapsedSeconds()
         }
     }
 
@@ -92,7 +116,7 @@ struct PrayerTimerView: View {
                         .rotationEffect(.degrees(-90))
 
                     VStack(spacing: 6) {
-                        Text(formatElapsedTime(elapsedSeconds))
+                        Text(formatElapsedTime(currentElapsedSeconds))
                             .font(.system(size: 54, weight: .semibold, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(.primary)
@@ -104,7 +128,7 @@ struct PrayerTimerView: View {
                 }
                 .frame(width: 220, height: 220)
 
-                Text(isRunning ? "Keep your attention on prayer, not the clock." : "Tap start, then leave the phone alone and pray.")
+                Text(isRunning ? prayerTimerCountingMode.runningInstruction : prayerTimerCountingMode.readyInstruction)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -162,7 +186,7 @@ struct PrayerTimerView: View {
     }
 
     private var progress: Double {
-        min(1, Double(elapsedSeconds) / 3600.0)
+        min(1, Double(currentElapsedSeconds) / 3600.0)
     }
 
     @MainActor
@@ -170,12 +194,26 @@ struct PrayerTimerView: View {
         startedAt = .now
         elapsedSeconds = 0
         isRunning = true
+    }
 
+    private func tickElapsedSeconds() {
+        switch prayerTimerCountingMode {
+        case .foreground:
+            elapsedSeconds += 1
+        case .background:
+            refreshElapsedSeconds()
+        }
+    }
+
+    private func refreshElapsedSeconds() {
+        guard prayerTimerCountingMode == .background else { return }
+        elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt)))
     }
 
     @MainActor
     private func finishSession() async {
-        let prayerMinutes = max(1, Int(ceil(Double(max(elapsedSeconds, 1)) / 60.0)))
+        refreshElapsedSeconds()
+        let prayerMinutes = max(1, Int(ceil(Double(max(currentElapsedSeconds, 1)) / 60.0)))
 
         let entry = LogEntry(
             kind: .prayer,

@@ -196,7 +196,20 @@ private struct PrayerSettingsPage: View {
     let onSaveEntry: (LogEntry) -> Void
     @AppStorage("keepScreenAwakeDuringPrayer") private var keepScreenAwakeDuringPrayer = true
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     @State private var isShowingPrayerTimer = false
+
+    private var prayerTimerCountingMode: PrayerTimerCountingMode {
+        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+    }
+
+    private var prayerTimerCountingModeBinding: Binding<PrayerTimerCountingMode> {
+        Binding {
+            prayerTimerCountingMode
+        } set: { newValue in
+            prayerTimerCountingModeRaw = newValue.rawValue
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -205,11 +218,26 @@ private struct PrayerSettingsPage: View {
             List {
                 Section("Timing") {
                     Toggle("Enable prayer timing", isOn: $isPrayerTimingEnabled)
+
+                    if isPrayerTimingEnabled {
+                        Picker("Timer counting", selection: prayerTimerCountingModeBinding) {
+                            ForEach(PrayerTimerCountingMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                    }
                 }
 
                 if isPrayerTimingEnabled {
                     Section("Session") {
-                        Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
+                        if prayerTimerCountingMode == .foreground {
+                            Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
+                        }
+
+                        SettingsNoteRow(
+                            title: prayerTimerCountingMode.displayName,
+                            subtitle: prayerTimerCountingMode.description
+                        )
                     }
 
                     Section("Timer") {

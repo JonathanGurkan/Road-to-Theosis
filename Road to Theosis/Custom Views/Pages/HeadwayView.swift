@@ -12,6 +12,11 @@ struct HeadwayView: View {
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+
+    private var prayerTimerCountingMode: PrayerTimerCountingMode {
+        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+    }
 
     private var greeting: String {
         Self.greeting(for: .now)
@@ -34,6 +39,19 @@ struct HeadwayView: View {
 
     private var progressSubtitle: String {
         Self.subtitleFormatter.string(from: Date())
+    }
+
+    private var quickActionSubtitle: String {
+        guard isPrayerTimingEnabled else {
+            return "Add a prayer, victory, loss, or note without focusing on time."
+        }
+
+        switch prayerTimerCountingMode {
+        case .foreground:
+            return "Start a quiet prayer session or add a victory, loss, or note."
+        case .background:
+            return "Start a prayer session that can keep counting in the background, or add a victory, loss, or note."
+        }
     }
 
     private var recentEntries: [LogEntry] {
@@ -235,7 +253,7 @@ struct HeadwayView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "Start a quiet prayer session or add a victory, loss, or note." : "Add a prayer, victory, loss, or note without focusing on time.")
+                Text(quickActionSubtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
