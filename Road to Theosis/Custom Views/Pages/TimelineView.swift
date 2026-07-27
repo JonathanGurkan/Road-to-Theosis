@@ -165,8 +165,8 @@ private struct TimelineRow: View {
                 }
 
                 HStack(spacing: 10) {
-                    if showsPrayerTiming && entry.prayerMinutes > 0 {
-                        Label("\(entry.prayerMinutes)m prayer", systemImage: "hands.sparkles")
+                    if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+                        Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
                     }

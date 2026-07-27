@@ -62,5 +62,45 @@ struct LogEntry: Identifiable {
     let sinTitle: String?
     let note: String
     let prayerMinutes: Int
+    let prayerDurationSeconds: Int
     let occurredAt: Date
+
+    init(
+        kind: Kind,
+        sectionTitle: String,
+        sinTitle: String?,
+        note: String,
+        prayerMinutes: Int,
+        prayerDurationSeconds: Int? = nil,
+        occurredAt: Date
+    ) {
+        self.kind = kind
+        self.sectionTitle = sectionTitle
+        self.sinTitle = sinTitle
+        self.note = note
+        self.prayerMinutes = prayerMinutes
+        self.prayerDurationSeconds = prayerDurationSeconds ?? max(prayerMinutes, 0) * 60
+        self.occurredAt = occurredAt
+    }
+
+    var prayerDurationText: String {
+        Self.formatPrayerDuration(seconds: prayerDurationSeconds)
+    }
+
+    static func formatPrayerDuration(seconds: Int) -> String {
+        let clampedSeconds = max(seconds, 0)
+
+        guard clampedSeconds >= 60 else {
+            return "\(max(clampedSeconds, 1))s"
+        }
+
+        let minutes = clampedSeconds / 60
+        let remainingSeconds = clampedSeconds % 60
+
+        guard remainingSeconds > 0 else {
+            return "\(minutes)m"
+        }
+
+        return "\(minutes)m \(remainingSeconds)s"
+    }
 }
