@@ -36,6 +36,25 @@ struct HeadwayView: View {
             return "Good night"
         }
     }
+    
+    private var greetingSubtitle: String {
+        Self.greetingSubtitle(for: .now)
+    }
+    
+    private static func greetingSubtitle(for date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+        
+        switch hour {
+        case 5..<12:
+            return "Hopefully you slept well today. Let's start the day with prayer and progress through this blessed day on the path of righteousness. Don't forget to put on the full armor of God!"
+        case 12..<17:
+            return "Hopefully the day is going pretty well so far. Take a moment to be mindfull of all your blessings so far!"
+        case 17..<22:
+            return "Don't forget to be mindfull of your blessings throughout the day so far. God is with you!"
+        default:
+            return "The day is coming to an end. Let's take some time to thank God for today's blessings and reflect on anything that need to be confessed and prayed for."
+        }
+    }
 
     private var progressSubtitle: String {
         Self.subtitleFormatter.string(from: Date())
@@ -143,7 +162,7 @@ struct HeadwayView: View {
                     .font(.largeTitle.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("Prayer, progress, and recent activity are gathered here in a cleaner, more native layout.")
+                Text(greetingSubtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -156,10 +175,6 @@ struct HeadwayView: View {
                         .truncationMode(.tail)
 
                     Spacer(minLength: 8)
-
-                    Text("Updated \(progressSubtitle)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(backgroundTheme.glowColor)
                 }
             }
         }
