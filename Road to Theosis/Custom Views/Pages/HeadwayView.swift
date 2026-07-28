@@ -554,9 +554,9 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
             switch size {
             case .minimal:
-                HStack(alignment: .top, spacing: 7) {
+                ZStack(alignment: .topLeading) {
                     minimalIcon("sun.max.fill", size: 22)
-
+                    
                     VStack(alignment: .leading, spacing: 1) {
                         Text(greeting)
                             .font(.subheadline.weight(.semibold))
@@ -570,8 +570,8 @@ struct HeadwayView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
-
-                    Spacer(minLength: 0)
+                    .padding(.leading, 26)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
@@ -611,17 +611,18 @@ struct HeadwayView: View {
                         .textCase(.uppercase)
 
                     Text(greeting)
-                        .font(.largeTitle.weight(.semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.78)
+                        .minimumScaleFactor(0.82)
 
                     Text(greetingSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(3)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.78)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
     }
@@ -630,7 +631,7 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
             switch size {
             case .minimal:
-                HStack(alignment: .top, spacing: 8) {
+                ZStack(alignment: .topLeading) {
                     minimalIcon("chart.line.uptrend.xyaxis")
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -652,8 +653,8 @@ struct HeadwayView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.62)
                     }
-
-                    Spacer(minLength: 0)
+                    .padding(.leading, 28)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
@@ -906,7 +907,7 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
             switch size {
             case .minimal:
-                HStack(alignment: .top, spacing: 8) {
+                ZStack(alignment: .topLeading) {
                     minimalIcon("bolt.fill")
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -917,10 +918,10 @@ struct HeadwayView: View {
 
                         minimalActionButtons(axis: .horizontal, size: 26, spacing: 6)
                     }
-
-                    Spacer(minLength: 0)
+                    .padding(.leading, 28)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -1097,12 +1098,12 @@ struct HeadwayView: View {
     }
 
     private func recentActivityCard(size: HomeScreenCardSize) -> some View {
-        let entries = recentEntries(limit: size == .standard ? 2 : 1)
+        let entries = recentEntries(limit: size == .minimal ? 1 : 2)
 
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14) {
             switch size {
             case .minimal:
-                HStack(alignment: .top, spacing: 8) {
+                ZStack(alignment: .topLeading) {
                     minimalIcon(latestActivityIcon)
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -1123,10 +1124,10 @@ struct HeadwayView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
-
-                    Spacer(minLength: 0)
+                    .padding(.leading, 28)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -1141,34 +1142,21 @@ struct HeadwayView: View {
                             .minimumScaleFactor(0.8)
                     }
 
-                    Spacer(minLength: 0)
-
-                    HStack(spacing: 10) {
-                        Image(systemName: latestActivityIcon)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(backgroundTheme.glowColor)
-                            .frame(width: 34, height: 34)
-                            .background(backgroundTheme.glowColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(latestActivityTitle)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.78)
-
-                            Text(latestActivityDetail)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.72)
+                    VStack(spacing: 6) {
+                        if entries.isEmpty {
+                            compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
+                        } else {
+                            ForEach(entries) { entry in
+                                compactRecentActivityRow(
+                                    title: entry.kind.title,
+                                    detail: entry.sinTitle ?? entry.sectionTitle,
+                                    icon: entry.kind.symbolName,
+                                    tint: entry.kind.tint
+                                )
+                            }
                         }
-
-                        Spacer(minLength: 0)
                     }
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             case .standard:
@@ -1212,6 +1200,36 @@ struct HeadwayView: View {
                 }
             }
         }
+    }
+
+    private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 28, height: 28)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(detail)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
     }
 
     private var latestActivitySummary: String {
