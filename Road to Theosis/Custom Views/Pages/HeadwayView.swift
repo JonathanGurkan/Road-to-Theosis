@@ -193,17 +193,6 @@ struct HeadwayView: View {
         }
         .contentShape(Rectangle())
         .draggable(configuration.id.rawValue)
-        .dropDestination(for: String.self) { droppedIDs, _ in
-            guard isCustomizingHome,
-                  let rawValue = droppedIDs.first,
-                  let sourceID = HomeScreenCardID(rawValue: rawValue),
-                  sourceID != configuration.id else {
-                return false
-            }
-
-            moveHomeCard(sourceID, before: configuration.id)
-            return true
-        }
         .onLongPressGesture {
             guard !isCustomizingHome else { return }
             isCustomizingHome = true
@@ -311,28 +300,47 @@ struct HeadwayView: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 2)
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                VStack(spacing: 8) {
                     ForEach(homeScreenLayout.availableCards) { cardID in
                         Button {
                             addHomeCard(cardID)
                         } label: {
-                            VStack(spacing: 10) {
+                            HStack(spacing: 12) {
                                 Image(systemName: cardID.systemImage)
-                                    .font(.title2.weight(.semibold))
-                                Text(cardID.title)
-                                    .font(.caption.weight(.semibold))
-                                    .multilineTextAlignment(.center)
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundStyle(backgroundTheme.glowColor)
+                                    .frame(width: 36, height: 36)
+                                    .background(backgroundTheme.glowColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(cardID.title)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+
+                                    Text(cardID.subtitle)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.78)
+                                }
+
+                                Spacer(minLength: 0)
+
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(backgroundTheme.glowColor)
                             }
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity)
-                            .aspectRatio(1, contentMode: .fit)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
                             .background {
-                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
                                     .fill(Color.primary.opacity(0.07))
                             }
                             .overlay(
-                                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                    .strokeBorder(Color.primary.opacity(0.10), style: StrokeStyle(lineWidth: 1, dash: [6, 5]))
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
@@ -404,7 +412,7 @@ struct HeadwayView: View {
         }
     }
 
-    private func moveHomeCard(_ sourceID: HomeScreenCardID, before destinationID: HomeScreenCardID) {
+    private func moveHomeCard(_ sourceID: HomeScreenCardID, relativeTo destinationID: HomeScreenCardID, insertAfter: Bool) {
         updateHomeLayout { layout in
             guard let sourceIndex = layout.cards.firstIndex(where: { $0.id == sourceID }),
                   let destinationIndex = layout.cards.firstIndex(where: { $0.id == destinationID }) else {
@@ -412,14 +420,21 @@ struct HeadwayView: View {
             }
 
             let card = layout.cards.remove(at: sourceIndex)
-            let adjustedDestinationIndex = sourceIndex < destinationIndex ? destinationIndex - 1 : destinationIndex
+            let adjustedDestinationIndex: Int
+
+            if insertAfter {
+                adjustedDestinationIndex = sourceIndex < destinationIndex ? destinationIndex : destinationIndex + 1
+            } else {
+                adjustedDestinationIndex = sourceIndex < destinationIndex ? destinationIndex - 1 : destinationIndex
+            }
+
             layout.cards.insert(card, at: adjustedDestinationIndex)
         }
     }
 
     private func moveHomeCard(_ sourceID: HomeScreenCardID, toGridLocation location: CGPoint) {
-        if let targetID = dropTargetID(at: location, excluding: sourceID) {
-            moveHomeCard(sourceID, before: targetID)
+        if let target = dropTarget(at: location, excluding: sourceID) {
+            moveHomeCard(sourceID, relativeTo: target.id, insertAfter: target.insertAfter)
         } else {
             moveHomeCardToEnd(sourceID)
         }
@@ -437,7 +452,7 @@ struct HeadwayView: View {
         }
     }
 
-    private func dropTargetID(at location: CGPoint, excluding sourceID: HomeScreenCardID) -> HomeScreenCardID? {
+    private func dropTarget(at location: CGPoint, excluding sourceID: HomeScreenCardID) -> (id: HomeScreenCardID, insertAfter: Bool)? {
         guard homeGridWidth > 0 else { return nil }
 
         let cards = homeScreenLayout.cards.filter { $0.id != sourceID }
@@ -454,7 +469,8 @@ struct HeadwayView: View {
             )
 
             if rect.contains(location) {
-                return cards[placement.index].id
+                let insertAfter = location.y > rect.midY || location.x > rect.midX
+                return (cards[placement.index].id, insertAfter)
             }
         }
 
@@ -462,7 +478,7 @@ struct HeadwayView: View {
             let centerY = CGFloat(placement.y) * (rowHeight + HomeScreenGridLayout.defaultVerticalSpacing) + rowHeight * CGFloat(placement.height) / 2
             let centerX = CGFloat(placement.x) * (columnWidth + HomeScreenGridLayout.defaultHorizontalSpacing) + columnWidth * CGFloat(placement.width) / 2
             return location.y < centerY || (abs(location.y - centerY) < rowHeight / 2 && location.x < centerX)
-        }.map { cards[$0.index].id }
+        }.map { (cards[$0.index].id, false) }
     }
 
     private func isFirstHomeCard(_ id: HomeScreenCardID) -> Bool {
@@ -501,12 +517,12 @@ struct HeadwayView: View {
                             .lineLimit(1)
 
                         Text(compactGreeting)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.72)
+                            .minimumScaleFactor(0.62)
 
-                        Text(latestActivitySummary)
+                        Text(progressSubtitle)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -534,10 +550,10 @@ struct HeadwayView: View {
                     Spacer(minLength: 0)
 
                     Text(greeting)
-                        .font(.headline.weight(.semibold))
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.82)
+                        .minimumScaleFactor(0.78)
 
                     Text(greetingSubtitle)
                         .font(.caption.weight(.semibold))
@@ -614,11 +630,17 @@ struct HeadwayView: View {
 
                     Spacer(minLength: 0)
 
-                    progressSummary
+                    Text("\(Int(dashboard.totalProgress * 100))%")
+                        .font(.title2.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("\(dashboard.dailyCheckIns) check-ins")
-                        Text("\(dashboard.activeStreak)d active streak")
+                    compactProgressBar
+
+                    HStack(spacing: 8) {
+                        Text("\(dashboard.dailyCheckIns) checks")
+                        Text("\(dashboard.activeStreak)d streak")
                     }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -687,6 +709,20 @@ struct HeadwayView: View {
                 .monospacedDigit()
                 .foregroundStyle(.primary)
         }
+    }
+
+    private var compactProgressBar: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.primary.opacity(0.10))
+
+                Capsule()
+                    .fill(backgroundTheme.glowColor)
+                    .frame(width: proxy.size.width * min(max(dashboard.totalProgress, 0), 1))
+            }
+        }
+        .frame(height: 8)
     }
 
     private func minimalIcon(_ systemName: String) -> some View {
@@ -771,7 +807,7 @@ struct HeadwayView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
-                        minimalActionButtons(axis: .horizontal)
+                        minimalActionButtons(axis: .horizontal, size: 26, spacing: 6)
                     }
 
                     Spacer(minLength: 0)
@@ -791,15 +827,29 @@ struct HeadwayView: View {
                             .minimumScaleFactor(0.8)
                     }
 
-                    Text(quickActionSubtitle)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.7)
-
                     Spacer(minLength: 0)
 
-                    minimalActionButtons(axis: .horizontal)
+                    VStack(spacing: 6) {
+                        compactActionRowButton(title: isPrayerTimingEnabled ? "Timer" : "Prayer", icon: isPrayerTimingEnabled ? "timer" : "hands.sparkles", tint: isPrayerTimingEnabled ? backgroundTheme.glowColor : .teal) {
+                            if isPrayerTimingEnabled {
+                                isShowingPrayerTimer = true
+                            } else {
+                                isShowingQuickPrayer = true
+                            }
+                        }
+
+                        HStack(spacing: 6) {
+                            if isPrayerTimingEnabled {
+                                compactActionRowButton(title: "Prayer", icon: "hands.sparkles", tint: .teal) {
+                                    isShowingQuickPrayer = true
+                                }
+                            }
+
+                            compactActionRowButton(title: "Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor) {
+                                isShowingAddView = true
+                            }
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             case .standard:
@@ -848,42 +898,61 @@ struct HeadwayView: View {
     }
 
     @ViewBuilder
-    private func minimalActionButtons(axis: HomeActionButtonAxis) -> some View {
+    private func minimalActionButtons(axis: HomeActionButtonAxis, size: CGFloat = 24, spacing: CGFloat = 8) -> some View {
         let content = Group {
             if isPrayerTimingEnabled {
-                compactActionButton(icon: "timer", tint: backgroundTheme.glowColor) {
+                compactActionButton(icon: "timer", tint: backgroundTheme.glowColor, size: size) {
                     isShowingPrayerTimer = true
                 }
             }
 
-            compactActionButton(icon: "hands.sparkles", tint: .teal) {
+            compactActionButton(icon: "hands.sparkles", tint: .teal, size: size) {
                 isShowingQuickPrayer = true
             }
 
-            compactActionButton(icon: "plus.circle.fill", tint: backgroundTheme.glowColor) {
+            compactActionButton(icon: "plus.circle.fill", tint: backgroundTheme.glowColor, size: size) {
                 isShowingAddView = true
             }
         }
 
         switch axis {
         case .horizontal:
-            HStack(spacing: 8) {
+            HStack(spacing: spacing) {
                 content
             }
         case .vertical:
-            VStack(spacing: 6) {
+            VStack(spacing: spacing) {
                 content
             }
         }
     }
 
-    private func compactActionButton(icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func compactActionButton(icon: String, tint: Color, size: CGFloat = 24, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(tint)
-                .frame(width: 24, height: 24)
+                .frame(width: size, height: size)
                 .background(tint.opacity(0.14), in: Circle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func compactActionRowButton(title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.caption2.weight(.bold))
+
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .foregroundStyle(tint)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: 30)
+            .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -1173,7 +1242,7 @@ private struct HomeScreenGridPlacement {
 
 private struct HomeScreenGridLayout: Layout {
     static let defaultHorizontalSpacing: CGFloat = 8
-    static let defaultVerticalSpacing: CGFloat = 4
+    static let defaultVerticalSpacing: CGFloat = 8
 
     let horizontalSpacing: CGFloat
     let verticalSpacing: CGFloat
