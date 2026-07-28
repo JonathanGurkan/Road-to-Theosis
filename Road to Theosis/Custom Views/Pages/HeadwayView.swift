@@ -1,5 +1,6 @@
 import SwiftUI
 import Playgrounds
+import UniformTypeIdentifiers
 
 struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
@@ -10,6 +11,7 @@ struct HeadwayView: View {
     @State private var isShowingPrayerTimer = false
     @State private var isCustomizingHome = false
     @State private var homeGridWidth: CGFloat = 0
+    @State private var draggingHomeCardID: HomeScreenCardID?
     @State private var selectedDefenseItem: SinCategory?
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
@@ -106,7 +108,7 @@ struct HeadwayView: View {
                             editableHomeCard(for: configuration)
                                 .layoutValue(key: HomeScreenGridWidthUnitsKey.self, value: configuration.id.supportsResizing ? configuration.size.widthUnits : 4)
                                 .layoutValue(key: HomeScreenGridHeightUnitsKey.self, value: configuration.id.supportsResizing ? configuration.size.heightUnits : 2)
-                                .layoutValue(key: HomeScreenGridUsesFixedHeightKey.self, value: configuration.id.supportsResizing && configuration.size != .standard)
+                                .layoutValue(key: HomeScreenGridUsesFixedHeightKey.self, value: configuration.id.supportsResizing)
                         }
                     }
                     .background {
@@ -134,8 +136,6 @@ struct HeadwayView: View {
                     if isCustomizingHome {
                         addCardsArea
                     }
-
-                    customizeHomeButton
                 }
                 .animation(.snappy, value: homeScreenLayout)
                 .animation(.snappy, value: isCustomizingHome)
@@ -147,10 +147,25 @@ struct HeadwayView: View {
         .navigationBarTitleDisplayMode(.large)
         .navigationTitle("Today")
         .toolbar {
-            Button {
-                isShowingAddView.toggle()
-            } label: {
-                Label("Add Log", systemImage: "plus.circle.fill")
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    isCustomizingHome.toggle()
+                } label: {
+                    Text(isCustomizingHome ? "Done" : "Edit")
+                        .font(.subheadline.weight(.semibold))
+                }
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                if isCustomizingHome {
+                    addWidgetToolbarMenu
+                } else {
+                    Button {
+                        isShowingAddView.toggle()
+                    } label: {
+                        Label("Add Log", systemImage: "plus.circle.fill")
+                    }
+                }
             }
         }
         .sheet(isPresented: $isShowingAddView) {
@@ -188,11 +203,37 @@ struct HeadwayView: View {
                 .allowsHitTesting(!isCustomizingHome)
 
             if isCustomizingHome {
+                GeometryReader { proxy in
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onDrag {
+                            draggingHomeCardID = configuration.id
+                            return NSItemProvider(object: configuration.id.rawValue as NSString)
+                        }
+                        .onDrop(
+                            of: [UTType.text],
+                            delegate: HomeCardDropDelegate(
+                                targetID: configuration.id,
+                                targetSize: proxy.size,
+                                draggingID: $draggingHomeCardID
+                            ) { sourceID, destinationID, insertAfter in
+                                moveHomeCard(sourceID, relativeTo: destinationID, insertAfter: insertAfter)
+                            }
+                        )
+                }
+
                 homeCardEditOverlay(for: configuration)
             }
         }
         .contentShape(Rectangle())
-        .draggable(configuration.id.rawValue)
+        .onDrag {
+            guard isCustomizingHome else {
+                return NSItemProvider()
+            }
+
+            draggingHomeCardID = configuration.id
+            return NSItemProvider(object: configuration.id.rawValue as NSString)
+        }
         .onLongPressGesture {
             guard !isCustomizingHome else { return }
             isCustomizingHome = true
@@ -366,16 +407,22 @@ struct HeadwayView: View {
         }
     }
 
-    private var customizeHomeButton: some View {
-        Button {
-            isCustomizingHome.toggle()
+    private var addWidgetToolbarMenu: some View {
+        Menu {
+            if homeScreenLayout.availableCards.isEmpty {
+                Text("No widgets available")
+            } else {
+                ForEach(homeScreenLayout.availableCards) { cardID in
+                    Button {
+                        addHomeCard(cardID)
+                    } label: {
+                        Label(cardID.title, systemImage: cardID.systemImage)
+                    }
+                }
+            }
         } label: {
-            Label(isCustomizingHome ? "Done" : "Customize Home Screen", systemImage: isCustomizingHome ? "checkmark.circle.fill" : "slider.horizontal.3")
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            Label("Add Widget", systemImage: "widget.small.badge.plus")
         }
-        .ifAvailableGlass(tint: backgroundTheme.glowColor)
     }
 
     private func updateHomeLayout(_ update: (inout HomeScreenLayout) -> Void) {
@@ -386,7 +433,7 @@ struct HeadwayView: View {
 
     private func addHomeCard(_ id: HomeScreenCardID) {
         updateHomeLayout { layout in
-            layout.cards.append(HomeScreenCardConfiguration(id: id, size: id.supportsResizing ? .compact : .standard))
+            layout.cards.insert(HomeScreenCardConfiguration(id: id, size: id.supportsResizing ? .compact : .standard), at: 0)
         }
     }
 
@@ -507,20 +554,15 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
             switch size {
             case .minimal:
-                HStack(spacing: 8) {
-                    minimalIcon("sun.max.fill")
+                HStack(alignment: .top, spacing: 7) {
+                    minimalIcon("sun.max.fill", size: 22)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(compactWeekday)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-
-                        Text(compactGreeting)
-                            .font(.headline.weight(.semibold))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(greeting)
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.62)
+                            .minimumScaleFactor(0.56)
 
                         Text(progressSubtitle)
                             .font(.caption2.weight(.semibold))
@@ -531,7 +573,7 @@ struct HeadwayView: View {
 
                     Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -539,12 +581,11 @@ struct HeadwayView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(backgroundTheme.glowColor)
 
-                        Text(progressSubtitle)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
+                        Text("Greeting")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.75)
+                            .minimumScaleFactor(0.8)
                     }
 
                     Spacer(minLength: 0)
@@ -561,7 +602,7 @@ struct HeadwayView: View {
                         .lineLimit(3)
                         .minimumScaleFactor(0.72)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
                 VStack(alignment: .leading, spacing: 8) {
                     Text(progressSubtitle)
@@ -589,7 +630,7 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
             switch size {
             case .minimal:
-                HStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     minimalIcon("chart.line.uptrend.xyaxis")
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -614,7 +655,7 @@ struct HeadwayView: View {
 
                     Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -623,9 +664,10 @@ struct HeadwayView: View {
                             .foregroundStyle(backgroundTheme.glowColor)
 
                         Text("Daily overview")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
 
                     Spacer(minLength: 0)
@@ -638,21 +680,17 @@ struct HeadwayView: View {
 
                     compactProgressBar
 
-                    HStack(spacing: 8) {
-                        Text("\(dashboard.dailyCheckIns) checks")
-                        Text("\(dashboard.activeStreak)d streak")
+                    HStack(spacing: 6) {
+                        compactOverviewInfoPill(value: "\(dashboard.dailyCheckIns)", label: "Checks", icon: "checklist")
+                        compactOverviewInfoPill(value: "\(dashboard.activeStreak)d", label: "Streak", icon: "flame.fill")
                     }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
                 HStack(alignment: .center, spacing: 14) {
                     progressRing(size: size)
 
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 6) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Daily overview")
                                 .font(.headline.weight(.semibold))
@@ -665,7 +703,7 @@ struct HeadwayView: View {
                                 .lineLimit(1)
                         }
 
-                        overviewStatsStrip
+                        overviewStackedStats
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -725,12 +763,36 @@ struct HeadwayView: View {
         .frame(height: 8)
     }
 
-    private func minimalIcon(_ systemName: String) -> some View {
+    private func minimalIcon(_ systemName: String, size: CGFloat = 24) -> some View {
         Image(systemName: systemName)
             .font(.caption.weight(.semibold))
             .foregroundStyle(backgroundTheme.glowColor)
-            .frame(width: 24, height: 24)
+            .frame(width: size, height: size)
             .background(backgroundTheme.glowColor.opacity(0.14), in: Circle())
+    }
+
+    private func compactOverviewInfoPill(value: String, label: String, icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(backgroundTheme.glowColor)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text(value)
+                    .font(.caption.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+
+                Text(label)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.76)
+        }
+        .padding(.horizontal, 7)
+        .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+        .background(backgroundTheme.glowColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var overviewStatsStrip: some View {
@@ -759,6 +821,52 @@ struct HeadwayView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 54)
         .background(backgroundTheme.glowColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var overviewStackedStats: some View {
+        VStack(spacing: 0) {
+            if isPrayerTimingEnabled {
+                overviewStackedStat(title: "Prayer minutes", value: "\(dashboard.prayerMinutes)m", icon: "hands.sparkles")
+
+                Divider()
+                    .padding(.leading, 36)
+            }
+
+            overviewStackedStat(title: "Check-ins", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
+
+            Divider()
+                .padding(.leading, 36)
+
+            overviewStackedStat(title: "Active streak", value: "\(dashboard.activeStreak)d", icon: "flame.fill")
+        }
+    }
+
+    private func overviewStackedStat(title: String, value: String, icon: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(backgroundTheme.glowColor)
+                .frame(width: 28, height: 28)
+                .background(backgroundTheme.glowColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(value)
+                    .font(.headline.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 34)
     }
 
     private var dashboardStats: some View {
@@ -798,7 +906,7 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
             switch size {
             case .minimal:
-                HStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     minimalIcon("bolt.fill")
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -821,50 +929,46 @@ struct HeadwayView: View {
                             .foregroundStyle(backgroundTheme.glowColor)
 
                         Text("Quick actions")
-                            .font(.headline.weight(.semibold))
+                            .font(.title3.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
 
-                    Spacer(minLength: 0)
-
                     VStack(spacing: 6) {
-                        compactActionRowButton(title: isPrayerTimingEnabled ? "Timer" : "Prayer", icon: isPrayerTimingEnabled ? "timer" : "hands.sparkles", tint: isPrayerTimingEnabled ? backgroundTheme.glowColor : .teal) {
+                        HStack(spacing: 6) {
                             if isPrayerTimingEnabled {
-                                isShowingPrayerTimer = true
-                            } else {
+                                compactActionRowButton(title: "Timer", icon: "timer", tint: backgroundTheme.glowColor, minHeight: 46) {
+                                    isShowingPrayerTimer = true
+                                }
+                            }
+
+                            compactActionRowButton(title: "Prayer", icon: "hands.sparkles", tint: .teal, minHeight: 46) {
                                 isShowingQuickPrayer = true
                             }
                         }
 
-                        HStack(spacing: 6) {
-                            if isPrayerTimingEnabled {
-                                compactActionRowButton(title: "Prayer", icon: "hands.sparkles", tint: .teal) {
-                                    isShowingQuickPrayer = true
-                                }
-                            }
-
-                            compactActionRowButton(title: "Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor) {
-                                isShowingAddView = true
-                            }
+                        compactActionRowButton(title: "Add Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor, minHeight: 46) {
+                            isShowingAddView = true
                         }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             case .standard:
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Quick actions")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
 
                     Text(quickActionSubtitle)
-                        .font(.subheadline)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
 
-                    VStack(spacing: 10) {
-                        HStack(spacing: 10) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
                             if isPrayerTimingEnabled {
                                 ActionButtonView(
                                     title: "Prayer Timer",
@@ -892,6 +996,7 @@ struct HeadwayView: View {
                             isShowingAddView = true
                         }
                     }
+                    .frame(maxHeight: .infinity, alignment: .bottom)
                 }
             }
         }
@@ -938,7 +1043,7 @@ struct HeadwayView: View {
         .buttonStyle(.plain)
     }
 
-    private func compactActionRowButton(title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func compactActionRowButton(title: String, icon: String, tint: Color, minHeight: CGFloat = 30, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
@@ -951,7 +1056,7 @@ struct HeadwayView: View {
             }
             .foregroundStyle(tint)
             .padding(.horizontal, 8)
-            .frame(maxWidth: .infinity, minHeight: 30)
+            .frame(maxWidth: .infinity, minHeight: minHeight)
             .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -992,12 +1097,12 @@ struct HeadwayView: View {
     }
 
     private func recentActivityCard(size: HomeScreenCardSize) -> some View {
-        let entries = recentEntries(limit: size == .standard ? 3 : 1)
+        let entries = recentEntries(limit: size == .standard ? 2 : 1)
 
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14) {
             switch size {
             case .minimal:
-                HStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     minimalIcon(latestActivityIcon)
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -1030,7 +1135,7 @@ struct HeadwayView: View {
                             .foregroundStyle(backgroundTheme.glowColor)
 
                         Text("Recent activity")
-                            .font(.headline.weight(.semibold))
+                            .font(.title3.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -1038,28 +1143,43 @@ struct HeadwayView: View {
 
                     Spacer(minLength: 0)
 
-                    Text(latestActivityTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
+                    HStack(spacing: 10) {
+                        Image(systemName: latestActivityIcon)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(backgroundTheme.glowColor)
+                            .frame(width: 34, height: 34)
+                            .background(backgroundTheme.glowColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
 
-                    Text(latestActivityDetail)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.72)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(latestActivityTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
+
+                            Text(latestActivityDetail)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.72)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             case .standard:
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("Recent activity")
                                 .font(.headline.weight(.semibold))
                                 .foregroundStyle(.primary)
                             Text("Latest logs from your timeline")
-                                .font(.footnote)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
@@ -1218,6 +1338,31 @@ private struct RecentActivityRow: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+private struct HomeCardDropDelegate: DropDelegate {
+    let targetID: HomeScreenCardID
+    let targetSize: CGSize
+    @Binding var draggingID: HomeScreenCardID?
+    let move: (HomeScreenCardID, HomeScreenCardID, Bool) -> Void
+
+    func dropEntered(info: DropInfo) {
+        guard let sourceID = draggingID, sourceID != targetID else {
+            return
+        }
+
+        let insertAfter = info.location.y > targetSize.height / 2 || info.location.x > targetSize.width / 2
+        move(sourceID, targetID, insertAfter)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggingID = nil
+        return true
+    }
 }
 
 private struct HomeScreenGridWidthUnitsKey: LayoutValueKey {
