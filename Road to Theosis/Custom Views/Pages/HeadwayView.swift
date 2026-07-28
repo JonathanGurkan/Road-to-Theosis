@@ -145,7 +145,7 @@ struct HeadwayView: View {
             }
         }
         .navigationBarTitleDisplayMode(.large)
-        .navigationTitle("Today")
+        .navigationTitle("My Journey")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
