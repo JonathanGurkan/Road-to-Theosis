@@ -62,7 +62,7 @@ struct HeadwayView: View {
 
     private var quickActionSubtitle: String {
         guard isPrayerTimingEnabled else {
-            return "Add a prayer, victory, loss, or note without focusing on time."
+            return "Add a prayer, victory, loss, or note."
         }
 
         switch prayerTimerCountingMode {
@@ -86,6 +86,9 @@ struct HeadwayView: View {
                     headerCard
                     overviewCard
                     actionCard
+                    if showRecentActivity {
+                        recentActivityCard
+                    }
                     sectionsHeader
                     LazyVStack(spacing: compactSinRows ? 10 : 12) {
                         ForEach(dashboard.sections.indices, id: \.self) { index in
@@ -103,9 +106,6 @@ struct HeadwayView: View {
                                 }
                             )
                         }
-                    }
-                    if showRecentActivity {
-                        recentActivityCard
                     }
                 }
                 .padding(.horizontal, 16)
@@ -190,10 +190,6 @@ struct HeadwayView: View {
                         Text("Daily overview")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
-                        Spacer()
-                        Text("\(Int(dashboard.totalProgress * 100))%")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(backgroundTheme.glowColor)
                     }
 
                     Text("Your current direction today")
@@ -211,8 +207,8 @@ struct HeadwayView: View {
                                 tint: backgroundTheme.glowColor
                             )
 
-                            Divider()
-                                .padding(.leading, 46)
+                        Divider()
+                            .padding(.leading, 46)
                         }
 
                         StatCardView(
@@ -247,15 +243,15 @@ struct HeadwayView: View {
                 .stroke(backgroundTheme.glowColor, style: StrokeStyle(lineWidth: 14, lineCap: .round))
                 .rotationEffect(.degrees(-90))
 
-            VStack(spacing: 4) {
+            VStack {
+                Text("Progress")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                
                 Text("\(Int(dashboard.totalProgress * 100))%")
                     .font(.system(size: 34, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
-
-                Text("Today")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
             }
         }
         .frame(width: 132, height: 132)
@@ -308,7 +304,7 @@ struct HeadwayView: View {
 
     private var sectionsHeader: some View {
         HStack {
-            Text("Focus areas")
+            Text("My focus areas")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.primary)
             Spacer()
