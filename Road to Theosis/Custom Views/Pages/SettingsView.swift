@@ -164,6 +164,7 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
 
@@ -173,13 +174,21 @@ private struct HomeSettingsPage: View {
 
             List {
                 Section("Layout") {
-                    Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
+
+                    Button(role: .destructive) {
+                        homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+                        showRecentActivity = true
+                        compactSinRows = false
+                    } label: {
+                        Label("Reset Home Screen", systemImage: "arrow.counterclockwise")
+                    }
                 }
 
                 Section("Notes") {
-                    SettingsNoteRow(title: "Recent activity", subtitle: "Shows the latest prayer sessions and logs on Home.")
-                    SettingsNoteRow(title: "Compact rows", subtitle: "Uses tighter spacing in the sins list.")
+                    SettingsNoteRow(title: "Customize Home", subtitle: "Use the button at the bottom of Home to reorder, remove, add, and resize cards.")
+                    SettingsNoteRow(title: "Reset layout", subtitle: "Restores the default card order and card sizes.")
+                    SettingsNoteRow(title: "Compact rows", subtitle: "Uses tighter spacing in the focus area list.")
                 }
             }
             .listStyle(.insetGrouped)
