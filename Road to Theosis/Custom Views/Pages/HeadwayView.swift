@@ -555,7 +555,7 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon("sun.max.fill", size: 22)
+                    minimalIcon("sun.max.fill", size: 20)
                     
                     VStack(alignment: .leading, spacing: 1) {
                         Text(greeting)
@@ -570,7 +570,7 @@ struct HeadwayView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
-                    .padding(.leading, 26)
+                    .padding(.leading, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -597,30 +597,30 @@ struct HeadwayView: View {
                         .minimumScaleFactor(0.78)
 
                     Text(greetingSubtitle)
-                        .font(.caption.weight(.semibold))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.72)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.68)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
                 VStack(alignment: .leading, spacing: 8) {
                     Text(progressSubtitle)
-                        .font(.caption.weight(.semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
 
                     Text(greeting)
-                        .font(.title.weight(.semibold))
+                        .font(.title2.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
 
                     Text(greetingSubtitle)
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.82)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
@@ -632,7 +632,7 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon("chart.line.uptrend.xyaxis")
+                    minimalIcon("chart.line.uptrend.xyaxis", size: 20)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Progress")
@@ -653,7 +653,7 @@ struct HeadwayView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.62)
                     }
-                    .padding(.leading, 28)
+                    .padding(.leading, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -908,7 +908,7 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon("bolt.fill")
+                    minimalIcon("bolt.fill", size: 20)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Actions")
@@ -918,7 +918,7 @@ struct HeadwayView: View {
 
                         minimalActionButtons(axis: .horizontal, size: 26, spacing: 6)
                     }
-                    .padding(.leading, 28)
+                    .padding(.leading, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -1104,7 +1104,7 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon(latestActivityIcon)
+                    minimalIcon(latestActivityIcon, size: 20)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Recent")
@@ -1124,7 +1124,7 @@ struct HeadwayView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
-                    .padding(.leading, 28)
+                    .padding(.leading, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -1156,9 +1156,9 @@ struct HeadwayView: View {
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -1198,6 +1198,7 @@ struct HeadwayView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
     }
