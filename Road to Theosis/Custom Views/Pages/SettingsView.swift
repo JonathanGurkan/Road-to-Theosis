@@ -189,7 +189,7 @@ private struct PrayerSettingsPage: View {
                 }
 
                 if isPrayerTimingEnabled {
-                    Section("Session") {
+                    Section(header: Text("Session"), footer: Text("This keeps the screen awake during a prayer session")) {
                         Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
                     }
                     
