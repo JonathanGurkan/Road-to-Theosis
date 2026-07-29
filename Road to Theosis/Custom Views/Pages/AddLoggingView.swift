@@ -15,6 +15,11 @@ struct AddLoggingView: View {
     @State private var occurredAt = Date()
     @State private var isShowingTimedPrayer = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+
+    private var prayerTimerCountingMode: PrayerTimerCountingMode {
+        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+    }
 
     init(
         backgroundTheme: Binding<AppBackgroundTheme>,
@@ -376,7 +381,7 @@ struct AddLoggingView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("Open the timer for a focused prayer session instead of logging a quick prayer.")
+                Text(prayerTimerCountingMode == .background ? "Open the timer for a focused prayer session that keeps counting while the app is in the background." : "Open the timer for a focused prayer session instead of logging a quick prayer.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

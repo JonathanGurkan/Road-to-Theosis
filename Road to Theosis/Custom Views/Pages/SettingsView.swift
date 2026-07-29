@@ -91,7 +91,7 @@ private struct SettingsLinkRow: View {
     let systemImage: String?
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .fill(Color(uiColor: .secondarySystemFill))
@@ -177,7 +177,20 @@ private struct PrayerSettingsPage: View {
     let onSaveEntry: (LogEntry) -> Void
     @AppStorage("keepScreenAwakeDuringPrayer") private var keepScreenAwakeDuringPrayer = true
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     @State private var isShowingPrayerTimer = false
+
+    private var prayerTimerCountingMode: PrayerTimerCountingMode {
+        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+    }
+
+    private var prayerTimerCountingModeBinding: Binding<PrayerTimerCountingMode> {
+        Binding {
+            prayerTimerCountingMode
+        } set: { newValue in
+            prayerTimerCountingModeRaw = newValue.rawValue
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -186,6 +199,14 @@ private struct PrayerSettingsPage: View {
             List {
                 Section(header: Text("Timing"), footer: isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
                     Toggle("Enable prayer timing", isOn: $isPrayerTimingEnabled)
+
+                    if isPrayerTimingEnabled {
+                        Picker("Timer counting", selection: prayerTimerCountingModeBinding) {
+                            ForEach(PrayerTimerCountingMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                    }
                 }
 
                 if isPrayerTimingEnabled {
@@ -202,7 +223,7 @@ private struct PrayerSettingsPage: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle("Prayer")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.large) 
         .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
             if !isEnabled {
                 isShowingPrayerTimer = false
