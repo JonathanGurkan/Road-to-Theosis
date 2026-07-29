@@ -566,22 +566,28 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon("sun.max.fill", size: 20)
-                    
-                    VStack(alignment: .leading, spacing: 1) {
+                    HStack {
+                        minimalIcon("sun.max.fill", size: 20)
                         Text(greeting)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.56)
-
+                    }
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 1) {
+                        Spacer()
+                        Text("Enjoy your day's blessings!")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .minimumScaleFactor(0.65)
+                        Spacer(minLength: 2)
                         Text(progressSubtitle)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
-                    .padding(.leading, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
