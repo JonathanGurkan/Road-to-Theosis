@@ -647,28 +647,41 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon("chart.line.uptrend.xyaxis", size: 20)
-
-                    VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        minimalIcon("chart.line.uptrend.xyaxis", size: 20)
                         Text("Progress")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
-
+                            .minimumScaleFactor(0.56)
+                    }
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 1) {
+                        Spacer(minLength: 3)
                         Text("\(Int(dashboard.totalProgress * 100))%")
                             .font(.title3.weight(.semibold))
                             .monospacedDigit()
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
-
-                        Text("\(dashboard.dailyCheckIns) checks • \(dashboard.activeStreak)d")
+                        GeometryReader { proxy in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.10))
+                                Capsule()
+                                    .fill(backgroundTheme.glowColor)
+                                    .frame(width: proxy.size.width * min(max(dashboard.totalProgress, 0), 1))
+                            }
+                            Spacer()
+                        }
+                        .frame(height: 4)
+                        Text("\(dashboard.dailyCheckIns) checks • \(dashboard.activeStreak)d streak")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.62)
+                            .padding(.top, 3)
                     }
-                    .padding(.leading, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -703,10 +716,10 @@ struct HeadwayView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
-                HStack(alignment: .center, spacing: 14) {
+                HStack(alignment: .center, spacing: 16) {
                     progressRing(size: size)
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Daily overview")
                                 .font(.headline.weight(.semibold))
@@ -840,18 +853,18 @@ struct HeadwayView: View {
     }
 
     private var overviewStackedStats: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 3) {
             if isPrayerTimingEnabled {
                 overviewStackedStat(title: "Prayer minutes", value: "\(dashboard.prayerMinutes)m", icon: "hands.sparkles")
 
                 Divider()
-                    .padding(.leading, 36)
+                    .padding(.leading, 38)
             }
 
             overviewStackedStat(title: "Check-ins", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
 
             Divider()
-                .padding(.leading, 36)
+                .padding(.leading, 38)
 
             overviewStackedStat(title: "Active streak", value: "\(dashboard.activeStreak)d", icon: "flame.fill")
         }
@@ -1643,5 +1656,10 @@ private extension HeadwayView {
 }
 
 #Playground {
-    print()
+    GeometryReader { geometry in
+        VStack {
+            Text("Width: \(geometry.size.width)")
+            Text("Height: \(geometry.size.height)")
+        }
+    }
 }
