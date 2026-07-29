@@ -158,14 +158,9 @@ private struct HomeSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Layout") {
+                Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
-                }
-
-                Section("Notes") {
-                    SettingsNoteRow(title: "Recent activity", subtitle: "Shows the latest prayer sessions and logs on Home.")
-                    SettingsNoteRow(title: "Compact rows", subtitle: "Uses tighter spacing in the sins list.")
                 }
             }
             .listStyle(.insetGrouped)
@@ -189,7 +184,7 @@ private struct PrayerSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Timing") {
+                Section(header: Text("Timing"), footer: isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
                     Toggle("Enable prayer timing", isOn: $isPrayerTimingEnabled)
                 }
 
@@ -197,31 +192,9 @@ private struct PrayerSettingsPage: View {
                     Section("Session") {
                         Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
                     }
-
-                    Section("Timer") {
-                        Button {
-                            isShowingPrayerTimer = true
-                        } label: {
-                            SettingsLinkRow(
-                                title: "Start timed prayer",
-                                subtitle: "Open the focused prayer timer from here.",
-                                systemImage: "timer"
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .tint(backgroundTheme.glowColor)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                    }
-
-                    Section("Notes") {
-                        SettingsNoteRow(title: "Focused mode", subtitle: "Start the timer, set the phone aside, and pray.")
-                        SettingsNoteRow(title: "Saved time", subtitle: "The elapsed minutes are added to the Timeline when you stop.")
-                    }
+                    
                 } else {
-                    Section("Notes") {
-                        SettingsNoteRow(title: "Prayer first", subtitle: "Timed sessions and manual prayer-minute fields are hidden across the app.")
-                    }
+
                 }
             }
             .listStyle(.insetGrouped)
