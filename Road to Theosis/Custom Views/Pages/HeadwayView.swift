@@ -664,6 +664,7 @@ struct HeadwayView: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
+                            .padding(.bottom, 5)
                         GeometryReader { proxy in
                             ZStack(alignment: .leading) {
                                 Capsule()
@@ -682,6 +683,7 @@ struct HeadwayView: View {
                             .minimumScaleFactor(0.62)
                             .padding(.top, 3)
                     }
+                    .padding(.horizontal, 8)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
