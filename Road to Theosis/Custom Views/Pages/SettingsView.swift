@@ -88,7 +88,7 @@ struct SettingsView: View {
 private struct SettingsLinkRow: View {
     let title: String
     let subtitle: String
-    let systemImage: String
+    let systemImage: String?
 
     var body: some View {
         HStack(spacing: 14) {
@@ -96,7 +96,7 @@ private struct SettingsLinkRow: View {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .fill(Color(uiColor: .secondarySystemFill))
 
-                Image(systemName: systemImage)
+                Image(systemName: systemImage ?? "info.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
             }
@@ -258,26 +258,28 @@ private struct AboutSettingsPage: View {
 
             List {
                 Section("App") {
-                    SettingsNoteRow(title: "Version", subtitle: versionText)
-                    SettingsNoteRow(title: "Timeline", subtitle: "Prayer sessions, victories, losses, and notes stay together.")
-
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text(versionText)
+                            .foregroundStyle(.secondary)
+                    }
+                    
                     Button {
                         onShowWelcome()
                     } label: {
-                        SettingsLinkRow(
-                            title: "Show Welcome",
-                            subtitle: "Replay the intro pages anytime.",
-                            systemImage: "sparkles"
-                        )
+                        Text("Show Onboarding")
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    
                 }
-
-                Section("Style") {
-                    SettingsNoteRow(title: "Foreground", subtitle: "The app keeps grouped spacing and standard hierarchy.")
-                    SettingsNoteRow(title: "Background", subtitle: "Themes keep the interface calm while preserving depth.")
+                
+                Section("Help") {
+                    Button {
+                        //Add logic to show a list of hidden tips and tricks
+                    } label: {
+                        Text("Tips and Tricks")
+                            .foregroundColor(.primary)
+                    }
                 }
             }
             .listStyle(.insetGrouped)
