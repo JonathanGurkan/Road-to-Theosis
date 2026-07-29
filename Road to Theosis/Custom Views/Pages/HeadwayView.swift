@@ -16,6 +16,7 @@ struct HeadwayView: View {
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     public var isDaytime: Bool {
