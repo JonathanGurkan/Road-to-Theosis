@@ -150,6 +150,7 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
 
@@ -161,6 +162,14 @@ private struct HomeSettingsPage: View {
                 Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
+
+                    Button(role: .destructive) {
+                        homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+                        showRecentActivity = true
+                        compactSinRows = false
+                    } label: {
+                        Label("Reset Home Screen", systemImage: "arrow.counterclockwise")
+                    }
                 }
             }
             .listStyle(.insetGrouped)
