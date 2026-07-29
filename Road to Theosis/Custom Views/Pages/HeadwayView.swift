@@ -936,17 +936,19 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon("bolt.fill", size: 20)
-
-                    VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        minimalIcon("bolt.fill", size: 20)
                         Text("Actions")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
-
-                        minimalActionButtons(axis: .horizontal, size: 26, spacing: 6)
+                            .minimumScaleFactor(0.56)
                     }
-                    .padding(.leading, 24)
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 1) {
+                        Spacer()
+                        minimalActionButtons(axis: .horizontal, size: 36, spacing: 6)
+                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -972,7 +974,7 @@ struct HeadwayView: View {
                                 }
                             }
 
-                            compactActionRowButton(title: "Prayer", icon: "hands.sparkles", tint: .teal, minHeight: 46) {
+                            compactActionRowButton(title: "Prayer", icon: "hands.sparkles", tint: .white, minHeight: 46) {
                                 isShowingQuickPrayer = true
                             }
                         }
@@ -1011,7 +1013,7 @@ struct HeadwayView: View {
                             ActionButtonView(
                                 title: "Quick Prayer",
                                 icon: "hands.sparkles",
-                                tint: .teal
+                                tint: .white
                             ) {
                                 isShowingQuickPrayer = true
                             }
@@ -1040,7 +1042,7 @@ struct HeadwayView: View {
                 }
             }
 
-            compactActionButton(icon: "hands.sparkles", tint: .teal, size: size) {
+            compactActionButton(icon: "hands.sparkles", tint: .white, size: size) {
                 isShowingQuickPrayer = true
             }
 
@@ -1066,8 +1068,8 @@ struct HeadwayView: View {
             Image(systemName: icon)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(tint)
-                .frame(width: size, height: size)
-                .background(tint.opacity(0.14), in: Circle())
+                .frame(width: size + 8, height: size)
+                .background(tint.opacity(0.14), in: Capsule())
         }
         .buttonStyle(.plain)
     }
