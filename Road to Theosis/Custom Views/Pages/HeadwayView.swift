@@ -1136,29 +1136,25 @@ struct HeadwayView: View {
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14) {
             switch size {
             case .minimal:
-                ZStack(alignment: .topLeading) {
-                    HStack() {
-                        minimalIcon(latestActivityIcon, size: 20)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        minimalIcon("clock.arrow.circlepath", size: 20)
                         Text("Recent")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                     }
-                    
-                    VStack(alignment: .center, spacing: 2) {
-                        Text(latestActivityTitle)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        Text(latestActivityDetail)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.65)
+
+                    if let entry = entries.first {
+                        compactRecentActivityRow(
+                            title: entry.kind.title,
+                            detail: entry.sinTitle ?? entry.sectionTitle,
+                            icon: entry.kind.symbolName,
+                            tint: entry.kind.tint
+                        )
+                    } else {
+                        compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                     }
-                    .padding(.init(top: 15, leading: 0, bottom: 0, trailing: 68))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
