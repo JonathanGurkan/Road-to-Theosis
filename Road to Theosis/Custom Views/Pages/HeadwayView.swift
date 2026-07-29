@@ -1134,27 +1134,27 @@ struct HeadwayView: View {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
-                    minimalIcon(latestActivityIcon, size: 20)
-
-                    VStack(alignment: .leading, spacing: 2) {
+                    HStack() {
+                        minimalIcon(latestActivityIcon, size: 20)
                         Text("Recent")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
-
+                    }
+                    
+                    VStack(alignment: .center, spacing: 2) {
                         Text(latestActivityTitle)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
-
                         Text(latestActivityDetail)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
-                    .padding(.leading, 24)
+                    .padding(.init(top: 15, leading: 0, bottom: 0, trailing: 68))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
