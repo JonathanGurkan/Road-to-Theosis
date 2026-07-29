@@ -18,6 +18,17 @@ struct HeadwayView: View {
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
+    public var isDaytime: Bool {
+        let hour = Calendar.current.component(.hour, from: Date())
+
+        switch hour {
+        case 5..<17:
+            return true
+        default:
+            return false
+        }
+    }
+    
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
         PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
     }
@@ -577,11 +588,11 @@ struct HeadwayView: View {
             case .compact:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
-                        Image(systemName: "sun.max.fill")
+                        Image(systemName: isDaytime ? "sun.max.fill" : "moon.stars.fill")
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(backgroundTheme.glowColor)
 
-                        Text("Greeting")
+                        Text(greeting)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -590,36 +601,34 @@ struct HeadwayView: View {
 
                     Spacer(minLength: 0)
 
-                    Text(greeting)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
-
                     Text(greetingSubtitle)
-                        .font(.caption)
+                        .font(.system(size: 16))
                         .foregroundStyle(.secondary)
-                        .lineLimit(4)
+                        .lineLimit(8)
                         .minimumScaleFactor(0.68)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(progressSubtitle)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
+                    HStack {
+                        Image(systemName: isDaytime ? "sun.max.fill" : "moon.stars.fill")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(backgroundTheme.glowColor)
+                        Text(progressSubtitle)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                    }
 
                     Text(greeting)
-                        .font(.title2.weight(.semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
 
                     Text(greetingSubtitle)
-                        .font(.callout)
+                        .font(.body)
                         .foregroundStyle(.secondary)
-                        .lineLimit(3)
                         .minimumScaleFactor(0.82)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
