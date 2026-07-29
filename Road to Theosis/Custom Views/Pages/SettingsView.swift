@@ -218,6 +218,7 @@ private struct PrayerSettingsPage: View {
 
 private struct ScriptureSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("showVerseApplications") private var showVerseApplications = true
 
     var body: some View {
@@ -225,13 +226,11 @@ private struct ScriptureSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Verses") {
-                    Toggle("Show verse explanations", isOn: $showVerseApplications)
-                }
-
-                Section("Use") {
-                    SettingsNoteRow(title: "Tap the icon", subtitle: "A swipeable NKJV verse sheet opens from the tapped item.")
-                    SettingsNoteRow(title: "Guidance", subtitle: "You can keep the short application text visible or hide it.")
+                Section(header: Text("Verse arsenal"), footer: Text("When you tap on the icon of a sin in the sins list, your verse arsenal shows up. These are verses you note down to use as a counter agains the devil. You can add not only the verse and the bible quote, but also a descriptive note beneath it to, for example, specify what the use is of the verse.")) {
+                    Toggle("Enable verse arsenal", isOn: $enableVerseInventory)
+                    if enableVerseInventory {
+                        Toggle("Show verse desctiptions", isOn: $showVerseApplications)
+                    }
                 }
             }
             .listStyle(.insetGrouped)

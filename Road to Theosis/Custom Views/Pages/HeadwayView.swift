@@ -12,6 +12,7 @@ struct HeadwayView: View {
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
 
     private var greeting: String {
         Self.greeting(for: .now)
@@ -56,6 +57,7 @@ struct HeadwayView: View {
                                 section: $dashboard.sections[index],
                                 isCompact: compactSinRows,
                                 onShowVerses: { item in
+                                    guard enableVerseInventory else { return }
                                     selectedDefenseItem = item
                                 },
                                 onVictory: { itemID in
