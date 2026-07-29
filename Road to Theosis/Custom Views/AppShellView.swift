@@ -17,7 +17,7 @@ struct AppShellView: View {
                 )
             }
             .tabItem {
-                Label("Today", systemImage: "house.fill")
+                Label("Dashboard", systemImage: "house.fill")
             }
 
             NavigationStack {

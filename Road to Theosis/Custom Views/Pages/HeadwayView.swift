@@ -567,7 +567,7 @@ struct HeadwayView: View {
             case .minimal:
                 ZStack(alignment: .topLeading) {
                     HStack {
-                        minimalIcon("sun.max.fill", size: 20)
+                        minimalIcon(isDaytime ? "sun.max.fill" : "moon.stars.fill", size: 20)
                         Text(greeting)
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
@@ -577,18 +577,19 @@ struct HeadwayView: View {
                     Spacer()
                     VStack(alignment: .leading, spacing: 1) {
                         Spacer()
-                        Text("Enjoy your day's blessings!")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .minimumScaleFactor(0.65)
-                        Spacer(minLength: 2)
                         Text(progressSubtitle)
-                            .font(.caption2.weight(.semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
+                        Spacer()
+                        Text(isDaytime ? "Enjoy your day's blessings!" : "Hopefully the day is going great. Enjoy the evening!")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .minimumScaleFactor(0.65)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .padding(.horizontal, 5)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .compact:
