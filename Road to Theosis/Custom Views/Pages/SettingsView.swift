@@ -10,73 +10,71 @@ struct SettingsView: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Pages") {
-                    NavigationLink {
-                        AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Appearance",
-                            subtitle: "Themes and background tone",
-                            systemImage: "paintbrush"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        HomeSettingsPage(backgroundTheme: $backgroundTheme)
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Home",
-                            subtitle: "Feed density and activity cards",
-                            systemImage: "house.fill"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        PrayerSettingsPage(
-                            backgroundTheme: $backgroundTheme,
-                            onSaveEntry: onSaveEntry
-                        )
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Prayer",
-                            subtitle: "Quiet mode and timer behavior",
-                            systemImage: "hands.sparkles"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Scripture",
-                            subtitle: "Defense verses and explanations",
-                            systemImage: "book.fill"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        AboutSettingsPage(
-                            backgroundTheme: $backgroundTheme,
-                            onShowWelcome: onShowWelcome
-                        )
-                    } label: {
-                        SettingsLinkRow(
-                            title: "About",
-                            subtitle: "App version and notes",
-                            systemImage: "info.circle.fill"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                NavigationLink {
+                    AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Appearance",
+                        subtitle: "Themes and background tone",
+                        systemImage: "paintbrush"
+                    )
                 }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    HomeSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Home",
+                        subtitle: "Feed density and activity cards",
+                        systemImage: "house.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    PrayerSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        onSaveEntry: onSaveEntry
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Prayer",
+                        subtitle: "Quiet mode and timer behavior",
+                        systemImage: "hands.sparkles"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Scripture",
+                        subtitle: "Defense verses and explanations",
+                        systemImage: "book.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    AboutSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        onShowWelcome: onShowWelcome
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "About",
+                        subtitle: "App version and notes",
+                        systemImage: "info.circle.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -128,7 +126,7 @@ private struct AppearanceSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Theme") {
+                Section(header: Text("Theme"), footer: Text("The theme changes the background while the interface stays consistent. Choose a theme that matches your style.")) {
                     ForEach(AppBackgroundTheme.allCases) { theme in
                         Button {
                             backgroundTheme = theme
@@ -139,18 +137,6 @@ private struct AppearanceSettingsPage: View {
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                     }
-                }
-
-                Section("Notes") {
-                    SettingsNoteRow(
-                        title: "Background only",
-                        subtitle: "The theme changes the background while the interface stays consistent."
-                    )
-
-                    SettingsNoteRow(
-                        title: "Old design restored",
-                        subtitle: "The larger swatches and checkmark make the selection easier to scan."
-                    )
                 }
             }
             .listStyle(.insetGrouped)
