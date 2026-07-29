@@ -10,73 +10,71 @@ struct SettingsView: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Pages") {
-                    NavigationLink {
-                        AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Appearance",
-                            subtitle: "Themes and background tone",
-                            systemImage: "paintbrush"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        HomeSettingsPage(backgroundTheme: $backgroundTheme)
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Home",
-                            subtitle: "Feed density and activity cards",
-                            systemImage: "house.fill"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        PrayerSettingsPage(
-                            backgroundTheme: $backgroundTheme,
-                            onSaveEntry: onSaveEntry
-                        )
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Prayer",
-                            subtitle: "Quiet mode and timer behavior",
-                            systemImage: "hands.sparkles"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
-                    } label: {
-                        SettingsLinkRow(
-                            title: "Scripture",
-                            subtitle: "Defense verses and explanations",
-                            systemImage: "book.fill"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                    NavigationLink {
-                        AboutSettingsPage(
-                            backgroundTheme: $backgroundTheme,
-                            onShowWelcome: onShowWelcome
-                        )
-                    } label: {
-                        SettingsLinkRow(
-                            title: "About",
-                            subtitle: "App version and notes",
-                            systemImage: "info.circle.fill"
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                NavigationLink {
+                    AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Appearance",
+                        subtitle: "Themes and background tone",
+                        systemImage: "paintbrush"
+                    )
                 }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    HomeSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Home",
+                        subtitle: "Feed density and activity cards",
+                        systemImage: "house.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    PrayerSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        onSaveEntry: onSaveEntry
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Prayer",
+                        subtitle: "Quiet mode and timer behavior",
+                        systemImage: "hands.sparkles"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Scripture",
+                        subtitle: "Defense verses and explanations",
+                        systemImage: "book.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    AboutSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        onShowWelcome: onShowWelcome
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "About",
+                        subtitle: "App version and notes",
+                        systemImage: "info.circle.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -90,7 +88,7 @@ struct SettingsView: View {
 private struct SettingsLinkRow: View {
     let title: String
     let subtitle: String
-    let systemImage: String
+    let systemImage: String?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -98,7 +96,7 @@ private struct SettingsLinkRow: View {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .fill(Color(uiColor: .secondarySystemFill))
 
-                Image(systemName: systemImage)
+                Image(systemName: systemImage ?? "info.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
             }
@@ -128,7 +126,7 @@ private struct AppearanceSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Theme") {
+                Section(header: Text("Theme"), footer: Text("The theme changes the background while the interface stays consistent. Choose a theme that matches your style.")) {
                     ForEach(AppBackgroundTheme.allCases) { theme in
                         Button {
                             backgroundTheme = theme
@@ -139,18 +137,6 @@ private struct AppearanceSettingsPage: View {
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                     }
-                }
-
-                Section("Notes") {
-                    SettingsNoteRow(
-                        title: "Background only",
-                        subtitle: "The theme changes the background while the interface stays consistent."
-                    )
-
-                    SettingsNoteRow(
-                        title: "Old design restored",
-                        subtitle: "The larger swatches and checkmark make the selection easier to scan."
-                    )
                 }
             }
             .listStyle(.insetGrouped)
@@ -172,14 +158,9 @@ private struct HomeSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Layout") {
+                Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
-                }
-
-                Section("Notes") {
-                    SettingsNoteRow(title: "Recent activity", subtitle: "Shows the latest prayer sessions and logs on Home.")
-                    SettingsNoteRow(title: "Compact rows", subtitle: "Uses tighter spacing in the sins list.")
                 }
             }
             .listStyle(.insetGrouped)
@@ -216,7 +197,7 @@ private struct PrayerSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Timing") {
+                Section(header: Text("Timing"), footer: isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
                     Toggle("Enable prayer timing", isOn: $isPrayerTimingEnabled)
 
                     if isPrayerTimingEnabled {
@@ -229,25 +210,12 @@ private struct PrayerSettingsPage: View {
                 }
 
                 if isPrayerTimingEnabled {
-                    Section("Session") {
-                        if prayerTimerCountingMode == .foreground {
-                            Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
-                        }
-
-                        SettingsNoteRow(
-                            title: prayerTimerCountingMode.displayName,
-                            subtitle: prayerTimerCountingMode.description
-                        )
+                    Section(header: Text("Session"), footer: Text("This keeps the screen awake during a prayer session")) {
+                        Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
                     }
-
-                    Section("Notes") {
-                        SettingsNoteRow(title: "Focused mode", subtitle: "Start the timer, set the phone aside, and pray.")
-                        SettingsNoteRow(title: "Saved time", subtitle: "The elapsed minutes are added to the Timeline when you stop.")
-                    }
+                    
                 } else {
-                    Section("Notes") {
-                        SettingsNoteRow(title: "Prayer first", subtitle: "Timed sessions and manual prayer-minute fields are hidden across the app.")
-                    }
+
                 }
             }
             .listStyle(.insetGrouped)
@@ -255,7 +223,7 @@ private struct PrayerSettingsPage: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle("Prayer")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.large) 
         .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
             if !isEnabled {
                 isShowingPrayerTimer = false
@@ -271,6 +239,7 @@ private struct PrayerSettingsPage: View {
 
 private struct ScriptureSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("showVerseApplications") private var showVerseApplications = true
 
     var body: some View {
@@ -278,13 +247,11 @@ private struct ScriptureSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section("Verses") {
-                    Toggle("Show verse explanations", isOn: $showVerseApplications)
-                }
-
-                Section("Use") {
-                    SettingsNoteRow(title: "Tap the icon", subtitle: "A swipeable NKJV verse sheet opens from the tapped item.")
-                    SettingsNoteRow(title: "Guidance", subtitle: "You can keep the short application text visible or hide it.")
+                Section(header: Text("Verse arsenal"), footer: Text("When you tap on the icon of a sin in the sins list, your verse arsenal shows up. These are verses you note down to use as a counter agains the devil. You can add not only the verse and the bible quote, but also a descriptive note beneath it to, for example, specify what the use is of the verse.")) {
+                    Toggle("Enable verse arsenal", isOn: $enableVerseInventory)
+                    if enableVerseInventory {
+                        Toggle("Show verse desctiptions", isOn: $showVerseApplications)
+                    }
                 }
             }
             .listStyle(.insetGrouped)
@@ -312,26 +279,28 @@ private struct AboutSettingsPage: View {
 
             List {
                 Section("App") {
-                    SettingsNoteRow(title: "Version", subtitle: versionText)
-                    SettingsNoteRow(title: "Timeline", subtitle: "Prayer sessions, victories, losses, and notes stay together.")
-
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text(versionText)
+                            .foregroundStyle(.secondary)
+                    }
+                    
                     Button {
                         onShowWelcome()
                     } label: {
-                        SettingsLinkRow(
-                            title: "Show Welcome",
-                            subtitle: "Replay the intro pages anytime.",
-                            systemImage: "sparkles"
-                        )
+                        Text("Show Onboarding")
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    
                 }
-
-                Section("Style") {
-                    SettingsNoteRow(title: "Foreground", subtitle: "The app keeps grouped spacing and standard hierarchy.")
-                    SettingsNoteRow(title: "Background", subtitle: "Themes keep the interface calm while preserving depth.")
+                
+                Section("Help") {
+                    Button {
+                        //Add logic to show a list of hidden tips and tricks
+                    } label: {
+                        Text("Tips and Tricks")
+                            .foregroundColor(.primary)
+                    }
                 }
             }
             .listStyle(.insetGrouped)

@@ -12,6 +12,7 @@ struct HeadwayView: View {
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
@@ -74,6 +75,7 @@ struct HeadwayView: View {
                                 section: $dashboard.sections[index],
                                 isCompact: compactSinRows,
                                 onShowVerses: { item in
+                                    guard enableVerseInventory else { return }
                                     selectedDefenseItem = item
                                 },
                                 onVictory: { itemID in
