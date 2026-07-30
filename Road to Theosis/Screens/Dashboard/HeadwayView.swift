@@ -93,6 +93,36 @@ struct HeadwayView: View {
         Array(logEntries.sorted { $0.occurredAt > $1.occurredAt }.prefix(limit))
     }
 
+    private func logSwipeOutcome(_ kind: LogEntry.Kind, for itemID: SinCategory.ID, in sectionIndex: Int) -> Bool {
+        guard dashboard.sections.indices.contains(sectionIndex),
+              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }),
+              shouldRecordSwipeOutcome(kind, progress: item.progress) else {
+            return false
+        }
+
+        let entry = LogEntry(
+            kind: kind,
+            sectionTitle: dashboard.sections[sectionIndex].title,
+            sinTitle: item.title,
+            note: "",
+            prayerMinutes: 0,
+            occurredAt: Date()
+        )
+        logEntries.insert(entry, at: 0)
+        return true
+    }
+
+    private func shouldRecordSwipeOutcome(_ kind: LogEntry.Kind, progress: Double) -> Bool {
+        switch kind {
+        case .victory:
+            return progress < 1
+        case .loss:
+            return progress > 0
+        case .prayer, .quickPrayer, .note:
+            return true
+        }
+    }
+
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -675,9 +705,11 @@ struct HeadwayView: View {
                             selectedDefenseItem = item
                         },
                         onVictory: { itemID in
+                            guard logSwipeOutcome(.victory, for: itemID, in: index) else { return }
                             dashboard.markVictory(in: itemID)
                         },
                         onReset: { itemID in
+                            guard logSwipeOutcome(.loss, for: itemID, in: index) else { return }
                             dashboard.resetItem(itemID)
                         }
                     )
