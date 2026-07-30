@@ -33,3 +33,8 @@ struct StatCardView: View {
         .padding(.vertical, 6)
     }
 }
+
+#Preview {
+    StatCardView(title: "Active streak", value: "18d", icon: "flame.fill", tint: .red)
+        .padding()
+}

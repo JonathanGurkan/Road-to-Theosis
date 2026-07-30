@@ -34,3 +34,8 @@ struct ActionButtonView: View {
         .buttonStyle(.plain)
     }
 }
+
+#Preview {
+    ActionButtonView(title: "Add Log", icon: "plus.circle.fill", tint: .red) { }
+        .padding()
+}

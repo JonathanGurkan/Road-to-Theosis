@@ -71,3 +71,14 @@ struct CategoryCardView: View {
         }
     }
 }
+
+#Preview {
+    CategoryCardView(
+        category: .constant(SinCategory.sample[0].items[0]),
+        isCompact: false,
+        onIconTap: { },
+        onVictory: { },
+        onReset: { }
+    )
+    .padding()
+}

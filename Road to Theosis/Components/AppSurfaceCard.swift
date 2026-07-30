@@ -3,18 +3,24 @@ import SwiftUI
 struct AppSurfaceCard<Content: View>: View {
     private let content: Content
     private let contentPadding: CGFloat
+    private let fillsAvailableHeight: Bool
     @Environment(\.colorScheme) private var colorScheme
 
-    init(contentPadding: CGFloat = 16, @ViewBuilder content: () -> Content) {
+    init(contentPadding: CGFloat = 16, fillsAvailableHeight: Bool = false, @ViewBuilder content: () -> Content) {
         self.content = content()
         self.contentPadding = contentPadding
+        self.fillsAvailableHeight = fillsAvailableHeight
     }
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
 
         content
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: fillsAvailableHeight ? .infinity : nil,
+                alignment: .leading
+            )
             .padding(contentPadding)
             .background {
                 if colorScheme == .dark {
@@ -33,6 +39,19 @@ struct AppSurfaceCard<Content: View>: View {
             )
             .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.05), radius: colorScheme == .dark ? 14 : 10, x: 0, y: colorScheme == .dark ? 8 : 4)
     }
+}
+
+#Preview {
+    AppSurfaceCard {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Surface card")
+                .font(.headline.weight(.semibold))
+
+            Text("Reusable app card styling.")
+                .foregroundStyle(.secondary)
+        }
+    }
+    .padding()
 }
 
 extension View {

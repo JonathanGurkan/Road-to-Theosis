@@ -186,3 +186,29 @@ private struct TimelineRow: View {
         return formatter
     }()
 }
+
+#Preview {
+    NavigationStack {
+        TimelineView(
+            backgroundTheme: .constant(.blood),
+            logEntries: .constant([
+                LogEntry(
+                    kind: .victory,
+                    sectionTitle: "Sins Against God",
+                    sinTitle: "Neglect of Prayer",
+                    note: "Stayed focused and prayed before starting the day.",
+                    prayerMinutes: 10,
+                    occurredAt: Date()
+                ),
+                LogEntry(
+                    kind: .loss,
+                    sectionTitle: "Sins of the Tongue",
+                    sinTitle: "Criticism",
+                    note: "Need to slow down before speaking.",
+                    prayerMinutes: 0,
+                    occurredAt: Date().addingTimeInterval(-3600)
+                )
+            ])
+        )
+    }
+}

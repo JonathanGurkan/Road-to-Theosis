@@ -104,7 +104,7 @@ struct HeadwayView: View {
                             editableHomeCard(for: configuration)
                                 .layoutValue(key: HomeScreenGridWidthUnitsKey.self, value: configuration.id.supportsResizing ? configuration.size.widthUnits : 4)
                                 .layoutValue(key: HomeScreenGridHeightUnitsKey.self, value: configuration.id.supportsResizing ? configuration.size.heightUnits : 2)
-                                .layoutValue(key: HomeScreenGridUsesFixedHeightKey.self, value: configuration.id.supportsResizing)
+                                .layoutValue(key: HomeScreenGridUsesFixedHeightKey.self, value: configuration.id.supportsResizing && configuration.size.usesFixedGridHeight)
                         }
                     }
                     .background {
@@ -209,7 +209,7 @@ struct HeadwayView: View {
     }
 
     private func headerCard(size: HomeScreenCardSize) -> some View {
-        AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
+        AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16, fillsAvailableHeight: size.usesFixedGridHeight) {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
@@ -291,7 +291,7 @@ struct HeadwayView: View {
     }
 
     private func overviewCard(size: HomeScreenCardSize) -> some View {
-        AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
+        AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16, fillsAvailableHeight: size.usesFixedGridHeight) {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
@@ -507,7 +507,7 @@ struct HeadwayView: View {
     }
 
     private func actionCard(size: HomeScreenCardSize) -> some View {
-        AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16) {
+        AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16, fillsAvailableHeight: size.usesFixedGridHeight) {
             switch size {
             case .minimal:
                 ZStack(alignment: .topLeading) {
@@ -689,7 +689,7 @@ struct HeadwayView: View {
     private func recentActivityCard(size: HomeScreenCardSize) -> some View {
         let entries = recentEntries(limit: size == .minimal ? 1 : 2)
 
-        return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14) {
+        return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
             switch size {
             case .minimal:
                 VStack(alignment: .leading, spacing: 6) {
@@ -899,4 +899,16 @@ struct HeadwayView: View {
         .padding(.vertical, 4)
     }
 }
+
+#Preview {
+    NavigationStack {
+        HeadwayView(
+            backgroundTheme: .constant(.blood),
+            dashboard: .constant(DashboardViewModel()),
+            logEntries: .constant([])
+        )
+    }
+}
+
+
 

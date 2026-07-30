@@ -89,3 +89,14 @@ struct SinSectionCardView: View {
         }
     }
 }
+
+#Preview {
+    SinSectionCardView(
+        section: .constant(SinCategory.sample[0]),
+        isCompact: false,
+        onShowVerses: { _ in },
+        onVictory: { _ in },
+        onReset: { _ in }
+    )
+    .padding()
+}

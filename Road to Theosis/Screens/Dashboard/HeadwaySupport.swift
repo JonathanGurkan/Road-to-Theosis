@@ -78,7 +78,7 @@ struct HomeScreenGridLayout: Layout {
             return (
                 index: index,
                 width: card.id.supportsResizing ? card.size.widthUnits : 4,
-                height: card.id.supportsResizing ? card.size.heightUnits : 2
+                height: card.id.supportsResizing && card.size.usesFixedGridHeight ? card.size.heightUnits : 2
             )
         })
     }
@@ -194,6 +194,15 @@ struct HomeScreenGridLayout: Layout {
 }
 
 extension HomeScreenCardSize {
+    var usesFixedGridHeight: Bool {
+        switch self {
+        case .minimal, .compact:
+            return true
+        case .standard:
+            return false
+        }
+    }
+
     var widthUnits: Int {
         switch self {
         case .minimal:
@@ -227,8 +236,4 @@ extension HeadwayView {
         formatter.dateFormat = "EEEE, MMMM d"
         return formatter
     }()
-}
-
-#Preview {
-    HeadwayView(backgroundTheme: .constant(.blood), dashboard: .constant(DashboardViewModel()), logEntries: .constant([]))
 }

@@ -53,3 +53,7 @@ struct AppShellView: View {
         }
     }
 }
+
+#Preview {
+    AppShellView()
+}
