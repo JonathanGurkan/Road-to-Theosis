@@ -10,11 +10,6 @@ private struct CustomProgressTarget: Identifiable {
 private struct FocusWidgetPresentation {
     let watchedContexts: [FocusedSinContext]
     let suggestedContexts: [FocusedSinContext]
-    let queueContexts: [FocusedSinContext]
-
-    var visibleContexts: [FocusedSinContext] {
-        watchedContexts + suggestedContexts
-    }
 }
 
 struct HeadwayView: View {
@@ -154,21 +149,29 @@ struct HeadwayView: View {
         Set(selectedFocusContexts.map { $0.item.id })
     }
 
-    private func focusWidgetPresentation(visibleCount: Int) -> FocusWidgetPresentation {
-        let watchedContexts = Array(selectedFocusContexts.prefix(visibleCount))
+    private func focusWidgetPresentation(watchedLimit: Int, suggestionLimit: Int) -> FocusWidgetPresentation {
+        let watchedContexts = Array(selectedFocusContexts.prefix(watchedLimit))
         let watchedIDs = Set(watchedContexts.map { $0.item.id })
         let suggestedContexts = Array(
             rankedFocusContexts(excluding: watchedIDs)
-                .prefix(max(visibleCount - watchedContexts.count, 0))
+                .prefix(suggestionLimit)
         )
-        let visibleIDs = Set((watchedContexts + suggestedContexts).map { $0.item.id })
-        let queueContexts = focusQueueContexts(excluding: visibleIDs)
 
         return FocusWidgetPresentation(
             watchedContexts: watchedContexts,
-            suggestedContexts: suggestedContexts,
-            queueContexts: queueContexts
+            suggestedContexts: suggestedContexts
         )
+    }
+
+    private func focusSuggestionLimit(for size: HomeScreenCardSize) -> Int {
+        switch size {
+        case .minimal:
+            return 0
+        case .compact:
+            return 3
+        case .standard:
+            return 8
+        }
     }
 
     private func rankedFocusContexts(excluding excludedIDs: Set<SinCategory.ID> = []) -> [FocusedSinContext] {
@@ -187,12 +190,6 @@ struct HeadwayView: View {
             .sorted { first, second in
                 first.item.progress < second.item.progress
             }
-    }
-
-    private func focusQueueContexts(excluding excludedIDs: Set<SinCategory.ID>) -> [FocusedSinContext] {
-        rankedFocusContexts(excluding: excludedIDs)
-            .prefix(3)
-            .map { $0 }
     }
 
     private func focusContext(for itemID: SinCategory.ID) -> FocusedSinContext? {
@@ -924,12 +921,13 @@ struct HeadwayView: View {
     }
 
     private func focusWidgetCard(size: HomeScreenCardSize) -> some View {
-        let visibleCount = maxFocusedSinCount
-        let presentation = focusWidgetPresentation(visibleCount: visibleCount)
-        let visibleContexts = presentation.visibleContexts
-        let selectedFocusID = focusWidgetPageID ?? visibleContexts.first?.item.id
-        let selectedFocusIndex = visibleContexts.firstIndex { $0.item.id == selectedFocusID }
-            .map { $0 + 1 } ?? (visibleContexts.isEmpty ? 0 : 1)
+        let presentation = focusWidgetPresentation(
+            watchedLimit: maxFocusedSinCount,
+            suggestionLimit: focusSuggestionLimit(for: size)
+        )
+        let selectedFocusID = focusWidgetPageID ?? presentation.watchedContexts.first?.item.id
+        let selectedFocusIndex = presentation.watchedContexts.firstIndex { $0.item.id == selectedFocusID }
+            .map { $0 + 1 } ?? (presentation.watchedContexts.isEmpty ? 0 : 1)
 
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
             VStack(alignment: .leading, spacing: size == .minimal ? 6 : 12) {
@@ -963,8 +961,14 @@ struct HeadwayView: View {
                 }
 
                 switch size {
-                case .minimal, .compact:
-                    focusWidgetPager(contexts: visibleContexts, size: size)
+                case .minimal:
+                    if presentation.watchedContexts.isEmpty {
+                        focusWidgetEmptyMessage(isMinimal: true)
+                    } else {
+                        focusWidgetPager(contexts: presentation.watchedContexts, size: size)
+                    }
+                case .compact:
+                    focusWidgetCompactContent(presentation)
                 case .standard:
                     focusWidgetStandardContent(presentation)
                 }
@@ -973,22 +977,41 @@ struct HeadwayView: View {
         }
     }
 
+    private func focusWidgetCompactContent(_ presentation: FocusWidgetPresentation) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if presentation.watchedContexts.isEmpty {
+                focusWidgetEmptyMessage(isMinimal: false)
+            } else {
+                focusWidgetPager(contexts: presentation.watchedContexts, size: .compact)
+            }
+
+            if !presentation.suggestedContexts.isEmpty {
+                focusSuggestionsList(presentation.suggestedContexts, isCompact: true)
+            }
+        }
+    }
+
     private func focusWidgetStandardContent(_ presentation: FocusWidgetPresentation) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(spacing: 8) {
-                ForEach(presentation.visibleContexts, id: \.item.id) { context in
-                    focusWidgetRow(
-                        for: context,
-                        isWatched: activeFocusIDs.contains(context.item.id),
-                        isDense: false,
-                        showsActions: true
-                    )
+            if presentation.watchedContexts.isEmpty {
+                focusWidgetEmptyMessage(isMinimal: false)
+                    .frame(maxWidth: .infinity, minHeight: 102, alignment: .center)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(presentation.watchedContexts, id: \.item.id) { context in
+                        focusWidgetRow(
+                            for: context,
+                            isWatched: true,
+                            isDense: false,
+                            showsActions: true
+                        )
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            if !presentation.queueContexts.isEmpty {
-                focusQueuePicker(presentation.queueContexts)
+            if !presentation.suggestedContexts.isEmpty {
+                focusSuggestionsList(presentation.suggestedContexts, isCompact: false)
             }
         }
     }
@@ -1149,7 +1172,7 @@ struct HeadwayView: View {
                     Button {
                         toggleFocus(for: context.item.id)
                     } label: {
-                        Text(isWatched ? "Watching" : "Watch")
+                        Text(isWatched ? "Focussing" : "Focus")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(isWatched ? .white : context.item.tint)
                             .padding(.horizontal, 8)
@@ -1165,38 +1188,64 @@ struct HeadwayView: View {
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private func focusQueuePicker(_ queueContexts: [FocusedSinContext]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Add another focus")
+    private func focusWidgetEmptyMessage(isMinimal: Bool) -> some View {
+        Text("No focus yet. Add one.")
+            .font((isMinimal ? Font.caption : Font.subheadline).weight(.semibold))
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: isMinimal ? 0 : 44, maxHeight: isMinimal ? .infinity : nil, alignment: .center)
+            .padding(isMinimal ? 6 : 10)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func focusSuggestionsList(_ suggestedContexts: [FocusedSinContext], isCompact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: isCompact ? 6 : 8) {
+            Text("Suggestions")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 6) {
-                ForEach(queueContexts, id: \.item.id) { context in
-                    Button {
-                        toggleFocus(for: context.item.id)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text(context.item.title)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-
-                            Spacer(minLength: 8)
-
-                            Text("\(Int(context.item.progress * 100))%")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(context.item.tint)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)],
+                spacing: 6
+            ) {
+                ForEach(suggestedContexts, id: \.item.id) { context in
+                    focusSuggestionButton(for: context, isCompact: isCompact)
                 }
             }
         }
+    }
+
+    private func focusSuggestionButton(for context: FocusedSinContext, isCompact: Bool) -> some View {
+        Button {
+            toggleFocus(for: context.item.id)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: context.item.icon)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(context.item.tint)
+                    .frame(width: 18, height: 18)
+                    .background(context.item.tint.opacity(0.14), in: Circle())
+
+                Text(context.item.title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Spacer(minLength: 4)
+
+                Text("\(Int(context.item.progress * 100))%")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(context.item.tint)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, isCompact ? 7 : 8)
+            .padding(.vertical, isCompact ? 5 : 6)
+            .frame(maxWidth: .infinity, minHeight: isCompact ? 30 : 34, alignment: .leading)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Set \(context.item.title) as today's focus")
     }
 
     private func recentActivityCard(size: HomeScreenCardSize) -> some View {
