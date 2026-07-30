@@ -7,6 +7,16 @@ private struct CustomProgressTarget: Identifiable {
     let currentPercentage: Int
 }
 
+private struct FocusWidgetPresentation {
+    let watchedContexts: [FocusedSinContext]
+    let suggestedContexts: [FocusedSinContext]
+    let queueContexts: [FocusedSinContext]
+
+    var visibleContexts: [FocusedSinContext] {
+        watchedContexts + suggestedContexts
+    }
+}
+
 struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
@@ -140,18 +150,25 @@ struct HeadwayView: View {
         focusedSinIDs.compactMap { focusContext(for: $0) }
     }
 
-    private var activeFocusContexts: [FocusedSinContext] {
-        var contexts = selectedFocusContexts
-        let selectedIDs = Set(contexts.map { $0.item.id })
-        let suggestedContexts = rankedFocusContexts(excluding: selectedIDs)
-            .prefix(maxFocusedSinCount - contexts.count)
-
-        contexts.append(contentsOf: suggestedContexts)
-        return Array(contexts.prefix(maxFocusedSinCount))
+    private var activeFocusIDs: Set<SinCategory.ID> {
+        Set(selectedFocusContexts.map { $0.item.id })
     }
 
-    private var activeFocusIDs: Set<SinCategory.ID> {
-        Set(activeFocusContexts.map { $0.item.id })
+    private func focusWidgetPresentation(visibleCount: Int) -> FocusWidgetPresentation {
+        let watchedContexts = Array(selectedFocusContexts.prefix(visibleCount))
+        let watchedIDs = Set(watchedContexts.map { $0.item.id })
+        let suggestedContexts = Array(
+            rankedFocusContexts(excluding: watchedIDs)
+                .prefix(max(visibleCount - watchedContexts.count, 0))
+        )
+        let visibleIDs = Set((watchedContexts + suggestedContexts).map { $0.item.id })
+        let queueContexts = focusQueueContexts(excluding: visibleIDs)
+
+        return FocusWidgetPresentation(
+            watchedContexts: watchedContexts,
+            suggestedContexts: suggestedContexts,
+            queueContexts: queueContexts
+        )
     }
 
     private func rankedFocusContexts(excluding excludedIDs: Set<SinCategory.ID> = []) -> [FocusedSinContext] {
@@ -907,19 +924,12 @@ struct HeadwayView: View {
     }
 
     private func focusWidgetCard(size: HomeScreenCardSize) -> some View {
-        let contexts = activeFocusContexts
-        let visibleCount: Int
-
-        switch size {
-        case .minimal, .compact, .standard:
-            visibleCount = maxFocusedSinCount
-        }
-
-        let visibleContexts = Array(contexts.prefix(visibleCount))
+        let visibleCount = maxFocusedSinCount
+        let presentation = focusWidgetPresentation(visibleCount: visibleCount)
+        let visibleContexts = presentation.visibleContexts
         let selectedFocusID = focusWidgetPageID ?? visibleContexts.first?.item.id
         let selectedFocusIndex = visibleContexts.firstIndex { $0.item.id == selectedFocusID }
             .map { $0 + 1 } ?? (visibleContexts.isEmpty ? 0 : 1)
-        let queueContexts = focusQueueContexts(excluding: Set(contexts.map { $0.item.id }))
 
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
             VStack(alignment: .leading, spacing: size == .minimal ? 6 : 12) {
@@ -956,19 +966,30 @@ struct HeadwayView: View {
                 case .minimal, .compact:
                     focusWidgetPager(contexts: visibleContexts, size: size)
                 case .standard:
-                    VStack(spacing: 8) {
-                        ForEach(visibleContexts, id: \.item.id) { context in
-                            focusWidgetRow(for: context, isDense: false, showsActions: true)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-                    if !queueContexts.isEmpty {
-                        focusQueuePicker(queueContexts)
-                    }
+                    focusWidgetStandardContent(presentation)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func focusWidgetStandardContent(_ presentation: FocusWidgetPresentation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(spacing: 8) {
+                ForEach(presentation.visibleContexts, id: \.item.id) { context in
+                    focusWidgetRow(
+                        for: context,
+                        isWatched: activeFocusIDs.contains(context.item.id),
+                        isDense: false,
+                        showsActions: true
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+            if !presentation.queueContexts.isEmpty {
+                focusQueuePicker(presentation.queueContexts)
+            }
         }
     }
 
@@ -1066,7 +1087,7 @@ struct HeadwayView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func focusWidgetRow(for context: FocusedSinContext, isDense: Bool, showsActions: Bool) -> some View {
+    private func focusWidgetRow(for context: FocusedSinContext, isWatched: Bool, isDense: Bool, showsActions: Bool) -> some View {
         let iconSize: CGFloat = isDense ? 24 : 30
 
         return VStack(alignment: .leading, spacing: isDense ? 6 : 8) {
@@ -1128,14 +1149,15 @@ struct HeadwayView: View {
                     Button {
                         toggleFocus(for: context.item.id)
                     } label: {
-                        Text(focusedSinIDs.contains(context.item.id) ? "Drop" : "Keep")
+                        Text(isWatched ? "Watching" : "Watch")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(context.item.tint)
+                            .foregroundStyle(isWatched ? .white : context.item.tint)
                             .padding(.horizontal, 8)
                             .frame(minHeight: 28)
-                            .background(context.item.tint.opacity(0.12), in: Capsule())
+                            .background(isWatched ? context.item.tint : context.item.tint.opacity(0.12), in: Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(isWatched ? "Remove \(context.item.title) from today's focus" : "Set \(context.item.title) as today's focus")
                 }
             }
         }
