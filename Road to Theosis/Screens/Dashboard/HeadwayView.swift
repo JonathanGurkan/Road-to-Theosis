@@ -11,6 +11,7 @@ struct HeadwayView: View {
     @State var homeGridWidth: CGFloat = 0
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
+    @State var focusedSinID: SinCategory.ID?
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
@@ -120,6 +121,62 @@ struct HeadwayView: View {
             return progress > 0
         case .prayer, .quickPrayer, .note:
             return true
+        }
+    }
+
+    private var selectedFocusContext: FocusedSinContext? {
+        guard let focusedSinID else { return nil }
+        return focusContext(for: focusedSinID)
+    }
+
+    private var suggestedFocusContext: FocusedSinContext? {
+        dashboard.sections.indices
+            .flatMap { sectionIndex in
+                dashboard.sections[sectionIndex].items.indices.map { itemIndex in
+                    FocusedSinContext(
+                        sectionIndex: sectionIndex,
+                        itemIndex: itemIndex,
+                        sectionTitle: dashboard.sections[sectionIndex].title,
+                        item: dashboard.sections[sectionIndex].items[itemIndex]
+                    )
+                }
+            }
+            .min { first, second in
+                first.item.progress < second.item.progress
+            }
+    }
+
+    private var currentFocusContext: FocusedSinContext? {
+        selectedFocusContext ?? suggestedFocusContext
+    }
+
+    private func focusContext(for itemID: SinCategory.ID) -> FocusedSinContext? {
+        for sectionIndex in dashboard.sections.indices {
+            guard let itemIndex = dashboard.sections[sectionIndex].items.firstIndex(where: { $0.id == itemID }) else {
+                continue
+            }
+
+            return FocusedSinContext(
+                sectionIndex: sectionIndex,
+                itemIndex: itemIndex,
+                sectionTitle: dashboard.sections[sectionIndex].title,
+                item: dashboard.sections[sectionIndex].items[itemIndex]
+            )
+        }
+
+        return nil
+    }
+
+    private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
+        guard logSwipeOutcome(kind, for: context.item.id, in: context.sectionIndex) else { return }
+
+        switch kind {
+        case .victory:
+            dashboard.markVictory(in: context.item.id)
+        case .loss:
+            dashboard.resetItem(context.item.id)
+        case .prayer, .quickPrayer, .note:
+            break
         }
     }
 
@@ -694,6 +751,10 @@ struct HeadwayView: View {
 
     private var focusAreasCard: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let currentFocusContext {
+                focusedSinPanel(for: currentFocusContext)
+            }
+
             sectionsHeader
 
             LazyVStack(spacing: compactSinRows ? 10 : 12) {
@@ -701,8 +762,12 @@ struct HeadwayView: View {
                     SinSectionCardView(
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
+                        focusedItemID: focusedSinID,
                         onShowVerses: { item in
                             selectedDefenseItem = item
+                        },
+                        onFocus: { itemID in
+                            focusedSinID = itemID
                         },
                         onVictory: { itemID in
                             guard logSwipeOutcome(.victory, for: itemID, in: index) else { return }
@@ -713,6 +778,71 @@ struct HeadwayView: View {
                             dashboard.resetItem(itemID)
                         }
                     )
+                }
+            }
+        }
+    }
+
+    private func focusedSinPanel(for context: FocusedSinContext) -> some View {
+        AppSurfaceCard(contentPadding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(context.item.tint.opacity(0.16))
+
+                        Image(systemName: context.item.icon)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(context.item.tint)
+                    }
+                    .frame(width: 40, height: 40)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Today's focus")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Text(context.item.title)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(context.item.detail)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("\(Int(context.item.progress * 100))%")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(context.item.tint)
+
+                        Text(context.sectionTitle.uppercased())
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(2)
+                    }
+                }
+
+                ProgressView(value: context.item.progress)
+                    .tint(context.item.tint)
+
+                HStack(spacing: 8) {
+                    compactActionRowButton(title: "Resist", icon: "shield.lefthalf.filled", tint: .green) {
+                        logFocusedOutcome(.victory, context: context)
+                    }
+
+                    compactActionRowButton(title: "Stumble", icon: "exclamationmark.triangle", tint: .red) {
+                        logFocusedOutcome(.loss, context: context)
+                    }
+
+                    compactActionRowButton(title: "Verses", icon: "book.fill", tint: context.item.tint) {
+                        selectedDefenseItem = context.item
+                    }
                 }
             }
         }

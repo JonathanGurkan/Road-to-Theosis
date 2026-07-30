@@ -3,7 +3,9 @@ import SwiftUI
 struct CategoryCardView: View {
     @Binding var category: SinCategory
     let isCompact: Bool
+    let isFocused: Bool
     let onIconTap: () -> Void
+    let onFocus: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
 
@@ -42,7 +44,7 @@ struct CategoryCardView: View {
 
                 Spacer(minLength: 10)
 
-                VStack(alignment: .trailing, spacing: 3) {
+                VStack(alignment: .trailing, spacing: 5) {
                     Text(progressText)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(category.tint)
@@ -51,6 +53,22 @@ struct CategoryCardView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .tracking(0.4)
+
+                    Button(action: onFocus) {
+                        Text(isFocused ? "Focused" : "Focus")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(isFocused ? .white : category.tint)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                isFocused ? category.tint : category.tint.opacity(0.13),
+                                in: Capsule()
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Set \(category.title) as today's focus")
                 }
             }
 
@@ -58,6 +76,19 @@ struct CategoryCardView: View {
                 .tint(category.tint)
         }
         .padding(.vertical, isCompact ? 8 : 10)
+        .padding(.horizontal, isFocused ? 8 : 0)
+        .background {
+            if isFocused {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(category.tint.opacity(0.08))
+            }
+        }
+        .overlay {
+            if isFocused {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(category.tint.opacity(0.22), lineWidth: 1)
+            }
+        }
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(action: onVictory) {
@@ -75,7 +106,9 @@ struct CategoryCardView: View {
     CategoryCardView(
         category: .constant(SinCategory.sample[0].items[0]),
         isCompact: false,
+        isFocused: true,
         onIconTap: { },
+        onFocus: { },
         onVictory: { },
         onReset: { }
     )
