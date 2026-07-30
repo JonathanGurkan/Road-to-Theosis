@@ -6,9 +6,14 @@ struct CategoryCardView: View {
     let onIconTap: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
+    let onSetProgress: () -> Void
 
     private var progressText: String {
         "\(Int(category.progress * 100))%"
+    }
+
+    private var swipeActions: SinSwipeActions {
+        category.swipeActions
     }
 
     var body: some View {
@@ -64,6 +69,12 @@ struct CategoryCardView: View {
                 Label("Resist", systemImage: "shield.lefthalf.filled")
             }
             .tint(.green)
+
+            Button(action: onSetProgress) {
+                Label(swipeActions.progressTitle, systemImage: "slider.horizontal.3")
+            }
+            .tint(.blue)
+
             Button(role: .destructive, action: onReset) {
                 Label("Stumble", systemImage: "exclamationmark.triangle")
             }
@@ -77,7 +88,8 @@ struct CategoryCardView: View {
         isCompact: false,
         onIconTap: { },
         onVictory: { },
-        onReset: { }
+        onReset: { },
+        onSetProgress: { }
     )
     .padding()
 }
