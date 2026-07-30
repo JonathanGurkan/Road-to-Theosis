@@ -157,7 +157,28 @@ private struct TimelineRow: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if !entry.note.isEmpty {
+                if let progressPercentage = entry.progressPercentage {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text("Custom progress")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            Spacer(minLength: 8)
+
+                            Text("\(progressPercentage)%")
+                                .font(.caption.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(entry.kind.tint)
+                        }
+
+                        ProgressView(value: Double(progressPercentage) / 100)
+                            .tint(entry.kind.tint)
+                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                } else if !entry.note.isEmpty {
                     Text(entry.note)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -171,9 +192,15 @@ private struct TimelineRow: View {
                             .foregroundStyle(entry.kind.tint)
                     }
 
-                    Label(entry.kind.title, systemImage: entry.kind.symbolName)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    if let progressPercentage = entry.progressPercentage {
+                        Label("Set to \(progressPercentage)%", systemImage: "percent")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(entry.kind.tint)
+                    } else {
+                        Label(entry.kind.title, systemImage: entry.kind.symbolName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }

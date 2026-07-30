@@ -6,6 +6,7 @@ struct LogEntry: Identifiable {
         case quickPrayer
         case victory
         case loss
+        case progressUpdate
         case note
 
         var id: String { rawValue }
@@ -20,6 +21,8 @@ struct LogEntry: Identifiable {
                 return "Victory"
             case .loss:
                 return "Loss"
+            case .progressUpdate:
+                return "Progress Set"
             case .note:
                 return "Note"
             }
@@ -35,6 +38,8 @@ struct LogEntry: Identifiable {
                 return "checkmark.circle.fill"
             case .loss:
                 return "xmark.circle.fill"
+            case .progressUpdate:
+                return "slider.horizontal.3"
             case .note:
                 return "text.quote"
             }
@@ -50,6 +55,8 @@ struct LogEntry: Identifiable {
                 return .green
             case .loss:
                 return .orange
+            case .progressUpdate:
+                return .blue
             case .note:
                 return .blue
             }
@@ -63,6 +70,7 @@ struct LogEntry: Identifiable {
     let note: String
     let prayerMinutes: Int
     let prayerDurationSeconds: Int
+    let progressPercentage: Int?
     let occurredAt: Date
 
     init(
@@ -72,6 +80,7 @@ struct LogEntry: Identifiable {
         note: String,
         prayerMinutes: Int,
         prayerDurationSeconds: Int? = nil,
+        progressPercentage: Int? = nil,
         occurredAt: Date
     ) {
         self.kind = kind
@@ -80,6 +89,7 @@ struct LogEntry: Identifiable {
         self.note = note
         self.prayerMinutes = prayerMinutes
         self.prayerDurationSeconds = prayerDurationSeconds ?? max(prayerMinutes, 0) * 60
+        self.progressPercentage = progressPercentage
         self.occurredAt = occurredAt
     }
 
