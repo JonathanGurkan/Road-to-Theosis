@@ -19,6 +19,7 @@ struct HeadwayView: View {
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
     @State var focusedSinIDs: [SinCategory.ID] = []
+    @State private var focusWidgetPageID: SinCategory.ID?
     @State private var customProgressTarget: CustomProgressTarget?
     @State private var customProgressText = ""
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
@@ -910,11 +911,7 @@ struct HeadwayView: View {
         let visibleCount: Int
 
         switch size {
-        case .minimal:
-            visibleCount = 1
-        case .compact:
-            visibleCount = 2
-        case .standard:
+        case .minimal, .compact, .standard:
             visibleCount = maxFocusedSinCount
         }
 
@@ -922,13 +919,13 @@ struct HeadwayView: View {
         let queueContexts = focusQueueContexts(excluding: Set(contexts.map { $0.item.id }))
 
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
-            VStack(alignment: .leading, spacing: size == .minimal ? 8 : 12) {
+            VStack(alignment: .leading, spacing: size == .minimal ? 6 : 12) {
                 HStack(spacing: 8) {
-                    minimalIcon("scope", size: size == .minimal ? 20 : 24)
+                    minimalIcon("scope", size: size == .minimal ? 18 : 24)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(size == .standard ? "Focus watch" : "Focus")
-                            .font((size == .minimal ? Font.headline : Font.title3).weight(.semibold))
+                            .font((size == .minimal ? Font.subheadline : Font.title3).weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -946,24 +943,123 @@ struct HeadwayView: View {
                     Text("\(visibleContexts.count)/\(maxFocusedSinCount)")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, size == .minimal ? 6 : 8)
                         .padding(.vertical, 4)
                         .background(Color.primary.opacity(0.07), in: Capsule())
                 }
 
-                VStack(spacing: size == .minimal ? 6 : 8) {
-                    ForEach(visibleContexts, id: \.item.id) { context in
-                        focusWidgetRow(for: context, isDense: size != .standard, showsActions: size == .standard)
+                switch size {
+                case .minimal, .compact:
+                    focusWidgetPager(contexts: visibleContexts, size: size)
+                case .standard:
+                    VStack(spacing: 8) {
+                        ForEach(visibleContexts, id: \.item.id) { context in
+                            focusWidgetRow(for: context, isDense: false, showsActions: true)
+                        }
                     }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                if size == .standard && !queueContexts.isEmpty {
-                    focusQueuePicker(queueContexts)
+                    if !queueContexts.isEmpty {
+                        focusQueuePicker(queueContexts)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+    }
+
+    private func focusWidgetPager(contexts: [FocusedSinContext], size: HomeScreenCardSize) -> some View {
+        let selectedID = focusWidgetPageID ?? contexts.first?.item.id
+
+        return VStack(spacing: size == .minimal ? 3 : 6) {
+            TabView(selection: $focusWidgetPageID) {
+                ForEach(contexts, id: \.item.id) { context in
+                    focusWidgetPage(for: context, size: size)
+                        .tag(Optional(context.item.id))
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                if focusWidgetPageID == nil {
+                    focusWidgetPageID = contexts.first?.item.id
+                }
+            }
+            .onChange(of: contexts.map { $0.item.id }) { _, itemIDs in
+                if let focusWidgetPageID, itemIDs.contains(focusWidgetPageID) {
+                    return
+                }
+
+                focusWidgetPageID = itemIDs.first
+            }
+
+            focusWidgetPageIndicator(contexts: contexts, selectedID: selectedID)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func focusWidgetPage(for context: FocusedSinContext, size: HomeScreenCardSize) -> some View {
+        let isMinimal = size == .minimal
+        let iconSize: CGFloat = isMinimal ? 20 : 28
+
+        return VStack(alignment: .leading, spacing: isMinimal ? 5 : 8) {
+            HStack(alignment: .center, spacing: isMinimal ? 7 : 10) {
+                ZStack {
+                    Circle()
+                        .fill(context.item.tint.opacity(0.16))
+
+                    Image(systemName: context.item.icon)
+                        .font((isMinimal ? Font.caption2 : Font.caption).weight(.semibold))
+                        .foregroundStyle(context.item.tint)
+                }
+                .frame(width: iconSize, height: iconSize)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(context.item.title)
+                        .font((isMinimal ? Font.caption : Font.subheadline).weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Text(context.item.watchword)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 6)
+
+                Text("\(Int(context.item.progress * 100))%")
+                    .font((isMinimal ? Font.caption2 : Font.caption).weight(.bold))
+                    .foregroundStyle(context.item.tint)
+            }
+
+            ProgressView(value: context.item.progress)
+                .tint(context.item.tint)
+                .scaleEffect(x: 1, y: isMinimal ? 0.65 : 0.82, anchor: .center)
+
+            if !isMinimal {
+                Text(context.sectionTitle)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+        }
+        .padding(isMinimal ? 7 : 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func focusWidgetPageIndicator(contexts: [FocusedSinContext], selectedID: SinCategory.ID?) -> some View {
+        HStack(spacing: 5) {
+            ForEach(contexts, id: \.item.id) { context in
+                Circle()
+                    .fill(context.item.id == selectedID ? context.item.tint : Color.primary.opacity(0.18))
+                    .frame(width: context.item.id == selectedID ? 6 : 5, height: context.item.id == selectedID ? 6 : 5)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func focusWidgetRow(for context: FocusedSinContext, isDense: Bool, showsActions: Bool) -> some View {
