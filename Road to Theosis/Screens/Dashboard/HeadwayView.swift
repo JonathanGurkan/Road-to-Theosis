@@ -916,6 +916,9 @@ struct HeadwayView: View {
         }
 
         let visibleContexts = Array(contexts.prefix(visibleCount))
+        let selectedFocusID = focusWidgetPageID ?? visibleContexts.first?.item.id
+        let selectedFocusIndex = visibleContexts.firstIndex { $0.item.id == selectedFocusID }
+            .map { $0 + 1 } ?? (visibleContexts.isEmpty ? 0 : 1)
         let queueContexts = focusQueueContexts(excluding: Set(contexts.map { $0.item.id }))
 
         return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
@@ -939,13 +942,14 @@ struct HeadwayView: View {
                     }
 
                     Spacer(minLength: 8)
-
-                    Text("\(visibleContexts.count)/\(maxFocusedSinCount)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, size == .minimal ? 6 : 8)
-                        .padding(.vertical, 4)
-                        .background(Color.primary.opacity(0.07), in: Capsule())
+                    if size != .standard {
+                        Text("\(selectedFocusIndex)/\(maxFocusedSinCount)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, size == .minimal ? 6 : 8)
+                            .padding(.vertical, 4)
+                            .background(Color.primary.opacity(0.07), in: Capsule())
+                    }
                 }
 
                 switch size {
@@ -1111,7 +1115,7 @@ struct HeadwayView: View {
                         logFocusedOutcome(.loss, context: context)
                     }
 
-                    compactActionButton(icon: "heart.fill", tint: .pink, size: 22) {
+                    compactActionButton(icon: "hands.sparkles", tint: .white, size: 22) {
                         logFocusedPrayer(context: context)
                     }
 
