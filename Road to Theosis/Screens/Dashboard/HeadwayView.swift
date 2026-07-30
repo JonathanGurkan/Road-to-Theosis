@@ -150,6 +150,26 @@ struct HeadwayView: View {
         selectedFocusContext ?? suggestedFocusContext
     }
 
+    private func focusQueueContexts(excluding excludedItemID: SinCategory.ID?) -> [FocusedSinContext] {
+        dashboard.sections.indices
+            .flatMap { sectionIndex in
+                dashboard.sections[sectionIndex].items.indices.map { itemIndex in
+                    FocusedSinContext(
+                        sectionIndex: sectionIndex,
+                        itemIndex: itemIndex,
+                        sectionTitle: dashboard.sections[sectionIndex].title,
+                        item: dashboard.sections[sectionIndex].items[itemIndex]
+                    )
+                }
+            }
+            .filter { $0.item.id != excludedItemID }
+            .sorted { first, second in
+                first.item.progress < second.item.progress
+            }
+            .prefix(3)
+            .map { $0 }
+    }
+
     private func focusContext(for itemID: SinCategory.ID) -> FocusedSinContext? {
         for sectionIndex in dashboard.sections.indices {
             guard let itemIndex = dashboard.sections[sectionIndex].items.firstIndex(where: { $0.id == itemID }) else {
@@ -762,7 +782,7 @@ struct HeadwayView: View {
                     SinSectionCardView(
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
-                        focusedItemID: focusedSinID,
+                        focusedItemID: currentFocusContext?.item.id,
                         onShowVerses: { item in
                             selectedDefenseItem = item
                         },
@@ -784,7 +804,9 @@ struct HeadwayView: View {
     }
 
     private func focusedSinPanel(for context: FocusedSinContext) -> some View {
-        AppSurfaceCard(contentPadding: 14) {
+        let queueContexts = focusQueueContexts(excluding: context.item.id)
+
+        return AppSurfaceCard(contentPadding: 14) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top, spacing: 12) {
                     ZStack {
@@ -842,6 +864,42 @@ struct HeadwayView: View {
 
                     compactActionRowButton(title: "Verses", icon: "book.fill", tint: context.item.tint) {
                         selectedDefenseItem = context.item
+                    }
+                }
+
+                if !queueContexts.isEmpty {
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Next up")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 6) {
+                            ForEach(queueContexts, id: \.item.id) { queueContext in
+                                Button {
+                                    focusedSinID = queueContext.item.id
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text(queueContext.item.title)
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
+
+                                        Spacer(minLength: 8)
+
+                                        Text("\(Int(queueContext.item.progress * 100))%")
+                                            .font(.caption2.weight(.semibold))
+                                            .foregroundStyle(queueContext.item.tint)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 7)
+                                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
                 }
             }
