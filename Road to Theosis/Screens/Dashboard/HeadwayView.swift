@@ -927,12 +927,12 @@ struct HeadwayView: View {
                     minimalIcon("scope", size: size == .minimal ? 20 : 24)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(size == .minimal ? "Focus" : "Focus watch")
+                        Text(size == .standard ? "Focus watch" : "Focus")
                             .font((size == .minimal ? Font.headline : Font.title3).weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
-                        if size != .minimal {
+                        if size == .standard {
                             Text("Work a few struggles with prayer and watchfulness.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -953,7 +953,7 @@ struct HeadwayView: View {
 
                 VStack(spacing: size == .minimal ? 6 : 8) {
                     ForEach(visibleContexts, id: \.item.id) { context in
-                        focusWidgetRow(for: context, showsActions: size != .minimal)
+                        focusWidgetRow(for: context, isDense: size != .standard, showsActions: size == .standard)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -966,22 +966,24 @@ struct HeadwayView: View {
         }
     }
 
-    private func focusWidgetRow(for context: FocusedSinContext, showsActions: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center, spacing: 10) {
+    private func focusWidgetRow(for context: FocusedSinContext, isDense: Bool, showsActions: Bool) -> some View {
+        let iconSize: CGFloat = isDense ? 24 : 30
+
+        return VStack(alignment: .leading, spacing: isDense ? 6 : 8) {
+            HStack(alignment: .center, spacing: isDense ? 8 : 10) {
                 ZStack {
                     Circle()
                         .fill(context.item.tint.opacity(0.16))
 
                     Image(systemName: context.item.icon)
-                        .font(.caption.weight(.semibold))
+                        .font((isDense ? Font.caption2 : Font.caption).weight(.semibold))
                         .foregroundStyle(context.item.tint)
                 }
-                .frame(width: 30, height: 30)
+                .frame(width: iconSize, height: iconSize)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text(context.item.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font((isDense ? Font.caption : Font.subheadline).weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
@@ -995,12 +997,13 @@ struct HeadwayView: View {
                 Spacer(minLength: 8)
 
                 Text("\(Int(context.item.progress * 100))%")
-                    .font(.caption.weight(.bold))
+                    .font((isDense ? Font.caption2 : Font.caption).weight(.bold))
                     .foregroundStyle(context.item.tint)
             }
 
             ProgressView(value: context.item.progress)
                 .tint(context.item.tint)
+                .scaleEffect(x: 1, y: isDense ? 0.75 : 1, anchor: .center)
 
             if showsActions {
                 HStack(spacing: 6) {
@@ -1036,7 +1039,7 @@ struct HeadwayView: View {
                 }
             }
         }
-        .padding(10)
+        .padding(isDense ? 8 : 10)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
