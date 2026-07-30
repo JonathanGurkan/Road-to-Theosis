@@ -153,6 +153,7 @@ private struct HomeSettingsPage: View {
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
+    @AppStorage("showVictorySwipeAction") private var showVictorySwipeAction = false
 
     var body: some View {
         ZStack {
@@ -162,11 +163,13 @@ private struct HomeSettingsPage: View {
                 Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
+                    Toggle("Show victory swipe action", isOn: $showVictorySwipeAction)
 
                     Button(role: .destructive) {
                         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
                         showRecentActivity = true
                         compactSinRows = false
+                        showVictorySwipeAction = false
                     } label: {
                         Label("Reset Home Screen", systemImage: "arrow.counterclockwise")
                     }

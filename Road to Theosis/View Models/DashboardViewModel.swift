@@ -23,6 +23,18 @@ struct DashboardViewModel {
         updateItem(itemID, delta: -0.08)
     }
 
+    mutating func advanceDailyProgress(days: Int = 1) {
+        let progressDelta = 0.01 * Double(max(days, 0))
+        guard progressDelta > 0 else { return }
+
+        for sectionIndex in sections.indices {
+            for itemIndex in sections[sectionIndex].items.indices {
+                let currentProgress = sections[sectionIndex].items[itemIndex].progress
+                sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + progressDelta)
+            }
+        }
+    }
+
     mutating func record(_ entry: LogEntry) {
         dailyCheckIns += 1
         prayerMinutes += max(entry.prayerMinutes, 0)

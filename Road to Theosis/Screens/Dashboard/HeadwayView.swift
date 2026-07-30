@@ -13,6 +13,7 @@ struct HeadwayView: View {
     @State var selectedDefenseItem: SinCategory?
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
+    @AppStorage("showVictorySwipeAction") private var showVictorySwipeAction = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -91,6 +92,10 @@ struct HeadwayView: View {
 
     private func recentEntries(limit: Int) -> [LogEntry] {
         Array(logEntries.sorted { $0.occurredAt > $1.occurredAt }.prefix(limit))
+    }
+
+    private func simulateDailyProgress() {
+        dashboard.advanceDailyProgress()
     }
 
     private func logSwipeOutcome(_ kind: LogEntry.Kind, for itemID: SinCategory.ID, in sectionIndex: Int) -> Bool {
@@ -566,6 +571,10 @@ struct HeadwayView: View {
                             compactActionButton(icon: "plus.circle.fill", tint: backgroundTheme.glowColor, size: 36) {
                                 isShowingAddView = true
                             }
+
+                            compactActionButton(icon: "calendar", tint: .green, size: 36) {
+                                simulateDailyProgress()
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -598,8 +607,14 @@ struct HeadwayView: View {
                             }
                         }
 
-                        compactActionRowButton(title: "Add Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor, minHeight: 46) {
-                            isShowingAddView = true
+                        HStack(spacing: 6) {
+                            compactActionRowButton(title: "Add Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor, minHeight: 46) {
+                                isShowingAddView = true
+                            }
+
+                            compactActionRowButton(title: "Sim Day", icon: "calendar", tint: .green, minHeight: 46) {
+                                simulateDailyProgress()
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -638,12 +653,22 @@ struct HeadwayView: View {
                             }
                         }
 
-                        ActionButtonView(
-                            title: "Add Log",
-                            icon: "plus.circle.fill",
-                            tint: backgroundTheme.glowColor
-                        ) {
-                            isShowingAddView = true
+                        HStack(spacing: 8) {
+                            ActionButtonView(
+                                title: "Add Log",
+                                icon: "plus.circle.fill",
+                                tint: backgroundTheme.glowColor
+                            ) {
+                                isShowingAddView = true
+                            }
+
+                            ActionButtonView(
+                                title: "Sim Day",
+                                icon: "calendar",
+                                tint: .green
+                            ) {
+                                simulateDailyProgress()
+                            }
                         }
                     }
                     .frame(maxHeight: .infinity, alignment: .bottom)
@@ -701,6 +726,7 @@ struct HeadwayView: View {
                     SinSectionCardView(
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
+                        showsVictoryAction: showVictorySwipeAction,
                         onShowVerses: { item in
                             selectedDefenseItem = item
                         },

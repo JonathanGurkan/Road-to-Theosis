@@ -3,6 +3,7 @@ import SwiftUI
 struct SinSectionCardView: View {
     @Binding var section: SinSection
     let isCompact: Bool
+    let showsVictoryAction: Bool
     let onShowVerses: (SinCategory) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
@@ -68,6 +69,7 @@ struct SinSectionCardView: View {
                             CategoryCardView(
                                 category: $section.items[index],
                                 isCompact: isCompact,
+                                showsVictoryAction: showsVictoryAction,
                                 onIconTap: {
                                     onShowVerses(section.items[index])
                                 }
@@ -94,6 +96,7 @@ struct SinSectionCardView: View {
     SinSectionCardView(
         section: .constant(SinCategory.sample[0]),
         isCompact: false,
+        showsVictoryAction: true,
         onShowVerses: { _ in },
         onVictory: { _ in },
         onReset: { _ in }

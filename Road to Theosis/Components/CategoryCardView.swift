@@ -3,6 +3,7 @@ import SwiftUI
 struct CategoryCardView: View {
     @Binding var category: SinCategory
     let isCompact: Bool
+    let showsVictoryAction: Bool
     let onIconTap: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
@@ -60,10 +61,13 @@ struct CategoryCardView: View {
         .padding(.vertical, isCompact ? 8 : 10)
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(action: onVictory) {
-                Label("Resist", systemImage: "shield.lefthalf.filled")
+            if showsVictoryAction {
+                Button(action: onVictory) {
+                    Label("Resist", systemImage: "shield.lefthalf.filled")
+                }
+                .tint(.green)
             }
-            .tint(.green)
+
             Button(role: .destructive, action: onReset) {
                 Label("Stumble", systemImage: "exclamationmark.triangle")
             }
@@ -75,6 +79,7 @@ struct CategoryCardView: View {
     CategoryCardView(
         category: .constant(SinCategory.sample[0].items[0]),
         isCompact: false,
+        showsVictoryAction: true,
         onIconTap: { },
         onVictory: { },
         onReset: { }
