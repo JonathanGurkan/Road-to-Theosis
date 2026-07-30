@@ -8,9 +8,14 @@ struct CategoryCardView: View {
     let onFocus: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
+    let onSetProgress: () -> Void
 
     private var progressText: String {
         "\(Int(category.progress * 100))%"
+    }
+
+    private var swipeActions: SinSwipeActions {
+        category.swipeActions
     }
 
     var body: some View {
@@ -92,11 +97,17 @@ struct CategoryCardView: View {
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(action: onVictory) {
-                Label("Resist", systemImage: "shield.lefthalf.filled")
+                Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
             }
             .tint(.green)
+
+            Button(action: onSetProgress) {
+                Label(swipeActions.progressTitle, systemImage: "slider.horizontal.3")
+            }
+            .tint(.blue)
+
             Button(role: .destructive, action: onReset) {
-                Label("Stumble", systemImage: "exclamationmark.triangle")
+                Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
             }
         }
     }
@@ -110,7 +121,8 @@ struct CategoryCardView: View {
         onIconTap: { },
         onFocus: { },
         onVictory: { },
-        onReset: { }
+        onReset: { },
+        onSetProgress: { }
     )
     .padding()
 }
