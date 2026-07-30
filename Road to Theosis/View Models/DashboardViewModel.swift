@@ -23,6 +23,17 @@ struct DashboardViewModel {
         updateItem(itemID, delta: -0.08)
     }
 
+    mutating func setProgress(_ progress: Double, for itemID: SinCategory.ID) {
+        for sectionIndex in sections.indices {
+            guard let itemIndex = sections[sectionIndex].items.firstIndex(where: { $0.id == itemID }) else {
+                continue
+            }
+
+            sections[sectionIndex].items[itemIndex].progress = clampedProgress(progress)
+            return
+        }
+    }
+
     mutating func advanceDailyProgress(days: Int = 1) {
         let progressDelta = 0.01 * Double(max(days, 0))
         guard progressDelta > 0 else { return }
@@ -50,6 +61,8 @@ struct DashboardViewModel {
             updateLoggedSin(entry, delta: 0.12)
         case .loss:
             updateLoggedSin(entry, delta: -0.08)
+        case .progressUpdate:
+            updateLoggedSinProgress(entry)
         }
     }
 
@@ -58,6 +71,19 @@ struct DashboardViewModel {
             updateItem(named: sinTitle, inSection: entry.sectionTitle, delta: delta)
         } else {
             updateFirstItem(in: entry.sectionTitle, delta: delta)
+        }
+    }
+
+    private mutating func updateLoggedSinProgress(_ entry: LogEntry) {
+        guard let progressPercentage = entry.progressPercentage else {
+            return
+        }
+
+        let progress = Double(progressPercentage) / 100
+        if let sinTitle = entry.sinTitle {
+            setProgress(progress, named: sinTitle, inSection: entry.sectionTitle)
+        } else {
+            setFirstItemProgress(progress, in: entry.sectionTitle)
         }
     }
 
@@ -86,6 +112,20 @@ struct DashboardViewModel {
         updateItem(at: itemIndex, in: sectionIndex, delta: delta)
     }
 
+    private mutating func setProgress(_ progress: Double, named itemTitle: String, inSection sectionTitle: String) {
+        guard let sectionIndex = sections.firstIndex(where: { $0.title == sectionTitle }) else {
+            setFirstItemProgress(progress, in: sectionTitle)
+            return
+        }
+
+        guard let itemIndex = sections[sectionIndex].items.firstIndex(where: { $0.title == itemTitle }) else {
+            setFirstItemProgress(progress, in: sectionTitle)
+            return
+        }
+
+        sections[sectionIndex].items[itemIndex].progress = clampedProgress(progress)
+    }
+
     private mutating func updateFirstItem(in sectionTitle: String, delta: Double) {
         guard let sectionIndex = sections.firstIndex(where: { $0.title == sectionTitle }),
               let itemIndex = sections[sectionIndex].items.indices.first else {
@@ -93,6 +133,15 @@ struct DashboardViewModel {
         }
 
         updateItem(at: itemIndex, in: sectionIndex, delta: delta)
+    }
+
+    private mutating func setFirstItemProgress(_ progress: Double, in sectionTitle: String) {
+        guard let sectionIndex = sections.firstIndex(where: { $0.title == sectionTitle }),
+              let itemIndex = sections[sectionIndex].items.indices.first else {
+            return
+        }
+
+        sections[sectionIndex].items[itemIndex].progress = clampedProgress(progress)
     }
 
     private mutating func updateItem(at itemIndex: Int, in sectionIndex: Int, delta: Double) {
