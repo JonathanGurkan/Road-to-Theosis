@@ -60,14 +60,13 @@ struct CategoryCardView: View {
         .padding(.vertical, isCompact ? 8 : 10)
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive, action: onReset) {
-                Label("Reset", systemImage: "arrow.counterclockwise")
-            }
-
             Button(action: onVictory) {
                 Label("Resist", systemImage: "shield.lefthalf.filled")
             }
-            .tint(category.tint)
+            .tint(.green)
+            Button(role: .destructive, action: onReset) {
+                Label("Stumble", systemImage: "exclamationmark.triangle")
+            }
         }
     }
 }
