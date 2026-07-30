@@ -281,7 +281,7 @@ struct HeadwayView: View {
                         .minimumScaleFactor(0.82)
 
                     Text(greetingSubtitle)
-                        .font(.body)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .minimumScaleFactor(0.82)
                 }
