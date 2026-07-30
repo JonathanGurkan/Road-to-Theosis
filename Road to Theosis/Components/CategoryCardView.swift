@@ -55,7 +55,7 @@ struct CategoryCardView: View {
                         .tracking(0.4)
 
                     Button(action: onFocus) {
-                        Text(isFocused ? "Focused" : "Focus")
+                        Text(isFocused ? "Watching" : "Watch")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(isFocused ? .white : category.tint)
                             .lineLimit(1)
