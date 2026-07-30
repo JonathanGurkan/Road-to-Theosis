@@ -60,6 +60,7 @@ struct CategoryCardView: View {
         }
         .padding(.vertical, isCompact ? 8 : 10)
         .contentShape(Rectangle())
+        .id(showsVictoryAction)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             if showsVictoryAction {
                 Button(action: onVictory) {

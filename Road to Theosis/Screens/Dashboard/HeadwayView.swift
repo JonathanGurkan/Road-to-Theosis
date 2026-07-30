@@ -191,10 +191,20 @@ struct HeadwayView: View {
                 if isCustomizingHome {
                     addWidgetToolbarMenu
                 } else {
-                    Button {
-                        isShowingAddView.toggle()
-                    } label: {
-                        Label("Add Log", systemImage: "plus.circle.fill")
+                    HStack(spacing: 12) {
+                        Button {
+                            simulateDailyProgress()
+                        } label: {
+                            Text("Sim Day")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.red)
+                        }
+
+                        Button {
+                            isShowingAddView.toggle()
+                        } label: {
+                            Label("Add Log", systemImage: "plus.circle.fill")
+                        }
                     }
                 }
             }
@@ -571,10 +581,6 @@ struct HeadwayView: View {
                             compactActionButton(icon: "plus.circle.fill", tint: backgroundTheme.glowColor, size: 36) {
                                 isShowingAddView = true
                             }
-
-                            compactActionButton(icon: "calendar", tint: .green, size: 36) {
-                                simulateDailyProgress()
-                            }
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -607,14 +613,8 @@ struct HeadwayView: View {
                             }
                         }
 
-                        HStack(spacing: 6) {
-                            compactActionRowButton(title: "Add Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor, minHeight: 46) {
-                                isShowingAddView = true
-                            }
-
-                            compactActionRowButton(title: "Sim Day", icon: "calendar", tint: .green, minHeight: 46) {
-                                simulateDailyProgress()
-                            }
+                        compactActionRowButton(title: "Add Log", icon: "plus.circle.fill", tint: backgroundTheme.glowColor, minHeight: 46) {
+                            isShowingAddView = true
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -653,22 +653,12 @@ struct HeadwayView: View {
                             }
                         }
 
-                        HStack(spacing: 8) {
-                            ActionButtonView(
-                                title: "Add Log",
-                                icon: "plus.circle.fill",
-                                tint: backgroundTheme.glowColor
-                            ) {
-                                isShowingAddView = true
-                            }
-
-                            ActionButtonView(
-                                title: "Sim Day",
-                                icon: "calendar",
-                                tint: .green
-                            ) {
-                                simulateDailyProgress()
-                            }
+                        ActionButtonView(
+                            title: "Add Log",
+                            icon: "plus.circle.fill",
+                            tint: backgroundTheme.glowColor
+                        ) {
+                            isShowingAddView = true
                         }
                     }
                     .frame(maxHeight: .infinity, alignment: .bottom)
