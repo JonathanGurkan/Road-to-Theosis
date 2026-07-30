@@ -18,6 +18,8 @@ struct HeadwayView: View {
     @State var homeGridWidth: CGFloat = 0
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
+    @State private var customProgressTarget: CustomProgressTarget?
+    @State private var customProgressText = ""
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
