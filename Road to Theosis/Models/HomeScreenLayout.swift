@@ -10,6 +10,7 @@ struct HomeScreenLayout: Codable, Equatable {
         HomeScreenCardConfiguration(id: .overview, size: .standard),
         HomeScreenCardConfiguration(id: .quickActions, size: .standard),
         HomeScreenCardConfiguration(id: .recentActivity, size: .standard),
+        HomeScreenCardConfiguration(id: .focusWidget, size: .standard),
         HomeScreenCardConfiguration(id: .focusAreas, size: .standard)
     ])
 
@@ -69,6 +70,7 @@ enum HomeScreenCardID: String, CaseIterable, Codable, Identifiable {
     case overview
     case quickActions
     case recentActivity
+    case focusWidget
     case focusAreas
 
     var id: String { rawValue }
@@ -83,6 +85,8 @@ enum HomeScreenCardID: String, CaseIterable, Codable, Identifiable {
             return "Quick actions"
         case .recentActivity:
             return "Recent activity"
+        case .focusWidget:
+            return "Focus widget"
         case .focusAreas:
             return "Focus areas"
         }
@@ -98,6 +102,8 @@ enum HomeScreenCardID: String, CaseIterable, Codable, Identifiable {
             return "Prayer and logging shortcuts"
         case .recentActivity:
             return "Latest timeline entries"
+        case .focusWidget:
+            return "Work two or three focus areas"
         case .focusAreas:
             return "Your focus area list"
         }
@@ -113,6 +119,8 @@ enum HomeScreenCardID: String, CaseIterable, Codable, Identifiable {
             return "bolt.fill"
         case .recentActivity:
             return "clock.arrow.circlepath"
+        case .focusWidget:
+            return "scope"
         case .focusAreas:
             return "list.bullet.rectangle.fill"
         }
@@ -120,7 +128,7 @@ enum HomeScreenCardID: String, CaseIterable, Codable, Identifiable {
 
     var supportsResizing: Bool {
         switch self {
-        case .greeting, .overview, .quickActions, .recentActivity:
+        case .greeting, .overview, .quickActions, .recentActivity, .focusWidget:
             return true
         case .focusAreas:
             return false

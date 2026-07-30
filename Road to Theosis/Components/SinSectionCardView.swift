@@ -3,9 +3,12 @@ import SwiftUI
 struct SinSectionCardView: View {
     @Binding var section: SinSection
     let isCompact: Bool
+    let focusedItemIDs: Set<SinCategory.ID>
     let onShowVerses: (SinCategory) -> Void
+    let onFocus: (SinCategory.ID) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
+    let onSetProgress: (SinCategory.ID) -> Void
 
     var body: some View {
         AppSurfaceCard(contentPadding: 12) {
@@ -57,7 +60,7 @@ struct SinSectionCardView: View {
                     ProgressView(value: section.averageProgress)
                         .tint(section.tint)
 
-                    Text("Swipe a row for quick actions.")
+                    Text("Choose a focus, then act from the panel above.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -68,13 +71,19 @@ struct SinSectionCardView: View {
                             CategoryCardView(
                                 category: $section.items[index],
                                 isCompact: isCompact,
+                                isFocused: focusedItemIDs.contains(section.items[index].id),
                                 onIconTap: {
                                     onShowVerses(section.items[index])
+                                },
+                                onFocus: {
+                                    onFocus(section.items[index].id)
                                 }
                             ) {
                                 onVictory(section.items[index].id)
                             } onReset: {
                                 onReset(section.items[index].id)
+                            } onSetProgress: {
+                                onSetProgress(section.items[index].id)
                             }
 
                             if index < section.items.count - 1 {
@@ -94,9 +103,12 @@ struct SinSectionCardView: View {
     SinSectionCardView(
         section: .constant(SinCategory.sample[0]),
         isCompact: false,
+        focusedItemIDs: [SinCategory.sample[0].items[0].id],
         onShowVerses: { _ in },
+        onFocus: { _ in },
         onVictory: { _ in },
-        onReset: { _ in }
+        onReset: { _ in },
+        onSetProgress: { _ in }
     )
     .padding()
 }

@@ -3,12 +3,19 @@ import SwiftUI
 struct CategoryCardView: View {
     @Binding var category: SinCategory
     let isCompact: Bool
+    let isFocused: Bool
     let onIconTap: () -> Void
+    let onFocus: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
+    let onSetProgress: () -> Void
 
     private var progressText: String {
         "\(Int(category.progress * 100))%"
+    }
+
+    private var swipeActions: SinSwipeActions {
+        category.swipeActions
     }
 
     var body: some View {
@@ -42,7 +49,7 @@ struct CategoryCardView: View {
 
                 Spacer(minLength: 10)
 
-                VStack(alignment: .trailing, spacing: 3) {
+                VStack(alignment: .trailing, spacing: 5) {
                     Text(progressText)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(category.tint)
@@ -51,6 +58,22 @@ struct CategoryCardView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .tracking(0.4)
+
+                    Button(action: onFocus) {
+                        Text(isFocused ? "Remove Focus" : "Focus")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(isFocused ? .white : category.tint)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                isFocused ? category.tint : category.tint.opacity(0.13),
+                                in: Capsule()
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Set \(category.title) as today's focus")
                 }
             }
 
@@ -58,14 +81,33 @@ struct CategoryCardView: View {
                 .tint(category.tint)
         }
         .padding(.vertical, isCompact ? 8 : 10)
+        .padding(.horizontal, isFocused ? 8 : 0)
+        .background {
+            if isFocused {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(category.tint.opacity(0.08))
+            }
+        }
+        .overlay {
+            if isFocused {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(category.tint.opacity(0.22), lineWidth: 1)
+            }
+        }
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(action: onVictory) {
-                Label("Resist", systemImage: "shield.lefthalf.filled")
+                Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
             }
             .tint(.green)
+
+            Button(action: onSetProgress) {
+                Label(swipeActions.progressTitle, systemImage: "slider.horizontal.3")
+            }
+            .tint(.blue)
+
             Button(role: .destructive, action: onReset) {
-                Label("Stumble", systemImage: "exclamationmark.triangle")
+                Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
             }
         }
     }
@@ -75,9 +117,12 @@ struct CategoryCardView: View {
     CategoryCardView(
         category: .constant(SinCategory.sample[0].items[0]),
         isCompact: false,
+        isFocused: true,
         onIconTap: { },
+        onFocus: { },
         onVictory: { },
-        onReset: { }
+        onReset: { },
+        onSetProgress: { }
     )
     .padding()
 }
