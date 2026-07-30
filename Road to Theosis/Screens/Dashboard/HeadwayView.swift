@@ -200,6 +200,19 @@ struct HeadwayView: View {
         }
     }
 
+    private func logFocusedPrayer(context: FocusedSinContext) {
+        let entry = LogEntry(
+            kind: .quickPrayer,
+            sectionTitle: context.sectionTitle,
+            sinTitle: context.item.title,
+            note: "",
+            prayerMinutes: 1,
+            occurredAt: Date()
+        )
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
+    }
+
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -804,6 +817,10 @@ struct HeadwayView: View {
     }
 
     private func focusedSinPanel(for context: FocusedSinContext) -> some View {
+        let actionColumns = [
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8)
+        ]
         let queueContexts = focusQueueContexts(excluding: context.item.id)
 
         return AppSurfaceCard(contentPadding: 14) {
@@ -853,13 +870,17 @@ struct HeadwayView: View {
                 ProgressView(value: context.item.progress)
                     .tint(context.item.tint)
 
-                HStack(spacing: 8) {
+                LazyVGrid(columns: actionColumns, spacing: 8) {
                     compactActionRowButton(title: "Resist", icon: "shield.lefthalf.filled", tint: .green) {
                         logFocusedOutcome(.victory, context: context)
                     }
 
                     compactActionRowButton(title: "Stumble", icon: "exclamationmark.triangle", tint: .red) {
                         logFocusedOutcome(.loss, context: context)
+                    }
+
+                    compactActionRowButton(title: "Pray", icon: "heart.fill", tint: .pink) {
+                        logFocusedPrayer(context: context)
                     }
 
                     compactActionRowButton(title: "Verses", icon: "book.fill", tint: context.item.tint) {
