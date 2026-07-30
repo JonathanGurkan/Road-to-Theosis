@@ -4,6 +4,7 @@ struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
+    let showVictorySwipeAction: Bool
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -13,7 +14,6 @@ struct HeadwayView: View {
     @State var selectedDefenseItem: SinCategory?
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
-    @AppStorage("showVictorySwipeAction") private var showVictorySwipeAction = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -963,7 +963,8 @@ struct HeadwayView: View {
         HeadwayView(
             backgroundTheme: .constant(.blood),
             dashboard: .constant(DashboardViewModel()),
-            logEntries: .constant([])
+            logEntries: .constant([]),
+            showVictorySwipeAction: true
         )
     }
 }

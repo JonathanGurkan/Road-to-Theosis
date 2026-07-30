@@ -7,6 +7,7 @@ struct AppShellView: View {
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
     @State private var isShowingWelcome = false
+    @State private var showVictorySwipeAction = false
 
     var body: some View {
         TabView {
@@ -14,7 +15,8 @@ struct AppShellView: View {
                 HeadwayView(
                     backgroundTheme: $backgroundTheme,
                     dashboard: $dashboard,
-                    logEntries: $logEntries
+                    logEntries: $logEntries,
+                    showVictorySwipeAction: showVictorySwipeAction
                 )
             }
             .tabItem {
@@ -29,9 +31,13 @@ struct AppShellView: View {
             }
 
             NavigationStack {
-                SettingsView(backgroundTheme: $backgroundTheme, onShowWelcome: {
-                    isShowingWelcome = true
-                }) { entry in
+                SettingsView(
+                    backgroundTheme: $backgroundTheme,
+                    showVictorySwipeAction: $showVictorySwipeAction,
+                    onShowWelcome: {
+                        isShowingWelcome = true
+                    }
+                ) { entry in
                     logEntries.insert(entry, at: 0)
                     dashboard.record(entry)
                 }
