@@ -11,12 +11,14 @@ struct HeadwayView: View {
     @State var homeGridWidth: CGFloat = 0
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
-    @State var focusedSinID: SinCategory.ID?
+    @State var focusedSinIDs: [SinCategory.ID] = []
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+
+    private let maxFocusedSinCount = 3
 
     private var isDaytime: Bool {
         (5..<17).contains(Calendar.current.component(.hour, from: Date()))
@@ -124,12 +126,25 @@ struct HeadwayView: View {
         }
     }
 
-    private var selectedFocusContext: FocusedSinContext? {
-        guard let focusedSinID else { return nil }
-        return focusContext(for: focusedSinID)
+    private var selectedFocusContexts: [FocusedSinContext] {
+        focusedSinIDs.compactMap { focusContext(for: $0) }
     }
 
-    private var suggestedFocusContext: FocusedSinContext? {
+    private var activeFocusContexts: [FocusedSinContext] {
+        var contexts = selectedFocusContexts
+        let selectedIDs = Set(contexts.map { $0.item.id })
+        let suggestedContexts = rankedFocusContexts(excluding: selectedIDs)
+            .prefix(maxFocusedSinCount - contexts.count)
+
+        contexts.append(contentsOf: suggestedContexts)
+        return Array(contexts.prefix(maxFocusedSinCount))
+    }
+
+    private var activeFocusIDs: Set<SinCategory.ID> {
+        Set(activeFocusContexts.map { $0.item.id })
+    }
+
+    private func rankedFocusContexts(excluding excludedIDs: Set<SinCategory.ID> = []) -> [FocusedSinContext] {
         dashboard.sections.indices
             .flatMap { sectionIndex in
                 dashboard.sections[sectionIndex].items.indices.map { itemIndex in
@@ -141,31 +156,14 @@ struct HeadwayView: View {
                     )
                 }
             }
-            .min { first, second in
-                first.item.progress < second.item.progress
-            }
-    }
-
-    private var currentFocusContext: FocusedSinContext? {
-        selectedFocusContext ?? suggestedFocusContext
-    }
-
-    private func focusQueueContexts(excluding excludedItemID: SinCategory.ID?) -> [FocusedSinContext] {
-        dashboard.sections.indices
-            .flatMap { sectionIndex in
-                dashboard.sections[sectionIndex].items.indices.map { itemIndex in
-                    FocusedSinContext(
-                        sectionIndex: sectionIndex,
-                        itemIndex: itemIndex,
-                        sectionTitle: dashboard.sections[sectionIndex].title,
-                        item: dashboard.sections[sectionIndex].items[itemIndex]
-                    )
-                }
-            }
-            .filter { $0.item.id != excludedItemID }
+            .filter { !excludedIDs.contains($0.item.id) }
             .sorted { first, second in
                 first.item.progress < second.item.progress
             }
+    }
+
+    private func focusQueueContexts(excluding excludedIDs: Set<SinCategory.ID>) -> [FocusedSinContext] {
+        rankedFocusContexts(excluding: excludedIDs)
             .prefix(3)
             .map { $0 }
     }
@@ -211,6 +209,19 @@ struct HeadwayView: View {
         )
         logEntries.insert(entry, at: 0)
         dashboard.record(entry)
+    }
+
+    private func toggleFocus(for itemID: SinCategory.ID) {
+        if focusedSinIDs.contains(itemID) {
+            focusedSinIDs.removeAll { $0 == itemID }
+            return
+        }
+
+        if focusedSinIDs.count >= maxFocusedSinCount {
+            focusedSinIDs.removeFirst()
+        }
+
+        focusedSinIDs.append(itemID)
     }
 
     var body: some View {
@@ -323,6 +334,8 @@ struct HeadwayView: View {
             actionCard(size: configuration.size)
         case .recentActivity:
             recentActivityCard(size: configuration.size)
+        case .focusWidget:
+            focusWidgetCard(size: configuration.size)
         case .focusAreas:
             focusAreasCard
         }
@@ -784,10 +797,6 @@ struct HeadwayView: View {
 
     private var focusAreasCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let currentFocusContext {
-                focusedSinPanel(for: currentFocusContext)
-            }
-
             sectionsHeader
 
             LazyVStack(spacing: compactSinRows ? 10 : 12) {
@@ -795,12 +804,12 @@ struct HeadwayView: View {
                     SinSectionCardView(
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
-                        focusedItemID: currentFocusContext?.item.id,
+                        focusedItemIDs: activeFocusIDs,
                         onShowVerses: { item in
                             selectedDefenseItem = item
                         },
                         onFocus: { itemID in
-                            focusedSinID = itemID
+                            toggleFocus(for: itemID)
                         },
                         onVictory: { itemID in
                             guard logSwipeOutcome(.victory, for: itemID, in: index) else { return }
@@ -816,112 +825,170 @@ struct HeadwayView: View {
         }
     }
 
-    private func focusedSinPanel(for context: FocusedSinContext) -> some View {
-        let actionColumns = [
-            GridItem(.flexible(), spacing: 8),
-            GridItem(.flexible(), spacing: 8)
-        ]
-        let queueContexts = focusQueueContexts(excluding: context.item.id)
+    private func focusWidgetCard(size: HomeScreenCardSize) -> some View {
+        let contexts = activeFocusContexts
+        let visibleCount: Int
 
-        return AppSurfaceCard(contentPadding: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(context.item.tint.opacity(0.16))
+        switch size {
+        case .minimal:
+            visibleCount = 1
+        case .compact:
+            visibleCount = 2
+        case .standard:
+            visibleCount = maxFocusedSinCount
+        }
 
-                        Image(systemName: context.item.icon)
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(context.item.tint)
-                    }
-                    .frame(width: 40, height: 40)
+        let visibleContexts = Array(contexts.prefix(visibleCount))
+        let queueContexts = focusQueueContexts(excluding: Set(contexts.map { $0.item.id }))
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Today's focus")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+        return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
+            VStack(alignment: .leading, spacing: size == .minimal ? 8 : 12) {
+                HStack(spacing: 8) {
+                    minimalIcon("scope", size: size == .minimal ? 20 : 24)
 
-                        Text(context.item.title)
-                            .font(.headline.weight(.semibold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(size == .minimal ? "Focus" : "Focus watch")
+                            .font((size == .minimal ? Font.headline : Font.title3).weight(.semibold))
                             .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1)
 
-                        Text(context.item.detail)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                        if size != .minimal {
+                            Text("Work a few struggles with prayer and watchfulness.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.82)
+                        }
                     }
 
                     Spacer(minLength: 8)
 
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("\(Int(context.item.progress * 100))%")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(context.item.tint)
-
-                        Text(context.sectionTitle.uppercased())
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.trailing)
-                            .lineLimit(2)
-                    }
+                    Text("\(visibleContexts.count)/\(maxFocusedSinCount)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.primary.opacity(0.07), in: Capsule())
                 }
 
-                ProgressView(value: context.item.progress)
-                    .tint(context.item.tint)
+                VStack(spacing: size == .minimal ? 6 : 8) {
+                    ForEach(visibleContexts, id: \.item.id) { context in
+                        focusWidgetRow(for: context, showsActions: size != .minimal)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                LazyVGrid(columns: actionColumns, spacing: 8) {
-                    compactActionRowButton(title: "Resist", icon: "shield.lefthalf.filled", tint: .green) {
+                if size == .standard && !queueContexts.isEmpty {
+                    focusQueuePicker(queueContexts)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func focusWidgetRow(for context: FocusedSinContext, showsActions: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(context.item.tint.opacity(0.16))
+
+                    Image(systemName: context.item.icon)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(context.item.tint)
+                }
+                .frame(width: 30, height: 30)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(context.item.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    Text(context.item.watchword)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                Text("\(Int(context.item.progress * 100))%")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(context.item.tint)
+            }
+
+            ProgressView(value: context.item.progress)
+                .tint(context.item.tint)
+
+            if showsActions {
+                HStack(spacing: 6) {
+                    compactActionButton(icon: "shield.lefthalf.filled", tint: .green, size: 22) {
                         logFocusedOutcome(.victory, context: context)
                     }
 
-                    compactActionRowButton(title: "Stumble", icon: "exclamationmark.triangle", tint: .red) {
+                    compactActionButton(icon: "exclamationmark.triangle", tint: .red, size: 22) {
                         logFocusedOutcome(.loss, context: context)
                     }
 
-                    compactActionRowButton(title: "Pray", icon: "heart.fill", tint: .pink) {
+                    compactActionButton(icon: "heart.fill", tint: .pink, size: 22) {
                         logFocusedPrayer(context: context)
                     }
 
-                    compactActionRowButton(title: "Verses", icon: "book.fill", tint: context.item.tint) {
+                    compactActionButton(icon: "book.fill", tint: context.item.tint, size: 22) {
                         selectedDefenseItem = context.item
                     }
-                }
 
-                if !queueContexts.isEmpty {
-                    Divider()
+                    Spacer(minLength: 0)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Next up")
+                    Button {
+                        toggleFocus(for: context.item.id)
+                    } label: {
+                        Text(focusedSinIDs.contains(context.item.id) ? "Drop" : "Keep")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        VStack(spacing: 6) {
-                            ForEach(queueContexts, id: \.item.id) { queueContext in
-                                Button {
-                                    focusedSinID = queueContext.item.id
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Text(queueContext.item.title)
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.primary)
-                                            .lineLimit(1)
-                                            .minimumScaleFactor(0.8)
-
-                                        Spacer(minLength: 8)
-
-                                        Text("\(Int(queueContext.item.progress * 100))%")
-                                            .font(.caption2.weight(.semibold))
-                                            .foregroundStyle(queueContext.item.tint)
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 7)
-                                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
+                            .foregroundStyle(context.item.tint)
+                            .padding(.horizontal, 8)
+                            .frame(minHeight: 28)
+                            .background(context.item.tint.opacity(0.12), in: Capsule())
                     }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func focusQueuePicker(_ queueContexts: [FocusedSinContext]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Add another focus")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 6) {
+                ForEach(queueContexts, id: \.item.id) { context in
+                    Button {
+                        toggleFocus(for: context.item.id)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text(context.item.title)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+
+                            Spacer(minLength: 8)
+
+                            Text("\(Int(context.item.progress * 100))%")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(context.item.tint)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

@@ -3,7 +3,7 @@ import SwiftUI
 struct SinSectionCardView: View {
     @Binding var section: SinSection
     let isCompact: Bool
-    let focusedItemID: SinCategory.ID?
+    let focusedItemIDs: Set<SinCategory.ID>
     let onShowVerses: (SinCategory) -> Void
     let onFocus: (SinCategory.ID) -> Void
     let onVictory: (SinCategory.ID) -> Void
@@ -70,7 +70,7 @@ struct SinSectionCardView: View {
                             CategoryCardView(
                                 category: $section.items[index],
                                 isCompact: isCompact,
-                                isFocused: section.items[index].id == focusedItemID,
+                                isFocused: focusedItemIDs.contains(section.items[index].id),
                                 onIconTap: {
                                     onShowVerses(section.items[index])
                                 },
@@ -100,7 +100,7 @@ struct SinSectionCardView: View {
     SinSectionCardView(
         section: .constant(SinCategory.sample[0]),
         isCompact: false,
-        focusedItemID: SinCategory.sample[0].items[0].id,
+        focusedItemIDs: [SinCategory.sample[0].items[0].id],
         onShowVerses: { _ in },
         onFocus: { _ in },
         onVictory: { _ in },
