@@ -7,6 +7,7 @@ struct LogEntry: Identifiable {
         case victory
         case loss
         case progressUpdate
+        case sliderProgressUpdate
         case note
 
         var id: String { rawValue }
@@ -23,6 +24,8 @@ struct LogEntry: Identifiable {
                 return "Loss"
             case .progressUpdate:
                 return "Progress Set"
+            case .sliderProgressUpdate:
+                return "Progress Adjusted"
             case .note:
                 return "Note"
             }
@@ -40,6 +43,8 @@ struct LogEntry: Identifiable {
                 return "xmark.circle.fill"
             case .progressUpdate:
                 return "slider.horizontal.3"
+            case .sliderProgressUpdate:
+                return "slider.horizontal.below.rectangle"
             case .note:
                 return "text.quote"
             }
@@ -57,6 +62,8 @@ struct LogEntry: Identifiable {
                 return .orange
             case .progressUpdate:
                 return .blue
+            case .sliderProgressUpdate:
+                return .indigo
             case .note:
                 return .blue
             }

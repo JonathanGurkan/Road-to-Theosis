@@ -3,11 +3,15 @@ import SwiftUI
 struct CategoryCardView: View {
     @Binding var category: SinCategory
     let isCompact: Bool
+    let showsVictoryAction: Bool
+    let usesProgressSlider: Bool
     let isFocused: Bool
     let onIconTap: () -> Void
     let onFocus: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
+    let onProgressChanged: (Double) -> Void
+    @State private var progressAtDragStart: Double?
     let onSetProgress: () -> Void
 
     private var progressText: String {
@@ -19,6 +23,26 @@ struct CategoryCardView: View {
     }
 
     var body: some View {
+        if usesProgressSlider {
+            cardContent
+        } else {
+            cardContent
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    if showsVictoryAction {
+                        Button(action: onVictory) {
+                            Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
+                        }
+                        .tint(.green)
+                    }
+
+                    Button(role: .destructive, action: onReset) {
+                        Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
+                    }
+                }
+        }
+    }
+
+    private var cardContent: some View {
         VStack(spacing: isCompact ? 8 : 10) {
             HStack(alignment: .top, spacing: 12) {
                 Button(action: onIconTap) {
@@ -77,8 +101,19 @@ struct CategoryCardView: View {
                 }
             }
 
-            ProgressView(value: category.progress)
+            if usesProgressSlider {
+                Slider(
+                    value: $category.progress,
+                    in: 0...1,
+                    step: 0.01
+                ) { isEditing in
+                    handleProgressEditingChanged(isEditing)
+                }
                 .tint(category.tint)
+            } else {
+                ProgressView(value: category.progress)
+                    .tint(category.tint)
+            }
         }
         .padding(.vertical, isCompact ? 8 : 10)
         .padding(.horizontal, isFocused ? 8 : 0)
@@ -95,6 +130,13 @@ struct CategoryCardView: View {
             }
         }
         .contentShape(Rectangle())
+        .id(showsVictoryAction)
+    }
+
+    private func handleProgressEditingChanged(_ isEditing: Bool) {
+        if isEditing {
+            progressAtDragStart = category.progress
+            return
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(action: onVictory) {
                 Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
@@ -110,6 +152,15 @@ struct CategoryCardView: View {
                 Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
             }
         }
+
+        defer { progressAtDragStart = nil }
+
+        guard let progressAtDragStart,
+              abs(progressAtDragStart - category.progress) >= 0.005 else {
+            return
+        }
+
+        onProgressChanged(category.progress)
     }
 }
 
@@ -117,11 +168,14 @@ struct CategoryCardView: View {
     CategoryCardView(
         category: .constant(SinCategory.sample[0].items[0]),
         isCompact: false,
+        showsVictoryAction: true,
+        usesProgressSlider: true,
         isFocused: true,
         onIconTap: { },
         onFocus: { },
         onVictory: { },
         onReset: { },
+        onProgressChanged: { _ in }
         onSetProgress: { }
     )
     .padding()

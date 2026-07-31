@@ -178,6 +178,10 @@ private struct TimelineRow: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal, 10)
                     .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
+                if !entry.note.isEmpty {
+                  
                 } else if !entry.note.isEmpty {
                     Text(entry.note)
                         .font(.subheadline)
@@ -193,7 +197,7 @@ private struct TimelineRow: View {
                     }
 
                     if let progressPercentage = entry.progressPercentage {
-                        Label("Set to \(progressPercentage)%", systemImage: "percent")
+                        Text("Set to \(progressPercentage)%")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
                     } else {
@@ -234,6 +238,15 @@ private struct TimelineRow: View {
                     note: "Need to slow down before speaking.",
                     prayerMinutes: 0,
                     occurredAt: Date().addingTimeInterval(-3600)
+                ),
+                LogEntry(
+                    kind: .sliderProgressUpdate,
+                    sectionTitle: "Sins Against Others",
+                    sinTitle: "Strife / Argumentative",
+                    note: "Adjusted after evening reflection.",
+                    prayerMinutes: 0,
+                    progressPercentage: 62,
+                    occurredAt: Date().addingTimeInterval(-7200)
                 )
             ])
         )

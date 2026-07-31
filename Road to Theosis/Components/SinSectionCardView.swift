@@ -3,11 +3,14 @@ import SwiftUI
 struct SinSectionCardView: View {
     @Binding var section: SinSection
     let isCompact: Bool
+    let showsVictoryAction: Bool
+    let usesProgressSliders: Bool
     let focusedItemIDs: Set<SinCategory.ID>
     let onShowVerses: (SinCategory) -> Void
     let onFocus: (SinCategory.ID) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
+    let onProgressChanged: (SinCategory.ID, Double) -> Void
     let onSetProgress: (SinCategory.ID) -> Void
 
     var body: some View {
@@ -71,6 +74,8 @@ struct SinSectionCardView: View {
                             CategoryCardView(
                                 category: $section.items[index],
                                 isCompact: isCompact,
+                                showsVictoryAction: showsVictoryAction,
+                                usesProgressSlider: usesProgressSliders,
                                 isFocused: focusedItemIDs.contains(section.items[index].id),
                                 onIconTap: {
                                     onShowVerses(section.items[index])
@@ -82,6 +87,8 @@ struct SinSectionCardView: View {
                                 onVictory(section.items[index].id)
                             } onReset: {
                                 onReset(section.items[index].id)
+                            } onProgressChanged: { progress in
+                                onProgressChanged(section.items[index].id, progress)
                             } onSetProgress: {
                                 onSetProgress(section.items[index].id)
                             }
@@ -103,11 +110,14 @@ struct SinSectionCardView: View {
     SinSectionCardView(
         section: .constant(SinCategory.sample[0]),
         isCompact: false,
+        showsVictoryAction: true,
+        usesProgressSliders: true,
         focusedItemIDs: [SinCategory.sample[0].items[0].id],
         onShowVerses: { _ in },
         onFocus: { _ in },
         onVictory: { _ in },
         onReset: { _ in },
+        onProgressChanged: { _, _ in }
         onSetProgress: { _ in }
     )
     .padding()

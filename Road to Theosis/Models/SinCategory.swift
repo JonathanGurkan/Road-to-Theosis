@@ -5,7 +5,6 @@ struct SinSwipeActions {
     let victoryIcon: String
     let stumbleTitle: String
     let stumbleIcon: String
-    let progressTitle: String
 }
 
 struct SinCategory: Identifiable {
@@ -36,143 +35,141 @@ struct SinCategory: Identifiable {
     }
 
     var swipeActions: SinSwipeActions {
-        let progressTitle = "Set %"
-
         switch title {
         case "Idolatry / Abomination":
-            return .init(victoryTitle: "Choose God", victoryIcon: "cross.fill", stumbleTitle: "Divided", stumbleIcon: "heart.slash", progressTitle: progressTitle)
+            return .init(victoryTitle: "Choose God", victoryIcon: "cross.fill", stumbleTitle: "Divided", stumbleIcon: "heart.slash")
         case "Blasphemy":
-            return .init(victoryTitle: "Reverent", victoryIcon: "text.bubble.fill", stumbleTitle: "Irreverent", stumbleIcon: "exclamationmark.bubble.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Reverent", victoryIcon: "text.bubble.fill", stumbleTitle: "Irreverent", stumbleIcon: "exclamationmark.bubble.fill")
         case "Neglect of God's Word":
-            return .init(victoryTitle: "Read Word", victoryIcon: "book.fill", stumbleTitle: "Missed Word", stumbleIcon: "book.closed.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Read Word", victoryIcon: "book.fill", stumbleTitle: "Missed Word", stumbleIcon: "book.closed.fill")
         case "Quenching the Holy Spirit":
-            return .init(victoryTitle: "Yield", victoryIcon: "wind", stumbleTitle: "Resisted", stumbleIcon: "hand.raised.slash.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Yield", victoryIcon: "wind", stumbleTitle: "Resisted", stumbleIcon: "hand.raised.slash.fill")
         case "Unbelief / No Trust in God":
-            return .init(victoryTitle: "Trust God", victoryIcon: "shield.fill", stumbleTitle: "Doubted", stumbleIcon: "questionmark.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Trust God", victoryIcon: "shield.fill", stumbleTitle: "Doubted", stumbleIcon: "questionmark.circle.fill")
         case "Heresies / False Doctrine":
-            return .init(victoryTitle: "Hold Faith", victoryIcon: "checkmark.seal.fill", stumbleTitle: "Strayed", stumbleIcon: "triangle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Hold Faith", victoryIcon: "checkmark.seal.fill", stumbleTitle: "Strayed", stumbleIcon: "triangle.fill")
         case "Occult Involvement / Witchcraft":
-            return .init(victoryTitle: "Renounce", victoryIcon: "sun.max.fill", stumbleTitle: "False", stumbleIcon: "sparkles", progressTitle: progressTitle)
+            return .init(victoryTitle: "Renounce", victoryIcon: "sun.max.fill", stumbleTitle: "False", stumbleIcon: "sparkles")
         case "Neglect of Prayer":
-            return .init(victoryTitle: "Prayed", victoryIcon: "hands.sparkles.fill", stumbleTitle: "No Prayer", stumbleIcon: "moon.zzz.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Prayed", victoryIcon: "hands.sparkles.fill", stumbleTitle: "No Prayer", stumbleIcon: "moon.zzz.fill")
         case "Sexual Immorality":
-            return .init(victoryTitle: "Purity", victoryIcon: "heart.circle.fill", stumbleTitle: "Impure", stumbleIcon: "heart.slash.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Purity", victoryIcon: "heart.circle.fill", stumbleTitle: "Impure", stumbleIcon: "heart.slash.fill")
         case "Adultery":
-            return .init(victoryTitle: "Keep Faith", victoryIcon: "ring.fill", stumbleTitle: "Wavered", stumbleIcon: "heart.slash.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Keep Faith", victoryIcon: "ring.fill", stumbleTitle: "Wavered", stumbleIcon: "heart.slash.circle.fill")
         case "Fornication":
-            return .init(victoryTitle: "Covenant", victoryIcon: "person.2.fill", stumbleTitle: "Chastity", stumbleIcon: "person.2.slash.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Covenant", victoryIcon: "person.2.fill", stumbleTitle: "Chastity", stumbleIcon: "person.2.slash.fill")
         case "Homosexuality":
-            return .init(victoryTitle: "Holiness", victoryIcon: "figure.stand", stumbleTitle: "Misordered", stumbleIcon: "person.3.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Holiness", victoryIcon: "figure.stand", stumbleTitle: "Misordered", stumbleIcon: "person.3.fill")
         case "Whoremongers":
-            return .init(victoryTitle: "Dignity", victoryIcon: "person.crop.circle.badge.checkmark", stumbleTitle: "Used", stumbleIcon: "building.2.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Dignity", victoryIcon: "person.crop.circle.badge.checkmark", stumbleTitle: "Used", stumbleIcon: "building.2.fill")
         case "Lasciviousness":
-            return .init(victoryTitle: "Modesty", victoryIcon: "eye.circle.fill", stumbleTitle: "Shameless", stumbleIcon: "eye.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Modesty", victoryIcon: "eye.circle.fill", stumbleTitle: "Shameless", stumbleIcon: "eye.fill")
         case "Lust / Pornography":
-            return .init(victoryTitle: "Guard Eyes", victoryIcon: "eye.slash.fill", stumbleTitle: "Looked", stumbleIcon: "play.rectangle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Guard Eyes", victoryIcon: "eye.slash.fill", stumbleTitle: "Looked", stumbleIcon: "play.rectangle.fill")
         case "Slander":
-            return .init(victoryTitle: "Protect", victoryIcon: "bubble.left.and.bubble.right.fill", stumbleTitle: "Slandered", stumbleIcon: "bubble.left.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Protect", victoryIcon: "bubble.left.and.bubble.right.fill", stumbleTitle: "Slandered", stumbleIcon: "bubble.left.fill")
         case "Criticism":
-            return .init(victoryTitle: "Grace", victoryIcon: "leaf.fill", stumbleTitle: "Judged", stumbleIcon: "exclamationmark.bubble.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Grace", victoryIcon: "leaf.fill", stumbleTitle: "Judged", stumbleIcon: "exclamationmark.bubble.fill")
         case "Boasting":
-            return .init(victoryTitle: "Thanks", victoryIcon: "hands.clap.fill", stumbleTitle: "Boasted", stumbleIcon: "crown.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Thanks", victoryIcon: "hands.clap.fill", stumbleTitle: "Boasted", stumbleIcon: "crown.fill")
         case "Gossip / Backbiting":
-            return .init(victoryTitle: "Keep Quiet", victoryIcon: "lock.fill", stumbleTitle: "Gossiped", stumbleIcon: "person.crop.circle.badge.exclamationmark", progressTitle: progressTitle)
+            return .init(victoryTitle: "Keep Quiet", victoryIcon: "lock.fill", stumbleTitle: "Gossiped", stumbleIcon: "person.crop.circle.badge.exclamationmark")
         case "Perjury":
-            return .init(victoryTitle: "Tell Truth", victoryIcon: "checkmark.circle.fill", stumbleTitle: "Falsehood", stumbleIcon: "doc.text.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Tell Truth", victoryIcon: "checkmark.circle.fill", stumbleTitle: "Falsehood", stumbleIcon: "doc.text.fill")
         case "Speaking Obscenities":
-            return .init(victoryTitle: "Clean", victoryIcon: "text.bubble.fill", stumbleTitle: "Corrupt", stumbleIcon: "text.quote", progressTitle: progressTitle)
+            return .init(victoryTitle: "Clean", victoryIcon: "text.bubble.fill", stumbleTitle: "Corrupt", stumbleIcon: "text.quote")
         case "Lying / Deceit":
-            return .init(victoryTitle: "Honest", victoryIcon: "eye.fill", stumbleTitle: "Hid Truth", stumbleIcon: "eye.slash.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Honest", victoryIcon: "eye.fill", stumbleTitle: "Hid Truth", stumbleIcon: "eye.slash.fill")
         case "Calling People a Fool":
-            return .init(victoryTitle: "Bless", victoryIcon: "message.fill", stumbleTitle: "Insulted", stumbleIcon: "hand.raised.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Bless", victoryIcon: "message.fill", stumbleTitle: "Insulted", stumbleIcon: "hand.raised.fill")
         case "Coarse Joking / Foolish Talk":
-            return .init(victoryTitle: "Sober", victoryIcon: "quote.bubble.fill", stumbleTitle: "Crude", stumbleIcon: "theatermasks.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Sober", victoryIcon: "quote.bubble.fill", stumbleTitle: "Crude", stumbleIcon: "theatermasks.fill")
         case "Profanity":
-            return .init(victoryTitle: "Tamed", victoryIcon: "checkmark.bubble.fill", stumbleTitle: "Careless", stumbleIcon: "hand.raised.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Tamed", victoryIcon: "checkmark.bubble.fill", stumbleTitle: "Careless", stumbleIcon: "hand.raised.fill")
         case "Murder":
-            return .init(victoryTitle: "Life", victoryIcon: "heart.fill", stumbleTitle: "Hatred", stumbleIcon: "cross.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Life", victoryIcon: "heart.fill", stumbleTitle: "Hatred", stumbleIcon: "cross.fill")
         case "Abuse":
-            return .init(victoryTitle: "Mercy", victoryIcon: "bandage.fill", stumbleTitle: "Harm", stumbleIcon: "exclamationmark.triangle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Mercy", victoryIcon: "bandage.fill", stumbleTitle: "Harm", stumbleIcon: "exclamationmark.triangle.fill")
         case "Dissension / Debate":
-            return .init(victoryTitle: "Peace", victoryIcon: "leaf.fill", stumbleTitle: "Conflict", stumbleIcon: "arrow.triangle.2.circlepath", progressTitle: progressTitle)
+            return .init(victoryTitle: "Peace", victoryIcon: "leaf.fill", stumbleTitle: "Conflict", stumbleIcon: "arrow.triangle.2.circlepath")
         case "Sedition / Rebellion to Authority":
-            return .init(victoryTitle: "Order", victoryIcon: "flag.fill", stumbleTitle: "Rebelled", stumbleIcon: "flag.slash.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Order", victoryIcon: "flag.fill", stumbleTitle: "Rebelled", stumbleIcon: "flag.slash.fill")
         case "Not Loving Your Neighbour":
-            return .init(victoryTitle: "Love", victoryIcon: "person.2.fill", stumbleTitle: "Loveless", stumbleIcon: "person.crop.circle.badge.xmark", progressTitle: progressTitle)
+            return .init(victoryTitle: "Love", victoryIcon: "person.2.fill", stumbleTitle: "Loveless", stumbleIcon: "person.crop.circle.badge.xmark")
         case "Unforgiving":
-            return .init(victoryTitle: "Forgive", victoryIcon: "arrow.uturn.backward.circle.fill", stumbleTitle: "Held Debt", stumbleIcon: "slash.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Forgive", victoryIcon: "arrow.uturn.backward.circle.fill", stumbleTitle: "Held Debt", stumbleIcon: "slash.circle.fill")
         case "Unmerciful":
-            return .init(victoryTitle: "Mercy", victoryIcon: "heart.circle.fill", stumbleTitle: "Merciless", stumbleIcon: "heart.slash.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Mercy", victoryIcon: "heart.circle.fill", stumbleTitle: "Merciless", stumbleIcon: "heart.slash.circle.fill")
         case "Prejudice / Bigotry":
-            return .init(victoryTitle: "Justly", victoryIcon: "scale.3d", stumbleTitle: "Partiality", stumbleIcon: "person.crop.circle.badge.xmark", progressTitle: progressTitle)
+            return .init(victoryTitle: "Justly", victoryIcon: "scale.3d", stumbleTitle: "Partiality", stumbleIcon: "person.crop.circle.badge.xmark")
         case "Hatred / Wrath / Resentment":
-            return .init(victoryTitle: "Peace", victoryIcon: "leaf.fill", stumbleTitle: "Anger", stumbleIcon: "flame", progressTitle: progressTitle)
+            return .init(victoryTitle: "Peace", victoryIcon: "leaf.fill", stumbleTitle: "Anger", stumbleIcon: "flame")
         case "Strife / Argumentative":
-            return .init(victoryTitle: "Gentle", victoryIcon: "hand.thumbsup.fill", stumbleTitle: "Argued", stumbleIcon: "hand.raised.slash.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Gentle", victoryIcon: "hand.thumbsup.fill", stumbleTitle: "Argued", stumbleIcon: "hand.raised.slash.fill")
         case "Depression":
-            return .init(victoryTitle: "Hope", victoryIcon: "sun.max.fill", stumbleTitle: "Despair", stumbleIcon: "cloud.drizzle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Hope", victoryIcon: "sun.max.fill", stumbleTitle: "Despair", stumbleIcon: "cloud.drizzle.fill")
         case "Envy / Emulations":
-            return .init(victoryTitle: "Thanks", victoryIcon: "gift.fill", stumbleTitle: "Envied", stumbleIcon: "eye.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Thanks", victoryIcon: "gift.fill", stumbleTitle: "Envied", stumbleIcon: "eye.circle.fill")
         case "Vanity":
-            return .init(victoryTitle: "Humility", victoryIcon: "sparkles", stumbleTitle: "Vanity", stumbleIcon: "sparkles", progressTitle: progressTitle)
+            return .init(victoryTitle: "Humility", victoryIcon: "sparkles", stumbleTitle: "Vanity", stumbleIcon: "sparkles")
         case "Pride":
-            return .init(victoryTitle: "Humble", victoryIcon: "arrow.down.circle.fill", stumbleTitle: "Pride", stumbleIcon: "crown", progressTitle: progressTitle)
+            return .init(victoryTitle: "Humble", victoryIcon: "arrow.down.circle.fill", stumbleTitle: "Pride", stumbleIcon: "crown")
         case "Greed / Covetousness":
-            return .init(victoryTitle: "Content", victoryIcon: "house.fill", stumbleTitle: "Grasped", stumbleIcon: "banknote.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Content", victoryIcon: "house.fill", stumbleTitle: "Grasped", stumbleIcon: "banknote.fill")
         case "Maliciousness / Malignity":
-            return .init(victoryTitle: "Goodwill", victoryIcon: "heart.text.square.fill", stumbleTitle: "Malice", stumbleIcon: "skull.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Goodwill", victoryIcon: "heart.text.square.fill", stumbleTitle: "Malice", stumbleIcon: "skull.fill")
         case "Evil Thoughts":
-            return .init(victoryTitle: "Guard", victoryIcon: "brain.head.profile", stumbleTitle: "Unclean", stumbleIcon: "xmark.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Guard", victoryIcon: "brain.head.profile", stumbleTitle: "Unclean", stumbleIcon: "xmark.circle.fill")
         case "Foolishness / Without Understanding":
-            return .init(victoryTitle: "Wisdom", victoryIcon: "lightbulb.fill", stumbleTitle: "Foolish", stumbleIcon: "questionmark.diamond.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Wisdom", victoryIcon: "lightbulb.fill", stumbleTitle: "Foolish", stumbleIcon: "questionmark.diamond.fill")
         case "Without Natural Affection":
-            return .init(victoryTitle: "Compassion", victoryIcon: "heart.fill", stumbleTitle: "Cold", stumbleIcon: "heart.slash", progressTitle: progressTitle)
+            return .init(victoryTitle: "Compassion", victoryIcon: "heart.fill", stumbleTitle: "Cold", stumbleIcon: "heart.slash")
         case "Implacable":
-            return .init(victoryTitle: "Peace", victoryIcon: "checkmark.seal.fill", stumbleTitle: "Stubborn", stumbleIcon: "bolt.horizontal.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Peace", victoryIcon: "checkmark.seal.fill", stumbleTitle: "Stubborn", stumbleIcon: "bolt.horizontal.circle.fill")
         case "Anxiety / Worry / Fearful":
-            return .init(victoryTitle: "Entrust", victoryIcon: "shield.lefthalf.filled", stumbleTitle: "Fearful", stumbleIcon: "exclamationmark.triangle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Entrust", victoryIcon: "shield.lefthalf.filled", stumbleTitle: "Fearful", stumbleIcon: "exclamationmark.triangle.fill")
         case "Negativism":
-            return .init(victoryTitle: "Hope", victoryIcon: "plus.circle.fill", stumbleTitle: "Negative", stumbleIcon: "minus.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Hope", victoryIcon: "plus.circle.fill", stumbleTitle: "Negative", stumbleIcon: "minus.circle.fill")
         case "Bitterness":
-            return .init(victoryTitle: "Release", victoryIcon: "drop.circle.fill", stumbleTitle: "Bitter", stumbleIcon: "drop.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Release", victoryIcon: "drop.circle.fill", stumbleTitle: "Bitter", stumbleIcon: "drop.fill")
         case "Haughtiness":
-            return .init(victoryTitle: "Lowly", victoryIcon: "arrow.down.circle.fill", stumbleTitle: "Haughty", stumbleIcon: "arrow.up.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Lowly", victoryIcon: "arrow.down.circle.fill", stumbleTitle: "Haughty", stumbleIcon: "arrow.up.circle.fill")
         case "Divorce":
-            return .init(victoryTitle: "Covenant", victoryIcon: "heart.text.square.fill", stumbleTitle: "Hardened", stumbleIcon: "heart.slash.circle", progressTitle: progressTitle)
+            return .init(victoryTitle: "Covenant", victoryIcon: "heart.text.square.fill", stumbleTitle: "Hardened", stumbleIcon: "heart.slash.circle")
         case "No Concern for the Lost":
-            return .init(victoryTitle: "Pray", victoryIcon: "map.fill", stumbleTitle: "Away", stumbleIcon: "map.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Pray", victoryIcon: "map.fill", stumbleTitle: "Away", stumbleIcon: "map.fill")
         case "Chronic Lateness":
-            return .init(victoryTitle: "On Time", victoryIcon: "clock.fill", stumbleTitle: "Late", stumbleIcon: "clock.badge.exclamationmark.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "On Time", victoryIcon: "clock.fill", stumbleTitle: "Late", stumbleIcon: "clock.badge.exclamationmark.fill")
         case "Passivity":
-            return .init(victoryTitle: "Act", victoryIcon: "play.circle.fill", stumbleTitle: "Passive", stumbleIcon: "pause.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Act", victoryIcon: "play.circle.fill", stumbleTitle: "Passive", stumbleIcon: "pause.circle.fill")
         case "Sloth":
-            return .init(victoryTitle: "Rise", victoryIcon: "figure.walk", stumbleTitle: "Sloth", stumbleIcon: "moon.zzz.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Rise", victoryIcon: "figure.walk", stumbleTitle: "Sloth", stumbleIcon: "moon.zzz.fill")
         case "Procrastination":
-            return .init(victoryTitle: "Do Today", victoryIcon: "checkmark.circle.fill", stumbleTitle: "Delayed", stumbleIcon: "hourglass.bottomhalf.filled", progressTitle: progressTitle)
+            return .init(victoryTitle: "Do Today", victoryIcon: "checkmark.circle.fill", stumbleTitle: "Delayed", stumbleIcon: "hourglass.bottomhalf.filled")
         case "Disobedient to Parents":
-            return .init(victoryTitle: "Honor", victoryIcon: "house.fill", stumbleTitle: "Dishonor", stumbleIcon: "house.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Honor", victoryIcon: "house.fill", stumbleTitle: "Dishonor", stumbleIcon: "house.fill")
         case "Workaholic":
-            return .init(victoryTitle: "Balance", victoryIcon: "briefcase.fill", stumbleTitle: "Overworked", stumbleIcon: "briefcase.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Balance", victoryIcon: "briefcase.fill", stumbleTitle: "Overworked", stumbleIcon: "briefcase.fill")
         case "Not Honoring Your Father and Mother":
-            return .init(victoryTitle: "Honor", victoryIcon: "heart.text.square.fill", stumbleTitle: "No Honor", stumbleIcon: "person.crop.circle.badge.xmark", progressTitle: progressTitle)
+            return .init(victoryTitle: "Honor", victoryIcon: "heart.text.square.fill", stumbleTitle: "No Honor", stumbleIcon: "person.crop.circle.badge.xmark")
         case "Gluttony":
-            return .init(victoryTitle: "Temperance", victoryIcon: "fork.knife", stumbleTitle: "Excess", stumbleIcon: "fork.knife", progressTitle: progressTitle)
+            return .init(victoryTitle: "Temperance", victoryIcon: "fork.knife", stumbleTitle: "Excess", stumbleIcon: "fork.knife")
         case "Drunkenness / Revellings":
-            return .init(victoryTitle: "Sober", victoryIcon: "cup.and.saucer.fill", stumbleTitle: "Drunken", stumbleIcon: "wineglass.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Sober", victoryIcon: "cup.and.saucer.fill", stumbleTitle: "Drunken", stumbleIcon: "wineglass.fill")
         case "Covenant Breaking / Defilement / Unrepentance":
-            return .init(victoryTitle: "Repent", victoryIcon: "arrow.uturn.left.circle.fill", stumbleTitle: "No Repent", stumbleIcon: "seal.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Repent", victoryIcon: "arrow.uturn.left.circle.fill", stumbleTitle: "No Repent", stumbleIcon: "seal.fill")
         case "Inventors of Evil Things":
-            return .init(victoryTitle: "Create", victoryIcon: "hammer.fill", stumbleTitle: "Misused", stumbleIcon: "wrench.and.screwdriver.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Create", victoryIcon: "hammer.fill", stumbleTitle: "Misused", stumbleIcon: "wrench.and.screwdriver.fill")
         case "Stealing":
-            return .init(victoryTitle: "Honest", victoryIcon: "hand.raised.fill", stumbleTitle: "Stole", stumbleIcon: "handbag.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Honest", victoryIcon: "hand.raised.fill", stumbleTitle: "Stole", stumbleIcon: "handbag.fill")
         case "Hypocrisy":
-            return .init(victoryTitle: "Sincere", victoryIcon: "face.smiling.fill", stumbleTitle: "Masked", stumbleIcon: "theatermasks.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Sincere", victoryIcon: "face.smiling.fill", stumbleTitle: "Masked", stumbleIcon: "theatermasks.fill")
         case "Selfishness":
-            return .init(victoryTitle: "Serve", victoryIcon: "person.2.fill", stumbleTitle: "Self", stumbleIcon: "person.crop.circle.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Serve", victoryIcon: "person.2.fill", stumbleTitle: "Self", stumbleIcon: "person.crop.circle.fill")
         case "Lawlessness / Unrighteousness / Ungodly / Unholy / Uncleanness":
-            return .init(victoryTitle: "Holiness", victoryIcon: "checkmark.shield.fill", stumbleTitle: "Unholy", stumbleIcon: "xmark.shield.fill", progressTitle: progressTitle)
+            return .init(victoryTitle: "Holiness", victoryIcon: "checkmark.shield.fill", stumbleTitle: "Unholy", stumbleIcon: "xmark.shield.fill")
         default:
-            return .init(victoryTitle: "Practice", victoryIcon: "checkmark.circle.fill", stumbleTitle: "Missed", stumbleIcon: "exclamationmark.triangle", progressTitle: progressTitle)
+            return .init(victoryTitle: "Practice", victoryIcon: "checkmark.circle.fill", stumbleTitle: "Missed", stumbleIcon: "exclamationmark.triangle")
         }
     }
 

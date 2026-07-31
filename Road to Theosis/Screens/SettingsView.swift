@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var showVictorySwipeAction: Bool
     let onShowWelcome: () -> Void
     let onSaveEntry: (LogEntry) -> Void
 
@@ -23,7 +24,10 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
-                    HomeSettingsPage(backgroundTheme: $backgroundTheme)
+                    HomeSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        showVictorySwipeAction: $showVictorySwipeAction
+                    )
                 } label: {
                     SettingsLinkRow(
                         title: "Home",
@@ -150,6 +154,7 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var showVictorySwipeAction: Bool
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
@@ -162,11 +167,13 @@ private struct HomeSettingsPage: View {
                 Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
+                    Toggle("Show victory swipe action", isOn: $showVictorySwipeAction)
 
                     Button(role: .destructive) {
                         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
                         showRecentActivity = true
                         compactSinRows = false
+                        showVictorySwipeAction = false
                     } label: {
                         Label("Reset Home Screen", systemImage: "arrow.counterclockwise")
                     }
@@ -400,6 +407,11 @@ private struct SettingsNoteRow: View {
 
 #Preview {
     NavigationStack {
-        SettingsView(backgroundTheme: .constant(.blood), onShowWelcome: {}, onSaveEntry: { _ in })
+        SettingsView(
+            backgroundTheme: .constant(.blood),
+            showVictorySwipeAction: .constant(false),
+            onShowWelcome: {},
+            onSaveEntry: { _ in }
+        )
     }
 }
