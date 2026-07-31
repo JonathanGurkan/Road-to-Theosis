@@ -20,6 +20,26 @@ struct CategoryCardView: View {
     }
 
     var body: some View {
+        if usesProgressSlider {
+            cardContent
+        } else {
+            cardContent
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    if showsVictoryAction {
+                        Button(action: onVictory) {
+                            Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
+                        }
+                        .tint(.green)
+                    }
+
+                    Button(role: .destructive, action: onReset) {
+                        Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
+                    }
+                }
+        }
+    }
+
+    private var cardContent: some View {
         VStack(spacing: isCompact ? 8 : 10) {
             HStack(alignment: .top, spacing: 12) {
                 Button(action: onIconTap) {
@@ -79,18 +99,6 @@ struct CategoryCardView: View {
         .padding(.vertical, isCompact ? 8 : 10)
         .contentShape(Rectangle())
         .id(showsVictoryAction)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            if showsVictoryAction {
-                Button(action: onVictory) {
-                    Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
-                }
-                .tint(.green)
-            }
-
-            Button(role: .destructive, action: onReset) {
-                Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
-            }
-        }
     }
 
     private func handleProgressEditingChanged(_ isEditing: Bool) {
