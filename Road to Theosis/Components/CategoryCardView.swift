@@ -7,7 +7,6 @@ struct CategoryCardView: View {
     let onIconTap: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
-    let onSetProgress: () -> Void
 
     private var progressText: String {
         "\(Int(category.progress * 100))%"
@@ -74,11 +73,6 @@ struct CategoryCardView: View {
                 .tint(.green)
             }
 
-            Button(action: onSetProgress) {
-                Label(swipeActions.progressTitle, systemImage: "slider.horizontal.3")
-            }
-            .tint(.blue)
-
             Button(role: .destructive, action: onReset) {
                 Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
             }
@@ -93,8 +87,7 @@ struct CategoryCardView: View {
         showsVictoryAction: true,
         onIconTap: { },
         onVictory: { },
-        onReset: { },
-        onSetProgress: { }
+        onReset: { }
     )
     .padding()
 }

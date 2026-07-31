@@ -1,12 +1,5 @@
 import SwiftUI
 
-private struct CustomProgressTarget: Identifiable {
-    let id: SinCategory.ID
-    let sectionIndex: Int
-    let title: String
-    let currentPercentage: Int
-}
-
 struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
@@ -19,8 +12,6 @@ struct HeadwayView: View {
     @State var homeGridWidth: CGFloat = 0
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
-    @State private var customProgressTarget: CustomProgressTarget?
-    @State private var customProgressText = ""
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
@@ -137,50 +128,6 @@ struct HeadwayView: View {
         }
     }
 
-    private func beginCustomProgress(for itemID: SinCategory.ID, in sectionIndex: Int) {
-        guard dashboard.sections.indices.contains(sectionIndex),
-              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }) else {
-            return
-        }
-
-        let currentPercentage = Int(item.progress * 100)
-        customProgressText = "\(currentPercentage)"
-        customProgressTarget = CustomProgressTarget(
-            id: itemID,
-            sectionIndex: sectionIndex,
-            title: item.title,
-            currentPercentage: currentPercentage
-        )
-    }
-
-    private func commitCustomProgress() {
-        guard let target = customProgressTarget,
-              dashboard.sections.indices.contains(target.sectionIndex),
-              let item = dashboard.sections[target.sectionIndex].items.first(where: { $0.id == target.id }) else {
-            customProgressTarget = nil
-            return
-        }
-
-        let typedValue = customProgressText.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
-        guard let rawPercentage = Double(typedValue) else {
-            return
-        }
-
-        let percentage = min(100, max(0, Int(rawPercentage.rounded())))
-        let entry = LogEntry(
-            kind: .progressUpdate,
-            sectionTitle: dashboard.sections[target.sectionIndex].title,
-            sinTitle: item.title,
-            note: "Set progress to \(percentage)%",
-            prayerMinutes: 0,
-            progressPercentage: percentage,
-            occurredAt: Date()
-        )
-        logEntries.insert(entry, at: 0)
-        dashboard.setProgress(Double(percentage) / 100, for: target.id)
-        customProgressTarget = nil
-    }
-
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -252,7 +199,6 @@ struct HeadwayView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.red)
                         }
-
                         Button {
                             isShowingAddView.toggle()
                         } label: {
@@ -284,30 +230,6 @@ struct HeadwayView: View {
                 logEntries.insert(entry, at: 0)
                 dashboard.record(entry)
             }
-        }
-        .alert(
-            "Set Progress",
-            isPresented: Binding(
-                get: { customProgressTarget != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        customProgressTarget = nil
-                    }
-                }
-            )
-        ) {
-            TextField("0-100", text: $customProgressText)
-                .keyboardType(.decimalPad)
-
-            Button("Set") {
-                commitCustomProgress()
-            }
-
-            Button("Cancel", role: .cancel) {
-                customProgressTarget = nil
-            }
-        } message: {
-            Text("Enter a percentage for \(customProgressTarget?.title ?? "this sin").")
         }
         .sheet(item: $selectedDefenseItem) { item in
             DefenseVersesSheetView(category: item)
@@ -804,9 +726,6 @@ struct HeadwayView: View {
                         onReset: { itemID in
                             guard logSwipeOutcome(.loss, for: itemID, in: index) else { return }
                             dashboard.resetItem(itemID)
-                        },
-                        onSetProgress: { itemID in
-                            beginCustomProgress(for: itemID, in: index)
                         }
                     )
                 }
@@ -1038,6 +957,4 @@ struct HeadwayView: View {
         )
     }
 }
-
-
 
