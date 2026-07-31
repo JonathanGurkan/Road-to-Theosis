@@ -5,10 +5,13 @@ struct SinSectionCardView: View {
     let isCompact: Bool
     let showsVictoryAction: Bool
     let usesProgressSliders: Bool
+    let focusedItemIDs: Set<SinCategory.ID>
     let onShowVerses: (SinCategory) -> Void
+    let onFocus: (SinCategory.ID) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
     let onProgressChanged: (SinCategory.ID, Double) -> Void
+    let onSetProgress: (SinCategory.ID) -> Void
 
     var body: some View {
         AppSurfaceCard(contentPadding: 12) {
@@ -60,7 +63,7 @@ struct SinSectionCardView: View {
                     ProgressView(value: section.averageProgress)
                         .tint(section.tint)
 
-                    Text("Swipe a row for quick actions.")
+                    Text("Choose a focus, then act from the panel above.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -73,8 +76,12 @@ struct SinSectionCardView: View {
                                 isCompact: isCompact,
                                 showsVictoryAction: showsVictoryAction,
                                 usesProgressSlider: usesProgressSliders,
+                                isFocused: focusedItemIDs.contains(section.items[index].id),
                                 onIconTap: {
                                     onShowVerses(section.items[index])
+                                },
+                                onFocus: {
+                                    onFocus(section.items[index].id)
                                 }
                             ) {
                                 onVictory(section.items[index].id)
@@ -82,6 +89,8 @@ struct SinSectionCardView: View {
                                 onReset(section.items[index].id)
                             } onProgressChanged: { progress in
                                 onProgressChanged(section.items[index].id, progress)
+                            } onSetProgress: {
+                                onSetProgress(section.items[index].id)
                             }
 
                             if index < section.items.count - 1 {
@@ -103,10 +112,13 @@ struct SinSectionCardView: View {
         isCompact: false,
         showsVictoryAction: true,
         usesProgressSliders: true,
+        focusedItemIDs: [SinCategory.sample[0].items[0].id],
         onShowVerses: { _ in },
+        onFocus: { _ in },
         onVictory: { _ in },
         onReset: { _ in },
         onProgressChanged: { _, _ in }
+        onSetProgress: { _ in }
     )
     .padding()
 }

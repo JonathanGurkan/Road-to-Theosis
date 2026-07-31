@@ -1,5 +1,17 @@
 import SwiftUI
 
+private struct CustomProgressTarget: Identifiable {
+    let id: SinCategory.ID
+    let sectionIndex: Int
+    let title: String
+    let currentPercentage: Int
+}
+
+private struct FocusWidgetPresentation {
+    let watchedContexts: [FocusedSinContext]
+    let suggestedContexts: [FocusedSinContext]
+}
+
 struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
@@ -13,12 +25,18 @@ struct HeadwayView: View {
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
     @State private var pendingProgressLog: ProgressLogDraft?
+    @State var focusedSinIDs: [SinCategory.ID] = []
+    @State private var focusWidgetPageID: SinCategory.ID?
+    @State private var customProgressTarget: CustomProgressTarget?
+    @State private var customProgressText = ""
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+
+    private let maxFocusedSinCount = 3
 
     private var isDaytime: Bool {
         (5..<17).contains(Calendar.current.component(.hour, from: Date()))
@@ -131,6 +149,114 @@ struct HeadwayView: View {
     }
 
     private func prepareProgressLog(for itemID: SinCategory.ID, progress: Double, in sectionIndex: Int) {
+    private var selectedFocusContexts: [FocusedSinContext] {
+        focusedSinIDs.compactMap { focusContext(for: $0) }
+    }
+
+    private var activeFocusIDs: Set<SinCategory.ID> {
+        Set(selectedFocusContexts.map { $0.item.id })
+    }
+
+    private func focusWidgetPresentation(watchedLimit: Int, suggestionLimit: Int) -> FocusWidgetPresentation {
+        let watchedContexts = Array(selectedFocusContexts.prefix(watchedLimit))
+        let watchedIDs = Set(watchedContexts.map { $0.item.id })
+        let suggestedContexts = Array(
+            rankedFocusContexts(excluding: watchedIDs)
+                .prefix(suggestionLimit)
+        )
+
+        return FocusWidgetPresentation(
+            watchedContexts: watchedContexts,
+            suggestedContexts: suggestedContexts
+        )
+    }
+
+    private func focusSuggestionLimit(for size: HomeScreenCardSize) -> Int {
+        switch size {
+        case .minimal:
+            return 0
+        case .compact:
+            return 3
+        case .standard:
+            return 8
+        }
+    }
+
+    private func rankedFocusContexts(excluding excludedIDs: Set<SinCategory.ID> = []) -> [FocusedSinContext] {
+        dashboard.sections.indices
+            .flatMap { sectionIndex in
+                dashboard.sections[sectionIndex].items.indices.map { itemIndex in
+                    FocusedSinContext(
+                        sectionIndex: sectionIndex,
+                        itemIndex: itemIndex,
+                        sectionTitle: dashboard.sections[sectionIndex].title,
+                        item: dashboard.sections[sectionIndex].items[itemIndex]
+                    )
+                }
+            }
+            .filter { !excludedIDs.contains($0.item.id) }
+            .sorted { first, second in
+                first.item.progress < second.item.progress
+            }
+    }
+
+    private func focusContext(for itemID: SinCategory.ID) -> FocusedSinContext? {
+        for sectionIndex in dashboard.sections.indices {
+            guard let itemIndex = dashboard.sections[sectionIndex].items.firstIndex(where: { $0.id == itemID }) else {
+                continue
+            }
+
+            return FocusedSinContext(
+                sectionIndex: sectionIndex,
+                itemIndex: itemIndex,
+                sectionTitle: dashboard.sections[sectionIndex].title,
+                item: dashboard.sections[sectionIndex].items[itemIndex]
+            )
+        }
+
+        return nil
+    }
+
+    private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
+        guard logSwipeOutcome(kind, for: context.item.id, in: context.sectionIndex) else { return }
+
+        switch kind {
+        case .victory:
+            dashboard.markVictory(in: context.item.id)
+        case .loss:
+            dashboard.resetItem(context.item.id)
+        case .prayer, .quickPrayer, .progressUpdate, .note:
+            break
+        }
+    }
+
+    private func logFocusedPrayer(context: FocusedSinContext) {
+        let entry = LogEntry(
+            kind: .quickPrayer,
+            sectionTitle: context.sectionTitle,
+            sinTitle: context.item.title,
+            note: "",
+            prayerMinutes: 1,
+            occurredAt: Date()
+        )
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
+    }
+
+    private func toggleFocus(for itemID: SinCategory.ID) {
+        if focusedSinIDs.contains(itemID) {
+            focusedSinIDs.removeAll { $0 == itemID }
+            return
+        }
+
+        if focusedSinIDs.count >= maxFocusedSinCount {
+            focusedSinIDs.removeFirst()
+        }
+
+        focusedSinIDs.append(itemID)
+    }
+
+    private func beginCustomProgress(for itemID: SinCategory.ID, in sectionIndex: Int) {
         guard dashboard.sections.indices.contains(sectionIndex),
               let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }) else {
             return
@@ -158,6 +284,42 @@ struct HeadwayView: View {
             occurredAt: Date()
         )
         logEntries.insert(entry, at: 0)
+        let currentPercentage = Int(item.progress * 100)
+        customProgressText = "\(currentPercentage)"
+        customProgressTarget = CustomProgressTarget(
+            id: itemID,
+            sectionIndex: sectionIndex,
+            title: item.title,
+            currentPercentage: currentPercentage
+        )
+    }
+
+    private func commitCustomProgress() {
+        guard let target = customProgressTarget,
+              dashboard.sections.indices.contains(target.sectionIndex),
+              let item = dashboard.sections[target.sectionIndex].items.first(where: { $0.id == target.id }) else {
+            customProgressTarget = nil
+            return
+        }
+
+        let typedValue = customProgressText.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
+        guard let rawPercentage = Double(typedValue) else {
+            return
+        }
+
+        let percentage = min(100, max(0, Int(rawPercentage.rounded())))
+        let entry = LogEntry(
+            kind: .progressUpdate,
+            sectionTitle: dashboard.sections[target.sectionIndex].title,
+            sinTitle: item.title,
+            note: "Set progress to \(percentage)%",
+            prayerMinutes: 0,
+            progressPercentage: percentage,
+            occurredAt: Date()
+        )
+        logEntries.insert(entry, at: 0)
+        dashboard.setProgress(Double(percentage) / 100, for: target.id)
+        customProgressTarget = nil
     }
 
     var body: some View {
@@ -263,6 +425,30 @@ struct HeadwayView: View {
                 dashboard.record(entry)
             }
         }
+        .alert(
+            "Set Progress",
+            isPresented: Binding(
+                get: { customProgressTarget != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        customProgressTarget = nil
+                    }
+                }
+            )
+        ) {
+            TextField("0-100", text: $customProgressText)
+                .keyboardType(.decimalPad)
+
+            Button("Set") {
+                commitCustomProgress()
+            }
+
+            Button("Cancel", role: .cancel) {
+                customProgressTarget = nil
+            }
+        } message: {
+            Text("Enter a percentage for \(customProgressTarget?.title ?? "this sin").")
+        }
         .sheet(item: $selectedDefenseItem) { item in
             DefenseVersesSheetView(category: item)
         }
@@ -284,6 +470,8 @@ struct HeadwayView: View {
             actionCard(size: configuration.size)
         case .recentActivity:
             recentActivityCard(size: configuration.size)
+        case .focusWidget:
+            focusWidgetCard(size: configuration.size)
         case .focusAreas:
             focusAreasCard
         }
@@ -765,8 +953,12 @@ struct HeadwayView: View {
                         isCompact: compactSinRows,
                         showsVictoryAction: showVictorySwipeAction,
                         usesProgressSliders: usesFocusProgressSliders,
+                        focusedItemIDs: activeFocusIDs,
                         onShowVerses: { item in
                             selectedDefenseItem = item
+                        },
+                        onFocus: { itemID in
+                            toggleFocus(for: itemID)
                         },
                         onVictory: { itemID in
                             guard logSwipeOutcome(.victory, for: itemID, in: index) else { return }
@@ -778,11 +970,341 @@ struct HeadwayView: View {
                         },
                         onProgressChanged: { itemID, progress in
                             prepareProgressLog(for: itemID, progress: progress, in: index)
+                        onSetProgress: { itemID in
+                            beginCustomProgress(for: itemID, in: index)
                         }
                     )
                 }
             }
         }
+    }
+
+    private func focusWidgetCard(size: HomeScreenCardSize) -> some View {
+        let presentation = focusWidgetPresentation(
+            watchedLimit: maxFocusedSinCount,
+            suggestionLimit: focusSuggestionLimit(for: size)
+        )
+        let selectedFocusID = focusWidgetPageID ?? presentation.watchedContexts.first?.item.id
+        let selectedFocusIndex = presentation.watchedContexts.firstIndex { $0.item.id == selectedFocusID }
+            .map { $0 + 1 } ?? (presentation.watchedContexts.isEmpty ? 0 : 1)
+
+        return AppSurfaceCard(contentPadding: size == .minimal ? 8 : 14, fillsAvailableHeight: size.usesFixedGridHeight) {
+            VStack(alignment: .leading, spacing: size == .minimal ? 6 : 12) {
+                HStack(spacing: 8) {
+                    minimalIcon("scope", size: size == .minimal ? 18 : 24)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(size == .standard ? "Focus watch" : "Focus")
+                            .font((size == .minimal ? Font.subheadline : Font.title3).weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        if size == .standard {
+                            Text("Work a few struggles with prayer and watchfulness.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.82)
+                        }
+                    }
+
+                    Spacer(minLength: 8)
+                    if size != .standard {
+                        Text("\(selectedFocusIndex)/\(maxFocusedSinCount)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, size == .minimal ? 6 : 8)
+                            .padding(.vertical, 4)
+                            .background(Color.primary.opacity(0.07), in: Capsule())
+                    }
+                }
+
+                switch size {
+                case .minimal:
+                    if presentation.watchedContexts.isEmpty {
+                        focusWidgetEmptyMessage(isMinimal: true)
+                    } else {
+                        focusWidgetPager(contexts: presentation.watchedContexts, size: size)
+                    }
+                case .compact:
+                    focusWidgetCompactContent(presentation)
+                case .standard:
+                    focusWidgetStandardContent(presentation)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func focusWidgetCompactContent(_ presentation: FocusWidgetPresentation) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if presentation.watchedContexts.isEmpty {
+                focusWidgetEmptyMessage(isMinimal: false)
+            } else {
+                focusWidgetPager(contexts: presentation.watchedContexts, size: .compact)
+            }
+
+            if !presentation.suggestedContexts.isEmpty {
+                focusSuggestionsList(presentation.suggestedContexts, isCompact: true)
+            }
+        }
+    }
+
+    private func focusWidgetStandardContent(_ presentation: FocusWidgetPresentation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if presentation.watchedContexts.isEmpty {
+                focusWidgetEmptyMessage(isMinimal: false)
+                    .frame(maxWidth: .infinity, minHeight: 102, alignment: .center)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(presentation.watchedContexts, id: \.item.id) { context in
+                        focusWidgetRow(
+                            for: context,
+                            isWatched: true,
+                            isDense: false,
+                            showsActions: true
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+
+            if !presentation.suggestedContexts.isEmpty {
+                focusSuggestionsList(presentation.suggestedContexts, isCompact: false)
+            }
+        }
+    }
+
+    private func focusWidgetPager(contexts: [FocusedSinContext], size: HomeScreenCardSize) -> some View {
+        let selectedID = focusWidgetPageID ?? contexts.first?.item.id
+
+        return VStack(spacing: size == .minimal ? 3 : 6) {
+            TabView(selection: $focusWidgetPageID) {
+                ForEach(contexts, id: \.item.id) { context in
+                    focusWidgetPage(for: context, size: size)
+                        .tag(Optional(context.item.id))
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                if focusWidgetPageID == nil {
+                    focusWidgetPageID = contexts.first?.item.id
+                }
+            }
+            .onChange(of: contexts.map { $0.item.id }) { _, itemIDs in
+                if let focusWidgetPageID, itemIDs.contains(focusWidgetPageID) {
+                    return
+                }
+
+                focusWidgetPageID = itemIDs.first
+            }
+
+            focusWidgetPageIndicator(contexts: contexts, selectedID: selectedID)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func focusWidgetPage(for context: FocusedSinContext, size: HomeScreenCardSize) -> some View {
+        let isMinimal = size == .minimal
+        let iconSize: CGFloat = isMinimal ? 20 : 28
+
+        return VStack(alignment: .leading, spacing: isMinimal ? 5 : 8) {
+            HStack(alignment: .center, spacing: isMinimal ? 7 : 10) {
+                ZStack {
+                    Circle()
+                        .fill(context.item.tint.opacity(0.16))
+
+                    Image(systemName: context.item.icon)
+                        .font((isMinimal ? Font.caption2 : Font.caption).weight(.semibold))
+                        .foregroundStyle(context.item.tint)
+                }
+                .frame(width: iconSize, height: iconSize)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(context.item.title)
+                        .font((isMinimal ? Font.caption : Font.subheadline).weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Text(context.item.watchword)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 6)
+
+                Text("\(Int(context.item.progress * 100))%")
+                    .font((isMinimal ? Font.caption2 : Font.caption).weight(.bold))
+                    .foregroundStyle(context.item.tint)
+            }
+
+            ProgressView(value: context.item.progress)
+                .tint(context.item.tint)
+                .scaleEffect(x: 1, y: isMinimal ? 0.65 : 0.82, anchor: .center)
+
+            if !isMinimal {
+                Text(context.sectionTitle)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+        }
+        .padding(isMinimal ? 7 : 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func focusWidgetPageIndicator(contexts: [FocusedSinContext], selectedID: SinCategory.ID?) -> some View {
+        HStack(spacing: 5) {
+            ForEach(contexts, id: \.item.id) { context in
+                Circle()
+                    .fill(context.item.id == selectedID ? context.item.tint : Color.primary.opacity(0.18))
+                    .frame(width: context.item.id == selectedID ? 6 : 5, height: context.item.id == selectedID ? 6 : 5)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func focusWidgetRow(for context: FocusedSinContext, isWatched: Bool, isDense: Bool, showsActions: Bool) -> some View {
+        let iconSize: CGFloat = isDense ? 24 : 30
+
+        return VStack(alignment: .leading, spacing: isDense ? 6 : 8) {
+            HStack(alignment: .center, spacing: isDense ? 8 : 10) {
+                ZStack {
+                    Circle()
+                        .fill(context.item.tint.opacity(0.16))
+
+                    Image(systemName: context.item.icon)
+                        .font((isDense ? Font.caption2 : Font.caption).weight(.semibold))
+                        .foregroundStyle(context.item.tint)
+                }
+                .frame(width: iconSize, height: iconSize)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(context.item.title)
+                        .font((isDense ? Font.caption : Font.subheadline).weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    Text(context.item.watchword)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                Text("\(Int(context.item.progress * 100))%")
+                    .font((isDense ? Font.caption2 : Font.caption).weight(.bold))
+                    .foregroundStyle(context.item.tint)
+            }
+
+            ProgressView(value: context.item.progress)
+                .tint(context.item.tint)
+                .scaleEffect(x: 1, y: isDense ? 0.75 : 1, anchor: .center)
+
+            if showsActions {
+                HStack(spacing: 6) {
+                    compactActionButton(icon: "shield.lefthalf.filled", tint: .green, size: 22) {
+                        logFocusedOutcome(.victory, context: context)
+                    }
+
+                    compactActionButton(icon: "exclamationmark.triangle", tint: .red, size: 22) {
+                        logFocusedOutcome(.loss, context: context)
+                    }
+
+                    compactActionButton(icon: "hands.sparkles", tint: .white, size: 22) {
+                        logFocusedPrayer(context: context)
+                    }
+
+                    compactActionButton(icon: "book.fill", tint: context.item.tint, size: 22) {
+                        selectedDefenseItem = context.item
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button {
+                        toggleFocus(for: context.item.id)
+                    } label: {
+                        Text(isWatched ? "Focussing" : "Focus")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(isWatched ? .white : context.item.tint)
+                            .padding(.horizontal, 8)
+                            .frame(minHeight: 28)
+                            .background(isWatched ? context.item.tint : context.item.tint.opacity(0.12), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isWatched ? "Remove \(context.item.title) from today's focus" : "Set \(context.item.title) as today's focus")
+                }
+            }
+        }
+        .padding(isDense ? 8 : 10)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func focusWidgetEmptyMessage(isMinimal: Bool) -> some View {
+        Text("No focus yet. Add one.")
+            .font((isMinimal ? Font.caption : Font.subheadline).weight(.semibold))
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: isMinimal ? 0 : 44, maxHeight: isMinimal ? .infinity : nil, alignment: .center)
+            .padding(isMinimal ? 6 : 10)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func focusSuggestionsList(_ suggestedContexts: [FocusedSinContext], isCompact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: isCompact ? 6 : 8) {
+            Text("Suggestions")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)],
+                spacing: 6
+            ) {
+                ForEach(suggestedContexts, id: \.item.id) { context in
+                    focusSuggestionButton(for: context, isCompact: isCompact)
+                }
+            }
+        }
+    }
+
+    private func focusSuggestionButton(for context: FocusedSinContext, isCompact: Bool) -> some View {
+        Button {
+            toggleFocus(for: context.item.id)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: context.item.icon)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(context.item.tint)
+                    .frame(width: 18, height: 18)
+                    .background(context.item.tint.opacity(0.14), in: Circle())
+
+                Text(context.item.title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Spacer(minLength: 4)
+
+                Text("\(Int(context.item.progress * 100))%")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(context.item.tint)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, isCompact ? 7 : 8)
+            .padding(.vertical, isCompact ? 5 : 6)
+            .frame(maxWidth: .infinity, minHeight: isCompact ? 30 : 34, alignment: .leading)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Set \(context.item.title) as today's focus")
     }
 
     private func recentActivityCard(size: HomeScreenCardSize) -> some View {

@@ -181,6 +181,8 @@ private struct TimelineRow: View {
                 }
 
                 if !entry.note.isEmpty {
+                  
+                } else if !entry.note.isEmpty {
                     Text(entry.note)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
