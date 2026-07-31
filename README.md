@@ -1,1 +1,5 @@
+#Welcome to Road to Theosis!
+As Christians its hard to stay focussed on what's really important sometimes. We all know that, but we still struggle and that's okay because Christ helps us. That doesn't mean we shouldn't put effort into changing ourselves and walking in the Spirit. That's where this app jpins the journey. Now before I even talk about what it does and how that will help you, here is a massive disclaimer beforehand
 
+*##DISCLAIMER*
+*This app is not a replacement for your prayer life, repentance, daily bible reading and overall relationship with God! These are all mandatory for a succesful Road to Theosis! If you for some reason spent more time in this app than you spent time with God, I strongly discourage you to dive into using this app. This app is a helper, not the full cheat code. 
