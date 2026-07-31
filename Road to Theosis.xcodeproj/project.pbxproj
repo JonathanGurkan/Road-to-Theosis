@@ -6,16 +6,6 @@
 	objectVersion = 110;
 	objects = {
 
-/* Begin PBXContainerItemProxy section */
-		74B384F73013CC42004BC9A6 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 000000000000000000000000 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 74B384FA4013CC45004BC9A6;
-			remoteInfo = PrayerTimerWidgetExtension;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		74B384F83013CC43004BC9A6 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -29,7 +19,6 @@
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Road to Theosis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Road to Theosis.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		749AB9EA3014CF0C00C05C8C /* PrayerTimerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrayerTimerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -61,7 +50,6 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* Road to Theosis.app */,
-				749AB9EA3014CF0C00C05C8C /* PrayerTimerWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,9 +68,6 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-				74B384F93013CC44004BC9A6 /* PBXTargetDependency */,
-			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* Road to Theosis */,
 			);
@@ -90,20 +75,6 @@
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Road to Theosis.app */;
 			productType = "com.apple.product-type.application";
-		};
-		74B384FA4013CC45004BC9A6 /* PrayerTimerWidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 74B384FB4013CC46004BC9A6 /* Build configuration list for PBXNativeTarget "PrayerTimerWidgetExtension" */;
-			buildPhases = (
-				74B384FC4013CC47004BC9A6 /* Sources */,
-				74B384FE4013CC49004BC9A6 /* Resources */,
-			);
-			buildRules = (
-			);
-			name = PrayerTimerWidgetExtension;
-			productName = PrayerTimerWidgetExtension;
-			productReference = 749AB9EA3014CF0C00C05C8C /* PrayerTimerWidgetExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -116,9 +87,6 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					000000000000000100000000 = {
-						CreatedOnToolsVersion = 26.3;
-					};
-					74B384FA4013CC45004BC9A6 = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -138,18 +106,12 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* Road to Theosis */,
-				74B384FA4013CC45004BC9A6 /* PrayerTimerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
-		74B384FE4013CC49004BC9A6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -162,20 +124,7 @@
 			files = (
 			);
 		};
-		74B384FC4013CC47004BC9A6 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		74B384F93013CC44004BC9A6 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 74B384FA4013CC45004BC9A6 /* PrayerTimerWidgetExtension */;
-			targetProxy = 74B384F73013CC42004BC9A6 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		000000000000000011000000 /* Debug configuration for PBXProject "Road to Theosis" */ = {
@@ -339,7 +288,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.RoadToTheosis;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = JonathanGurkan.C1VP0G0X.MyApp;
@@ -387,7 +336,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.RoadToTheosis;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = JonathanGurkan.C1VP0G0X.MyApp;
@@ -403,40 +352,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.6;
-			};
-			name = Release;
-		};
-		74B384FF4013CC4A04BC9A6 /* Debug configuration for PBXNativeTarget "PrayerTimerWidgetExtension" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = AGGDTC7UL9;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
-				INFOPLIST_KEY_NSExtension_NSExtensionPrincipalClass = "$(PRODUCT_MODULE_NAME).PrayerTimerWidgetBundle";
-				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.Road_to_Theosis.PrayerTimerWidgetExtension;
-				PRODUCT_NAME = PrayerTimerWidgetExtension;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				WRAPPER_EXTENSION = appex;
-			};
-			name = Debug;
-		};
-		74B385004013CC4B04BC9A6 /* Release configuration for PBXNativeTarget "PrayerTimerWidgetExtension" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = AGGDTC7UL9;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
-				INFOPLIST_KEY_NSExtension_NSExtensionPrincipalClass = "$(PRODUCT_MODULE_NAME).PrayerTimerWidgetBundle";
-				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.Road_to_Theosis.PrayerTimerWidgetExtension;
-				PRODUCT_NAME = PrayerTimerWidgetExtension;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				WRAPPER_EXTENSION = appex;
 			};
 			name = Release;
 		};
@@ -456,14 +371,6 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "Road to Theosis" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "Road to Theosis" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		74B384FB4013CC46004BC9A6 /* Build configuration list for PBXNativeTarget "PrayerTimerWidgetExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				74B384FF4013CC4A04BC9A6 /* Debug configuration for PBXNativeTarget "PrayerTimerWidgetExtension" */,
-				74B385004013CC4B04BC9A6 /* Release configuration for PBXNativeTarget "PrayerTimerWidgetExtension" */,
 			);
 			defaultConfigurationName = Release;
 		};

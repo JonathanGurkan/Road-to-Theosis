@@ -11,7 +11,6 @@ struct SinSectionCardView: View {
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
     let onProgressChanged: (SinCategory.ID, Double) -> Void
-    let onSetProgress: (SinCategory.ID) -> Void
 
     var body: some View {
         AppSurfaceCard(contentPadding: 12) {
@@ -89,8 +88,6 @@ struct SinSectionCardView: View {
                                 onReset(section.items[index].id)
                             } onProgressChanged: { progress in
                                 onProgressChanged(section.items[index].id, progress)
-                            } onSetProgress: {
-                                onSetProgress(section.items[index].id)
                             }
 
                             if index < section.items.count - 1 {
@@ -118,7 +115,6 @@ struct SinSectionCardView: View {
         onVictory: { _ in },
         onReset: { _ in },
         onProgressChanged: { _, _ in }
-        onSetProgress: { _ in }
     )
     .padding()
 }

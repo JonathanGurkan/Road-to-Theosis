@@ -12,7 +12,6 @@ struct CategoryCardView: View {
     let onReset: () -> Void
     let onProgressChanged: (Double) -> Void
     @State private var progressAtDragStart: Double?
-    let onSetProgress: () -> Void
 
     private var progressText: String {
         "\(Int(category.progress * 100))%"
@@ -137,20 +136,6 @@ struct CategoryCardView: View {
         if isEditing {
             progressAtDragStart = category.progress
             return
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(action: onVictory) {
-                Label(swipeActions.victoryTitle, systemImage: swipeActions.victoryIcon)
-            }
-            .tint(.green)
-
-            Button(action: onSetProgress) {
-                Label(swipeActions.progressTitle, systemImage: "slider.horizontal.3")
-            }
-            .tint(.blue)
-
-            Button(role: .destructive, action: onReset) {
-                Label(swipeActions.stumbleTitle, systemImage: swipeActions.stumbleIcon)
-            }
         }
 
         defer { progressAtDragStart = nil }
@@ -176,7 +161,6 @@ struct CategoryCardView: View {
         onVictory: { },
         onReset: { },
         onProgressChanged: { _ in }
-        onSetProgress: { }
     )
     .padding()
 }

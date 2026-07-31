@@ -1,12 +1,5 @@
 import SwiftUI
 
-private struct CustomProgressTarget: Identifiable {
-    let id: SinCategory.ID
-    let sectionIndex: Int
-    let title: String
-    let currentPercentage: Int
-}
-
 private struct FocusWidgetPresentation {
     let watchedContexts: [FocusedSinContext]
     let suggestedContexts: [FocusedSinContext]
@@ -27,8 +20,6 @@ struct HeadwayView: View {
     @State private var pendingProgressLog: ProgressLogDraft?
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
-    @State private var customProgressTarget: CustomProgressTarget?
-    @State private var customProgressText = ""
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
@@ -148,7 +139,6 @@ struct HeadwayView: View {
         }
     }
 
-    private func prepareProgressLog(for itemID: SinCategory.ID, progress: Double, in sectionIndex: Int) {
     private var selectedFocusContexts: [FocusedSinContext] {
         focusedSinIDs.compactMap { focusContext(for: $0) }
     }
@@ -225,7 +215,7 @@ struct HeadwayView: View {
             dashboard.markVictory(in: context.item.id)
         case .loss:
             dashboard.resetItem(context.item.id)
-        case .prayer, .quickPrayer, .progressUpdate, .note:
+        case .prayer, .quickPrayer, .progressUpdate, .sliderProgressUpdate, .note:
             break
         }
     }
@@ -256,7 +246,7 @@ struct HeadwayView: View {
         focusedSinIDs.append(itemID)
     }
 
-    private func beginCustomProgress(for itemID: SinCategory.ID, in sectionIndex: Int) {
+    private func prepareProgressLog(for itemID: SinCategory.ID, progress: Double, in sectionIndex: Int) {
         guard dashboard.sections.indices.contains(sectionIndex),
               let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }) else {
             return
@@ -284,42 +274,6 @@ struct HeadwayView: View {
             occurredAt: Date()
         )
         logEntries.insert(entry, at: 0)
-        let currentPercentage = Int(item.progress * 100)
-        customProgressText = "\(currentPercentage)"
-        customProgressTarget = CustomProgressTarget(
-            id: itemID,
-            sectionIndex: sectionIndex,
-            title: item.title,
-            currentPercentage: currentPercentage
-        )
-    }
-
-    private func commitCustomProgress() {
-        guard let target = customProgressTarget,
-              dashboard.sections.indices.contains(target.sectionIndex),
-              let item = dashboard.sections[target.sectionIndex].items.first(where: { $0.id == target.id }) else {
-            customProgressTarget = nil
-            return
-        }
-
-        let typedValue = customProgressText.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
-        guard let rawPercentage = Double(typedValue) else {
-            return
-        }
-
-        let percentage = min(100, max(0, Int(rawPercentage.rounded())))
-        let entry = LogEntry(
-            kind: .progressUpdate,
-            sectionTitle: dashboard.sections[target.sectionIndex].title,
-            sinTitle: item.title,
-            note: "Set progress to \(percentage)%",
-            prayerMinutes: 0,
-            progressPercentage: percentage,
-            occurredAt: Date()
-        )
-        logEntries.insert(entry, at: 0)
-        dashboard.setProgress(Double(percentage) / 100, for: target.id)
-        customProgressTarget = nil
     }
 
     var body: some View {
@@ -424,30 +378,6 @@ struct HeadwayView: View {
                 logEntries.insert(entry, at: 0)
                 dashboard.record(entry)
             }
-        }
-        .alert(
-            "Set Progress",
-            isPresented: Binding(
-                get: { customProgressTarget != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        customProgressTarget = nil
-                    }
-                }
-            )
-        ) {
-            TextField("0-100", text: $customProgressText)
-                .keyboardType(.decimalPad)
-
-            Button("Set") {
-                commitCustomProgress()
-            }
-
-            Button("Cancel", role: .cancel) {
-                customProgressTarget = nil
-            }
-        } message: {
-            Text("Enter a percentage for \(customProgressTarget?.title ?? "this sin").")
         }
         .sheet(item: $selectedDefenseItem) { item in
             DefenseVersesSheetView(category: item)
@@ -970,8 +900,6 @@ struct HeadwayView: View {
                         },
                         onProgressChanged: { itemID, progress in
                             prepareProgressLog(for: itemID, progress: progress, in: index)
-                        onSetProgress: { itemID in
-                            beginCustomProgress(for: itemID, in: index)
                         }
                     )
                 }
