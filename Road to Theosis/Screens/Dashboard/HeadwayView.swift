@@ -12,8 +12,10 @@ struct HeadwayView: View {
     @State var homeGridWidth: CGFloat = 0
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
+    @State private var pendingProgressLog: ProgressLogDraft?
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
+    @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -123,9 +125,39 @@ struct HeadwayView: View {
             return progress < 1
         case .loss:
             return progress > 0
-        case .prayer, .quickPrayer, .progressUpdate, .note:
+        case .prayer, .quickPrayer, .progressUpdate, .sliderProgressUpdate, .note:
             return true
         }
+    }
+
+    private func prepareProgressLog(for itemID: SinCategory.ID, progress: Double, in sectionIndex: Int) {
+        guard dashboard.sections.indices.contains(sectionIndex),
+              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }) else {
+            return
+        }
+
+        let percentage = Int((min(max(progress, 0), 1) * 100).rounded())
+        dashboard.setProgress(Double(percentage) / 100, for: itemID)
+        pendingProgressLog = ProgressLogDraft(
+            sectionTitle: dashboard.sections[sectionIndex].title,
+            sinTitle: item.title,
+            progressPercentage: percentage,
+            tint: item.tint
+        )
+    }
+
+    private func saveProgressLog(_ draft: ProgressLogDraft, note: String) {
+        let fallbackNote = "Adjusted progress to \(draft.progressPercentage)%"
+        let entry = LogEntry(
+            kind: .sliderProgressUpdate,
+            sectionTitle: draft.sectionTitle,
+            sinTitle: draft.sinTitle,
+            note: note.isEmpty ? fallbackNote : note,
+            prayerMinutes: 0,
+            progressPercentage: draft.progressPercentage,
+            occurredAt: Date()
+        )
+        logEntries.insert(entry, at: 0)
     }
 
     var body: some View {
@@ -233,6 +265,11 @@ struct HeadwayView: View {
         }
         .sheet(item: $selectedDefenseItem) { item in
             DefenseVersesSheetView(category: item)
+        }
+        .sheet(item: $pendingProgressLog) { draft in
+            ProgressLogSheetView(backgroundTheme: $backgroundTheme, draft: draft) { note in
+                saveProgressLog(draft, note: note)
+            }
         }
     }
 
@@ -702,6 +739,17 @@ struct HeadwayView: View {
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.primary)
             Spacer()
+            Button {
+                usesFocusProgressSliders.toggle()
+            } label: {
+                Image(systemName: usesFocusProgressSliders ? "chart.bar.fill" : "slider.horizontal.3")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(backgroundTheme.glowColor)
+                    .frame(width: 28, height: 28)
+                    .background(backgroundTheme.glowColor.opacity(0.14), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(usesFocusProgressSliders ? "Show progress bars" : "Show progress sliders")
         }
         .padding(.horizontal, 2)
     }
@@ -716,6 +764,7 @@ struct HeadwayView: View {
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
                         showsVictoryAction: showVictorySwipeAction,
+                        usesProgressSliders: usesFocusProgressSliders,
                         onShowVerses: { item in
                             selectedDefenseItem = item
                         },
@@ -726,6 +775,9 @@ struct HeadwayView: View {
                         onReset: { itemID in
                             guard logSwipeOutcome(.loss, for: itemID, in: index) else { return }
                             dashboard.resetItem(itemID)
+                        },
+                        onProgressChanged: { itemID, progress in
+                            prepareProgressLog(for: itemID, progress: progress, in: index)
                         }
                     )
                 }
@@ -957,4 +1009,3 @@ struct HeadwayView: View {
         )
     }
 }
-

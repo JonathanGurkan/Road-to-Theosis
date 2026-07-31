@@ -61,7 +61,7 @@ struct DashboardViewModel {
             updateLoggedSin(entry, delta: 0.12)
         case .loss:
             updateLoggedSin(entry, delta: -0.08)
-        case .progressUpdate:
+        case .progressUpdate, .sliderProgressUpdate:
             updateLoggedSinProgress(entry)
         }
     }

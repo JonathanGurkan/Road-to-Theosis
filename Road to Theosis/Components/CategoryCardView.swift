@@ -4,9 +4,12 @@ struct CategoryCardView: View {
     @Binding var category: SinCategory
     let isCompact: Bool
     let showsVictoryAction: Bool
+    let usesProgressSlider: Bool
     let onIconTap: () -> Void
     let onVictory: () -> Void
     let onReset: () -> Void
+    let onProgressChanged: (Double) -> Void
+    @State private var progressAtDragStart: Double?
 
     private var progressText: String {
         "\(Int(category.progress * 100))%"
@@ -59,8 +62,19 @@ struct CategoryCardView: View {
                 }
             }
 
-            ProgressView(value: category.progress)
+            if usesProgressSlider {
+                Slider(
+                    value: $category.progress,
+                    in: 0...1,
+                    step: 0.01
+                ) { isEditing in
+                    handleProgressEditingChanged(isEditing)
+                }
                 .tint(category.tint)
+            } else {
+                ProgressView(value: category.progress)
+                    .tint(category.tint)
+            }
         }
         .padding(.vertical, isCompact ? 8 : 10)
         .contentShape(Rectangle())
@@ -78,6 +92,22 @@ struct CategoryCardView: View {
             }
         }
     }
+
+    private func handleProgressEditingChanged(_ isEditing: Bool) {
+        if isEditing {
+            progressAtDragStart = category.progress
+            return
+        }
+
+        defer { progressAtDragStart = nil }
+
+        guard let progressAtDragStart,
+              abs(progressAtDragStart - category.progress) >= 0.005 else {
+            return
+        }
+
+        onProgressChanged(category.progress)
+    }
 }
 
 #Preview {
@@ -85,9 +115,11 @@ struct CategoryCardView: View {
         category: .constant(SinCategory.sample[0].items[0]),
         isCompact: false,
         showsVictoryAction: true,
+        usesProgressSlider: true,
         onIconTap: { },
         onVictory: { },
-        onReset: { }
+        onReset: { },
+        onProgressChanged: { _ in }
     )
     .padding()
 }

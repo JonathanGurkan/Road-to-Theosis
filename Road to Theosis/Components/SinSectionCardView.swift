@@ -4,9 +4,11 @@ struct SinSectionCardView: View {
     @Binding var section: SinSection
     let isCompact: Bool
     let showsVictoryAction: Bool
+    let usesProgressSliders: Bool
     let onShowVerses: (SinCategory) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
+    let onProgressChanged: (SinCategory.ID, Double) -> Void
 
     var body: some View {
         AppSurfaceCard(contentPadding: 12) {
@@ -70,6 +72,7 @@ struct SinSectionCardView: View {
                                 category: $section.items[index],
                                 isCompact: isCompact,
                                 showsVictoryAction: showsVictoryAction,
+                                usesProgressSlider: usesProgressSliders,
                                 onIconTap: {
                                     onShowVerses(section.items[index])
                                 }
@@ -77,6 +80,8 @@ struct SinSectionCardView: View {
                                 onVictory(section.items[index].id)
                             } onReset: {
                                 onReset(section.items[index].id)
+                            } onProgressChanged: { progress in
+                                onProgressChanged(section.items[index].id, progress)
                             }
 
                             if index < section.items.count - 1 {
@@ -97,9 +102,11 @@ struct SinSectionCardView: View {
         section: .constant(SinCategory.sample[0]),
         isCompact: false,
         showsVictoryAction: true,
+        usesProgressSliders: true,
         onShowVerses: { _ in },
         onVictory: { _ in },
-        onReset: { _ in }
+        onReset: { _ in },
+        onProgressChanged: { _, _ in }
     )
     .padding()
 }
