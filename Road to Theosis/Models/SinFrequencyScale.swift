@@ -9,13 +9,13 @@ struct SinFrequencyLevel: Identifiable {
 
 enum SinFrequencyScale {
     static let levels: [SinFrequencyLevel] = [
-        SinFrequencyLevel(id: "none", title: "0 times monthly", detail: "No recent falls", rangeText: "0%"),
-        SinFrequencyLevel(id: "onceMonthly", title: "1 time monthly", detail: "Less than monthly", rangeText: "1-15%"),
-        SinFrequencyLevel(id: "twoThreeMonthly", title: "2-3 times monthly", detail: "Monthly pattern", rangeText: "16-30%"),
-        SinFrequencyLevel(id: "oneWeekly", title: "1 time weekly", detail: "About once a week", rangeText: "31-45%"),
-        SinFrequencyLevel(id: "twoThreeWeekly", title: "2-3 times weekly", detail: "Several times a week", rangeText: "46-60%"),
-        SinFrequencyLevel(id: "fourSixWeekly", title: "4-6 times weekly", detail: "Most days are affected", rangeText: "61-80%"),
-        SinFrequencyLevel(id: "oneTwoDaily", title: "1-2 times daily", detail: "Daily or near daily", rangeText: "81-100%")
+        SinFrequencyLevel(id: "none", title: "No recent pattern", detail: "not recently", rangeText: "0%"),
+        SinFrequencyLevel(id: "rare", title: "Rare", detail: "less than monthly", rangeText: "1-15%"),
+        SinFrequencyLevel(id: "monthly", title: "Monthly", detail: "about once a month", rangeText: "16-30%"),
+        SinFrequencyLevel(id: "repeatedMonthly", title: "Repeated monthly", detail: "2-3 times monthly", rangeText: "31-45%"),
+        SinFrequencyLevel(id: "weekly", title: "Weekly", detail: "about once weekly", rangeText: "46-60%"),
+        SinFrequencyLevel(id: "severalWeekly", title: "Several times weekly", detail: "2-4 times weekly", rangeText: "61-80%"),
+        SinFrequencyLevel(id: "daily", title: "Daily", detail: "daily or near daily", rangeText: "81-100%")
     ]
 
     static let milestoneProgresses: [Double] = [0, 0.15, 0.30, 0.45, 0.60, 0.80, 1]
@@ -77,9 +77,9 @@ enum FocusSliderStyle: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .clean:
-            return "Smooth track with the frequency label below."
+            return "Smooth track with subtle frequency indicators."
         case .marked:
-            return "Adds subtle frequency indicators beneath the slider."
+            return "Uses slightly stronger frequency indicators beneath the slider."
         case .compact:
             return "Shorter control for a denser focus list."
         }
@@ -108,14 +108,25 @@ enum FocusSliderStyle: String, CaseIterable, Identifiable {
         case .clean:
             return 30
         case .marked:
-            return 34
+            return 36
         case .compact:
             return 22
         }
     }
 
     var showsMilestones: Bool {
-        self == .marked
+        self != .compact
+    }
+
+    var milestoneOpacity: (active: Double, inactive: Double) {
+        switch self {
+        case .marked:
+            return (0.68, 0.30)
+        case .clean:
+            return (0.50, 0.20)
+        case .compact:
+            return (0, 0)
+        }
     }
 
     var showsLegend: Bool {
