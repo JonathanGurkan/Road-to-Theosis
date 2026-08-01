@@ -158,6 +158,16 @@ private struct HomeSettingsPage: View {
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
+    @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
+    @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+
+    private var focusSliderStyleBinding: Binding<FocusSliderStyle> {
+        Binding {
+            FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
+        } set: { newValue in
+            focusSliderStyleRaw = newValue.rawValue
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -167,12 +177,27 @@ private struct HomeSettingsPage: View {
                 Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
+                    Toggle("Use frequency sliders", isOn: $usesFocusProgressSliders)
                     Toggle("Show victory swipe action", isOn: $showVictorySwipeAction)
+
+                    if usesFocusProgressSliders {
+                        Picker("Slider style", selection: focusSliderStyleBinding) {
+                            ForEach(FocusSliderStyle.allCases) { style in
+                                Text(style.title).tag(style)
+                            }
+                        }
+
+                        Text((FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean).subtitle)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
 
                     Button(role: .destructive) {
                         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
                         showRecentActivity = true
                         compactSinRows = false
+                        usesFocusProgressSliders = true
+                        focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
                         showVictorySwipeAction = false
                     } label: {
                         Label("Reset Home Screen", systemImage: "arrow.counterclockwise")

@@ -6,6 +6,10 @@ struct ProgressLogDraft: Identifiable {
     let sinTitle: String
     let progressPercentage: Int
     let tint: Color
+
+    var frequencyLabel: String {
+        SinFrequencyScale.label(for: progressPercentage)
+    }
 }
 
 struct ProgressLogSheetView: View {
@@ -33,7 +37,7 @@ struct ProgressLogSheetView: View {
                                     .font(.largeTitle.weight(.semibold))
                                     .foregroundStyle(.primary)
 
-                                Text("Progress changed to \(draft.progressPercentage)%.")
+                                Text("Frequency changed to \(draft.frequencyLabel).")
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
 
@@ -42,7 +46,7 @@ struct ProgressLogSheetView: View {
                                         Circle()
                                             .fill(draft.tint.opacity(0.16))
 
-                                        Image(systemName: "slider.horizontal.3")
+                                        Image(systemName: "calendar.badge.clock")
                                             .font(.subheadline.weight(.semibold))
                                             .foregroundStyle(draft.tint)
                                     }
@@ -70,7 +74,7 @@ struct ProgressLogSheetView: View {
                                     .font(.headline.weight(.semibold))
                                     .foregroundStyle(.primary)
 
-                                Text("Add context for this progress change, or save it without a note.")
+                                Text("Add context for this frequency change, or save it without a note.")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)

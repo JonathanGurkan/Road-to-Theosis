@@ -5,6 +5,7 @@ struct CategoryCardView: View {
     let isCompact: Bool
     let showsVictoryAction: Bool
     let usesProgressSlider: Bool
+    let sliderStyle: FocusSliderStyle
     let isFocused: Bool
     let onIconTap: () -> Void
     let onFocus: () -> Void
@@ -13,8 +14,16 @@ struct CategoryCardView: View {
     let onProgressChanged: (Double) -> Void
     @State private var progressAtDragStart: Double?
 
+    private var progressPercentage: Int {
+        SinFrequencyScale.percentage(for: category.progress)
+    }
+
+    private var frequencyLevel: SinFrequencyLevel {
+        SinFrequencyScale.level(for: progressPercentage)
+    }
+
     private var progressText: String {
-        "\(Int(category.progress * 100))%"
+        "\(progressPercentage)%"
     }
 
     private var swipeActions: SinSwipeActions {
@@ -75,9 +84,10 @@ struct CategoryCardView: View {
                 VStack(alignment: .trailing, spacing: 5) {
                     Text(progressText)
                         .font(.caption.weight(.semibold))
+                        .monospacedDigit()
                         .foregroundStyle(category.tint)
 
-                    Text(category.watchword.uppercased())
+                    Text(frequencyLevel.title.uppercased())
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .tracking(0.4)
@@ -101,17 +111,25 @@ struct CategoryCardView: View {
             }
 
             if usesProgressSlider {
-                Slider(
-                    value: $category.progress,
-                    in: 0...1,
-                    step: 0.01
-                ) { isEditing in
-                    handleProgressEditingChanged(isEditing)
+                VStack(alignment: .leading, spacing: sliderStyle == .compact ? 4 : 6) {
+                    FrequencySliderView(
+                        value: $category.progress,
+                        tint: category.tint,
+                        style: sliderStyle,
+                        accessibilityTitle: "\(category.title) frequency",
+                        onEditingChanged: handleProgressEditingChanged
+                    )
+
+                    if sliderStyle.showsLegend {
+                        frequencySummaryRow
+                    }
                 }
-                .tint(category.tint)
             } else {
-                ProgressView(value: category.progress)
-                    .tint(category.tint)
+                VStack(alignment: .leading, spacing: 6) {
+                    FrequencyProgressBarView(value: category.progress, tint: category.tint)
+
+                    frequencySummaryRow
+                }
             }
         }
         .padding(.vertical, isCompact ? 8 : 10)
@@ -132,6 +150,27 @@ struct CategoryCardView: View {
         .id(showsVictoryAction)
     }
 
+    private var frequencySummaryRow: some View {
+        HStack(spacing: 8) {
+            Label(frequencyLevel.title, systemImage: "calendar.badge.clock")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(category.tint)
+
+            Text(frequencyLevel.rangeText)
+                .font(.caption2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Text(frequencyLevel.detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+    }
+
     private func handleProgressEditingChanged(_ isEditing: Bool) {
         if isEditing {
             progressAtDragStart = category.progress
@@ -149,12 +188,113 @@ struct CategoryCardView: View {
     }
 }
 
+private struct FrequencySliderView: View {
+    @Binding var value: Double
+    let tint: Color
+    let style: FocusSliderStyle
+    let accessibilityTitle: String
+    let onEditingChanged: (Bool) -> Void
+    @State private var isEditing = false
+
+    private var clampedValue: Double {
+        min(max(value, 0), 1)
+    }
+
+    private var accessibilityValue: String {
+        SinFrequencyScale.label(for: clampedValue)
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = max(proxy.size.width, 1)
+            let thumbSize = style.thumbSize
+            let xPosition = min(max(clampedValue * width, thumbSize / 2), width - thumbSize / 2)
+
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: style.trackHeight / 2, style: .continuous)
+                    .fill(Color(uiColor: .tertiarySystemFill))
+                    .frame(height: style.trackHeight)
+
+                RoundedRectangle(cornerRadius: style.trackHeight / 2, style: .continuous)
+                    .fill(tint.gradient)
+                    .frame(width: max(thumbSize / 2, xPosition), height: style.trackHeight)
+
+                if style.showsMilestones {
+                    ForEach(SinFrequencyScale.milestoneProgresses, id: \.self) { milestone in
+                        let position = min(max(CGFloat(milestone) * width, 2.5), width - 2.5)
+                        Circle()
+                            .fill(milestone <= clampedValue ? tint : Color(uiColor: .systemBackground))
+                            .overlay(Circle().stroke(tint.opacity(0.45), lineWidth: 1))
+                            .frame(width: 5, height: 5)
+                            .position(x: position, y: style.controlHeight / 2)
+                    }
+                }
+
+                Circle()
+                    .fill(Color(uiColor: .systemBackground))
+                    .overlay(Circle().stroke(tint, lineWidth: 3))
+                    .shadow(color: tint.opacity(0.25), radius: 6, x: 0, y: 2)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .position(x: xPosition, y: style.controlHeight / 2)
+            }
+            .frame(height: style.controlHeight)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        beginEditingIfNeeded()
+                        updateValue(with: gesture.location.x, width: width)
+                    }
+                    .onEnded { gesture in
+                        updateValue(with: gesture.location.x, width: width)
+                        endEditingIfNeeded()
+                    }
+            )
+        }
+        .frame(height: style.controlHeight)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityTitle)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityAdjustableAction { direction in
+            beginEditingIfNeeded()
+            switch direction {
+            case .increment:
+                value = min(1, clampedValue + 0.05)
+            case .decrement:
+                value = max(0, clampedValue - 0.05)
+            @unknown default:
+                break
+            }
+            endEditingIfNeeded()
+        }
+    }
+
+    private func beginEditingIfNeeded() {
+        guard !isEditing else { return }
+        isEditing = true
+        onEditingChanged(true)
+    }
+
+    private func endEditingIfNeeded() {
+        guard isEditing else { return }
+        isEditing = false
+        value = Double(SinFrequencyScale.percentage(for: value)) / 100
+        onEditingChanged(false)
+    }
+
+    private func updateValue(with locationX: CGFloat, width: CGFloat) {
+        let rawValue = min(max(locationX / max(width, 1), 0), 1)
+        value = Double(rawValue)
+    }
+}
+
 #Preview {
     CategoryCardView(
         category: .constant(SinCategory.sample[0].items[0]),
         isCompact: false,
         showsVictoryAction: true,
         usesProgressSlider: true,
+        sliderStyle: .marked,
         isFocused: true,
         onIconTap: { },
         onFocus: { },
