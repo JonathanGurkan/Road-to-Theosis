@@ -160,20 +160,19 @@ private struct TimelineRow: View {
                 if let progressPercentage = entry.progressPercentage {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text("Custom progress")
+                            Text("Sin frequency")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
 
                             Spacer(minLength: 8)
 
-                            Text("\(progressPercentage)%")
+                            Text(SinFrequencyScale.label(for: progressPercentage))
                                 .font(.caption.weight(.semibold))
                                 .monospacedDigit()
                                 .foregroundStyle(entry.kind.tint)
                         }
 
-                        ProgressView(value: Double(progressPercentage) / 100)
-                            .tint(entry.kind.tint)
+                        FrequencyProgressBarView(value: Double(progressPercentage) / 100, tint: entry.kind.tint)
                     }
                     .padding(.vertical, 6)
                     .padding(.horizontal, 10)
@@ -197,7 +196,7 @@ private struct TimelineRow: View {
                     }
 
                     if let progressPercentage = entry.progressPercentage {
-                        Text("Set to \(progressPercentage)%")
+                        Text("Set to \(SinFrequencyScale.label(for: progressPercentage))")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
                     } else {

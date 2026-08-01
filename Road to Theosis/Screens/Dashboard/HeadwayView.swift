@@ -23,6 +23,7 @@ struct HeadwayView: View {
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
+    @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -35,6 +36,10 @@ struct HeadwayView: View {
     
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
         PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+    }
+
+    private var focusSliderStyle: FocusSliderStyle {
+        FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
     }
 
     var homeScreenLayout: HomeScreenLayout {
@@ -252,7 +257,7 @@ struct HeadwayView: View {
             return
         }
 
-        let percentage = Int((min(max(progress, 0), 1) * 100).rounded())
+        let percentage = SinFrequencyScale.percentage(for: progress)
         dashboard.setProgress(Double(percentage) / 100, for: itemID)
         pendingProgressLog = ProgressLogDraft(
             sectionTitle: dashboard.sections[sectionIndex].title,
@@ -263,7 +268,7 @@ struct HeadwayView: View {
     }
 
     private func saveProgressLog(_ draft: ProgressLogDraft, note: String) {
-        let fallbackNote = "Adjusted progress to \(draft.progressPercentage)%"
+        let fallbackNote = "Adjusted frequency to \(SinFrequencyScale.label(for: draft.progressPercentage))"
         let entry = LogEntry(
             kind: .sliderProgressUpdate,
             sectionTitle: draft.sectionTitle,
@@ -883,6 +888,7 @@ struct HeadwayView: View {
                         isCompact: compactSinRows,
                         showsVictoryAction: showVictorySwipeAction,
                         usesProgressSliders: usesFocusProgressSliders,
+                        sliderStyle: focusSliderStyle,
                         focusedItemIDs: activeFocusIDs,
                         onShowVerses: { item in
                             selectedDefenseItem = item

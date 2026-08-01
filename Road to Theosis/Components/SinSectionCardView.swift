@@ -5,12 +5,17 @@ struct SinSectionCardView: View {
     let isCompact: Bool
     let showsVictoryAction: Bool
     let usesProgressSliders: Bool
+    let sliderStyle: FocusSliderStyle
     let focusedItemIDs: Set<SinCategory.ID>
     let onShowVerses: (SinCategory) -> Void
     let onFocus: (SinCategory.ID) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
     let onProgressChanged: (SinCategory.ID, Double) -> Void
+
+    private var averageFrequencyText: String {
+        SinFrequencyScale.label(for: section.averageProgress)
+    }
 
     var body: some View {
         AppSurfaceCard(contentPadding: 12) {
@@ -44,11 +49,12 @@ struct SinSectionCardView: View {
                         Spacer(minLength: 8)
 
                         VStack(alignment: .trailing, spacing: 3) {
-                            Text("\(Int(section.averageProgress * 100))%")
+                            Text("\(SinFrequencyScale.percentage(for: section.averageProgress))%")
                                 .font(.caption.weight(.semibold))
+                                .monospacedDigit()
                                 .foregroundStyle(section.tint)
 
-                            Text("\(section.itemCount) items")
+                            Text(SinFrequencyScale.level(for: section.averageProgress).title.uppercased())
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .tracking(0.4)
@@ -59,12 +65,20 @@ struct SinSectionCardView: View {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    ProgressView(value: section.averageProgress)
-                        .tint(section.tint)
+                    FrequencyProgressBarView(value: section.averageProgress, tint: section.tint)
 
-                    Text("Choose a focus, then act from the panel above.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text("Average frequency: \(averageFrequencyText)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer(minLength: 8)
+
+                        Text("\(section.itemCount) items")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if section.isExpanded {
@@ -75,6 +89,7 @@ struct SinSectionCardView: View {
                                 isCompact: isCompact,
                                 showsVictoryAction: showsVictoryAction,
                                 usesProgressSlider: usesProgressSliders,
+                                sliderStyle: sliderStyle,
                                 isFocused: focusedItemIDs.contains(section.items[index].id),
                                 onIconTap: {
                                     onShowVerses(section.items[index])
@@ -109,6 +124,7 @@ struct SinSectionCardView: View {
         isCompact: false,
         showsVictoryAction: true,
         usesProgressSliders: true,
+        sliderStyle: .marked,
         focusedItemIDs: [SinCategory.sample[0].items[0].id],
         onShowVerses: { _ in },
         onFocus: { _ in },

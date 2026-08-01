@@ -25,7 +25,7 @@ struct LogEntry: Identifiable {
             case .progressUpdate:
                 return "Progress Set"
             case .sliderProgressUpdate:
-                return "Progress Adjusted"
+                return "Frequency Adjusted"
             case .note:
                 return "Note"
             }
