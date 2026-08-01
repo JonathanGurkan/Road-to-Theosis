@@ -21,6 +21,7 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
+    @State private var purityCalculationDate = Date()
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
@@ -112,7 +113,20 @@ struct HeadwayView: View {
     }
 
     private func simulateDailyProgress() {
-        dashboard.advanceDailyProgress()
+        purityCalculationDate = Calendar.current.date(byAdding: .day, value: 1, to: purityCalculationDate) ?? purityCalculationDate
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+    }
+
+    private func saveEntry(_ entry: LogEntry, now: Date? = nil) {
+        let calculationDate = now ?? purityCalculationDate
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
+
+        guard entry.kind != .progressUpdate, entry.kind != .sliderProgressUpdate else {
+            return
+        }
+
+        dashboard.recalculatePurity(from: logEntries, now: calculationDate)
     }
 
     private func logSwipeOutcome(_ kind: LogEntry.Kind, for itemID: SinCategory.ID, in sectionIndex: Int) -> Bool {
@@ -130,7 +144,7 @@ struct HeadwayView: View {
             prayerMinutes: 0,
             occurredAt: Date()
         )
-        logEntries.insert(entry, at: 0)
+        saveEntry(entry)
         return true
     }
 
@@ -216,14 +230,7 @@ struct HeadwayView: View {
     private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
         guard logSwipeOutcome(kind, for: context.item.id, in: context.sectionIndex) else { return }
 
-        switch kind {
-        case .victory:
-            dashboard.markVictory(in: context.item.id)
-        case .loss:
-            dashboard.resetItem(context.item.id)
-        case .prayer, .quickPrayer, .progressUpdate, .sliderProgressUpdate, .note:
-            break
-        }
+        // Purity is recalculated from the saved log entry in logSwipeOutcome.
     }
 
     private func logFocusedPrayer(context: FocusedSinContext) {
@@ -235,8 +242,7 @@ struct HeadwayView: View {
             prayerMinutes: 1,
             occurredAt: Date()
         )
-        logEntries.insert(entry, at: 0)
-        dashboard.record(entry)
+        saveEntry(entry)
     }
 
     private func toggleFocus(for itemID: SinCategory.ID) {
@@ -279,7 +285,7 @@ struct HeadwayView: View {
             progressPercentage: draft.progressPercentage,
             occurredAt: Date()
         )
-        logEntries.insert(entry, at: 0)
+        saveEntry(entry)
     }
 
     var body: some View {
@@ -364,14 +370,12 @@ struct HeadwayView: View {
         }
         .sheet(isPresented: $isShowingAddView) {
             AddLoggingView(backgroundTheme: $backgroundTheme) { entry in
-                logEntries.insert(entry, at: 0)
-                dashboard.record(entry)
+                saveEntry(entry)
             }
         }
         .sheet(isPresented: $isShowingQuickPrayer) {
             AddLoggingView(backgroundTheme: $backgroundTheme, onSave: { entry in
-                logEntries.insert(entry, at: 0)
-                dashboard.record(entry)
+                saveEntry(entry)
             }, initialMode: .quickPrayer)
         }
         .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
@@ -381,8 +385,7 @@ struct HeadwayView: View {
         }
         .fullScreenCover(isPresented: $isShowingPrayerTimer) {
             PrayerTimerView(backgroundTheme: $backgroundTheme) { entry in
-                logEntries.insert(entry, at: 0)
-                dashboard.record(entry)
+                saveEntry(entry)
             }
         }
         .sheet(item: $selectedDefenseItem) { item in
@@ -919,12 +922,10 @@ struct HeadwayView: View {
                             toggleFocus(for: itemID)
                         },
                         onVictory: { itemID in
-                            guard logSwipeOutcome(.victory, for: itemID, in: index) else { return }
-                            dashboard.markVictory(in: itemID)
+                            _ = logSwipeOutcome(.victory, for: itemID, in: index)
                         },
                         onReset: { itemID in
-                            guard logSwipeOutcome(.loss, for: itemID, in: index) else { return }
-                            dashboard.resetItem(itemID)
+                            _ = logSwipeOutcome(.loss, for: itemID, in: index)
                         },
                         onProgressChanged: { itemID, progress in
                             prepareProgressLog(for: itemID, progress: progress, in: index)

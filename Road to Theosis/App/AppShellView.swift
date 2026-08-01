@@ -2,7 +2,6 @@ import SwiftUI
 
 struct AppShellView: View {
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
-    @AppStorage("lastDailyProgressDate") private var lastDailyProgressDate = ""
     @State private var backgroundTheme: AppBackgroundTheme = .blood
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
@@ -38,8 +37,7 @@ struct AppShellView: View {
                         isShowingWelcome = true
                     }
                 ) { entry in
-                    logEntries.insert(entry, at: 0)
-                    dashboard.record(entry)
+                    saveEntry(entry)
                 }
             }
             .tabItem {
@@ -55,37 +53,22 @@ struct AppShellView: View {
             }
         }
         .task {
-            applyDailyProgressIfNeeded()
+            dashboard.recalculatePurity(from: logEntries)
             guard !hasSeenWelcome else { return }
             isShowingWelcome = true
         }
     }
 
-    private func applyDailyProgressIfNeeded(on date: Date = .now) {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: date)
-        let todayStamp = Self.dailyProgressFormatter.string(from: today)
+    private func saveEntry(_ entry: LogEntry) {
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
 
-        guard !lastDailyProgressDate.isEmpty,
-              let lastDate = Self.dailyProgressFormatter.date(from: lastDailyProgressDate) else {
-            lastDailyProgressDate = todayStamp
+        guard entry.kind != .progressUpdate, entry.kind != .sliderProgressUpdate else {
             return
         }
 
-        let elapsedDays = calendar.dateComponents([.day], from: lastDate, to: today).day ?? 0
-        guard elapsedDays > 0 else { return }
-
-        dashboard.advanceDailyProgress(days: elapsedDays)
-        lastDailyProgressDate = todayStamp
+        dashboard.recalculatePurity(from: logEntries)
     }
-
-    private static let dailyProgressFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
 }
 
 #Preview {

@@ -15,14 +15,13 @@ struct DashboardViewModel {
     }
 
     mutating func markVictory(in itemID: SinCategory.ID) {
-        updateItem(itemID, delta: 0.12)
         activeStreak += 1
         dailyCheckIns += 1
         prayerMinutes += 2
     }
 
     mutating func resetItem(_ itemID: SinCategory.ID) {
-        updateItem(itemID, delta: -0.08)
+        setProgress(0.10, for: itemID)
     }
 
     mutating func setProgress(_ progress: Double, for itemID: SinCategory.ID) {
@@ -37,16 +36,32 @@ struct DashboardViewModel {
     }
 
     mutating func advanceDailyProgress(days: Int = 1) {
-        let elapsedDays = max(days, 0)
-        guard elapsedDays > 0 else { return }
+        // Kept as a compatibility no-op. Purity now comes from log history.
+    }
+
+    mutating func recalculatePurity(from entries: [LogEntry], now: Date = .now) {
+        let calendar = Calendar.current
+        let windowStart = calendar.date(byAdding: .day, value: -30, to: now) ?? now
+        let pureStart = calendar.date(byAdding: .day, value: -90, to: now) ?? now
 
         for sectionIndex in sections.indices {
             for itemIndex in sections[sectionIndex].items.indices {
-                let currentProgress = sections[sectionIndex].items[itemIndex].progress
-                guard currentProgress < 1 else { continue }
+                let sectionTitle = sections[sectionIndex].title
+                let sinTitle = sections[sectionIndex].items[itemIndex].title
+                let lossEntries = entries.filter { entry in
+                    entry.kind == .loss &&
+                    entry.sectionTitle == sectionTitle &&
+                    entry.sinTitle == sinTitle &&
+                    entry.occurredAt <= now
+                }
 
-                let recoveryDelta = dailyRecoveryDelta(for: currentProgress, elapsedDays: elapsedDays)
-                sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + recoveryDelta)
+                guard let latestLossDate = lossEntries.map(\.occurredAt).max() else {
+                    continue
+                }
+
+                let recentLossCount = lossEntries.filter { $0.occurredAt >= windowStart }.count
+                let purity = purityScore(recentLossCount: recentLossCount, latestLossDate: latestLossDate, pureStart: pureStart)
+                sections[sectionIndex].items[itemIndex].progress = purity
             }
         }
     }
@@ -63,9 +78,8 @@ struct DashboardViewModel {
             dailyCheckIns += 1
         case .victory:
             activeStreak += 1
-            updateLoggedSin(entry, delta: 0.12)
         case .loss:
-            updateLoggedSin(entry, delta: -0.08)
+            activeStreak = 0
         case .progressUpdate, .sliderProgressUpdate:
             updateLoggedSinProgress(entry)
         }
@@ -154,10 +168,23 @@ struct DashboardViewModel {
         sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + delta)
     }
 
-    private func dailyRecoveryDelta(for progress: Double, elapsedDays: Int) -> Double {
-        let remainingPurity = max(0, 1 - progress)
-        let dailyRecoveryRate = 0.012
-        return remainingPurity * (1 - pow(1 - dailyRecoveryRate, Double(elapsedDays)))
+    private func purityScore(recentLossCount: Int, latestLossDate: Date, pureStart: Date) -> Double {
+        switch recentLossCount {
+        case 22...:
+            return 0.10
+        case 14...21:
+            return 0.30
+        case 8...13:
+            return 0.48
+        case 4...7:
+            return 0.63
+        case 2...3:
+            return 0.78
+        case 1:
+            return 0.90
+        default:
+            return latestLossDate <= pureStart ? 1.0 : 0.97
+        }
     }
 
     private func clampedProgress(_ progress: Double) -> Double {
