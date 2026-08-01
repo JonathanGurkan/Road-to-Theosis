@@ -12,7 +12,7 @@ enum SinFrequencyScale {
         SinFrequencyLevel(id: "none", title: "Not active", detail: "No recent falls", rangeText: "0%"),
         SinFrequencyLevel(id: "rare", title: "Rare", detail: "Less than monthly", rangeText: "1-15%"),
         SinFrequencyLevel(id: "occasional", title: "Occasional", detail: "Monthly pattern", rangeText: "16-30%"),
-        SinFrequencyLevel(id: "monthlyPlus", title: "Monthly+", detail: "Several times a month", rangeText: "31-45%"),
+        SinFrequencyLevel(id: "repeatedMonthly", title: "Repeated monthly", detail: "Several times a month", rangeText: "31-45%"),
         SinFrequencyLevel(id: "weekly", title: "Weekly", detail: "About once a week", rangeText: "46-60%"),
         SinFrequencyLevel(id: "frequent", title: "Frequent", detail: "Several times a week", rangeText: "61-80%"),
         SinFrequencyLevel(id: "daily", title: "Daily", detail: "Daily or near daily", rangeText: "81-100%")

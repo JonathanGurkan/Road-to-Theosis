@@ -65,7 +65,8 @@ struct SinSectionCardView: View {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    FrequencyProgressBarView(value: section.averageProgress, tint: section.tint)
+                    ProgressView(value: section.averageProgress)
+                        .tint(section.tint)
 
                     HStack(spacing: 8) {
                         Text("Average frequency: \(averageFrequencyText)")

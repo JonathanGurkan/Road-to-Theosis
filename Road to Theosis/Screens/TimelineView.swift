@@ -172,7 +172,8 @@ private struct TimelineRow: View {
                                 .foregroundStyle(entry.kind.tint)
                         }
 
-                        FrequencyProgressBarView(value: Double(progressPercentage) / 100, tint: entry.kind.tint)
+                        ProgressView(value: Double(progressPercentage) / 100)
+                            .tint(entry.kind.tint)
                     }
                     .padding(.vertical, 6)
                     .padding(.horizontal, 10)
