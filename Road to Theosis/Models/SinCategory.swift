@@ -34,6 +34,43 @@ struct SinCategory: Identifiable {
         )
     }
 
+    func frequencyDescription(for level: SinFrequencyLevel) -> String {
+        "\(frequencyAction) \(level.detail)"
+    }
+
+    private var frequencyAction: String {
+        switch title {
+        case "Neglect of God's Word":
+            return "Missed reading"
+        case "Neglect of Prayer":
+            return "Missed prayer"
+        case "Chronic Lateness":
+            return "Late"
+        case "No Concern for the Lost":
+            return "Neglected mission"
+        case "Disobedient to Parents", "Not Honoring Your Father and Mother":
+            return "Failed to honor"
+        case "Lust / Pornography":
+            return "Gave in"
+        case "Profanity", "Speaking Obscenities", "Coarse Joking / Foolish Talk":
+            return "Spoke carelessly"
+        case "Gossip / Backbiting", "Slander", "Criticism":
+            return "Spoke harmfully"
+        case "Lying / Deceit", "Perjury":
+            return "Hid truth"
+        case "Anxiety / Worry / Fearful":
+            return "Gave way to fear"
+        case "Procrastination":
+            return "Delayed duty"
+        case "Sloth", "Passivity":
+            return "Neglected duty"
+        case "Gluttony", "Drunkenness / Revellings":
+            return "Lost restraint"
+        default:
+            return "Happened"
+        }
+    }
+
     var swipeActions: SinSwipeActions {
         switch title {
         case "Idolatry / Abomination":

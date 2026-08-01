@@ -87,7 +87,7 @@ struct CategoryCardView: View {
                         .monospacedDigit()
                         .foregroundStyle(category.tint)
 
-                    Text(frequencyLevel.title.uppercased())
+                    Text(category.watchword.uppercased())
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .tracking(0.4)
@@ -160,18 +160,13 @@ struct CategoryCardView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(category.tint)
 
-            Text(frequencyLevel.rangeText)
-                .font(.caption2.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-
             Spacer(minLength: 8)
 
-            Text(frequencyLevel.detail)
+            Text(category.frequencyDescription(for: frequencyLevel))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.78)
         }
     }
 
@@ -225,13 +220,13 @@ private struct FrequencySliderView: View {
 
                 if style.showsMilestones {
                     ForEach(SinFrequencyScale.milestoneProgresses, id: \.self) { milestone in
-                        let indicatorWidth: CGFloat = 8
-                        let indicatorHeight: CGFloat = 2
+                        let indicatorWidth: CGFloat = 10
+                        let indicatorHeight: CGFloat = 3
                         let position = min(max(CGFloat(milestone) * width, indicatorWidth / 2), width - indicatorWidth / 2)
                         Capsule()
-                            .fill(tint.opacity(milestone <= clampedValue ? 0.32 : 0.14))
+                            .fill(tint.opacity(milestone <= clampedValue ? style.milestoneOpacity.active : style.milestoneOpacity.inactive))
                             .frame(width: indicatorWidth, height: indicatorHeight)
-                            .position(x: position, y: style.controlHeight - indicatorHeight / 2)
+                            .position(x: position, y: style.controlHeight - 4)
                     }
                 }
 
