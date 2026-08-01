@@ -268,7 +268,7 @@ struct HeadwayView: View {
     }
 
     private func saveProgressLog(_ draft: ProgressLogDraft, note: String) {
-        let fallbackNote = "Adjusted frequency to \(SinFrequencyScale.label(for: draft.progressPercentage))"
+        let fallbackNote = "Adjusted purity to \(SinFrequencyScale.label(for: draft.progressPercentage))"
         let entry = LogEntry(
             kind: .sliderProgressUpdate,
             sectionTitle: draft.sectionTitle,

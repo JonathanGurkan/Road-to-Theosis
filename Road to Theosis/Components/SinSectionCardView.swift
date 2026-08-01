@@ -13,7 +13,7 @@ struct SinSectionCardView: View {
     let onReset: (SinCategory.ID) -> Void
     let onProgressChanged: (SinCategory.ID, Double) -> Void
 
-    private var averageFrequencyText: String {
+    private var averagePurityText: String {
         SinFrequencyScale.label(for: section.averageProgress)
     }
 
@@ -69,7 +69,7 @@ struct SinSectionCardView: View {
                         .tint(section.tint)
 
                     HStack(spacing: 8) {
-                        Text("Average frequency: \(averageFrequencyText)")
+                        Text("Average purity: \(averagePurityText)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

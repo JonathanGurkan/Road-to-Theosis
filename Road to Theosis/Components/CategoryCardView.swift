@@ -129,8 +129,10 @@ struct CategoryCardView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    ProgressView(value: category.progress)
-                        .tint(category.tint)
+                    NextFrequencyProgressBar(
+                        value: category.progress,
+                        tint: category.tint
+                    )
 
                     frequencySummaryRow
                 }
@@ -184,6 +186,71 @@ struct CategoryCardView: View {
         }
 
         onProgressChanged(category.progress)
+    }
+}
+
+private struct NextFrequencyProgressBar: View {
+    let value: Double
+    let tint: Color
+
+    private let trackHeight: CGFloat = 8
+    private let indicatorWidth: CGFloat = 10
+    private let indicatorHeight: CGFloat = 3
+
+    private var clampedValue: Double {
+        min(max(value, 0), 1)
+    }
+
+    private var nextMilestone: Double? {
+        SinFrequencyScale.nextMilestone(after: clampedValue)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            GeometryReader { proxy in
+                let width = max(proxy.size.width, 1)
+
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: trackHeight / 2, style: .continuous)
+                        .fill(Color(uiColor: .tertiarySystemFill))
+                        .frame(height: trackHeight)
+
+                    RoundedRectangle(cornerRadius: trackHeight / 2, style: .continuous)
+                        .fill(tint.gradient)
+                        .frame(width: max(0, width * CGFloat(clampedValue)), height: trackHeight)
+
+                    if let nextMilestone {
+                        let xPosition = min(max(CGFloat(nextMilestone) * width, indicatorWidth / 2), width - indicatorWidth / 2)
+                        Capsule()
+                            .fill(tint.opacity(0.62))
+                            .frame(width: indicatorWidth, height: indicatorHeight)
+                            .position(x: xPosition, y: trackHeight + 5)
+                    }
+                }
+                .frame(height: trackHeight + 8)
+            }
+            .frame(height: trackHeight + 8)
+
+            if let nextMilestone {
+                GeometryReader { proxy in
+                    let width = max(proxy.size.width, 1)
+                    let xPosition = min(max(CGFloat(nextMilestone) * width, 24), width - 24)
+                    Text(SinFrequencyScale.level(forMilestone: nextMilestone).title)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(tint.opacity(0.82))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                        .position(x: xPosition, y: 7)
+                }
+                .frame(height: 14)
+            } else {
+                Text("Pure")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(tint.opacity(0.82))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
