@@ -10,7 +10,6 @@ struct HeadwayView: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
-    let showVictorySwipeAction: Bool
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -911,7 +910,7 @@ struct HeadwayView: View {
                     SinSectionCardView(
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
-                        showsVictoryAction: showVictorySwipeAction,
+                        showsVictoryAction: true,
                         usesProgressSliders: usesFocusProgressSliders,
                         sliderStyle: focusSliderStyle,
                         focusedItemIDs: activeFocusIDs,
@@ -1484,8 +1483,7 @@ struct HeadwayView: View {
             backgroundTheme: .constant(.blood),
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
-            purityCalculationDate: .constant(Date()),
-            showVictorySwipeAction: true
+            purityCalculationDate: .constant(Date())
         )
     }
 }

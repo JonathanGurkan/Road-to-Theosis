@@ -7,7 +7,6 @@ struct AppShellView: View {
     @State private var logEntries: [LogEntry] = []
     @State private var purityCalculationDate = Date()
     @State private var isShowingWelcome = false
-    @State private var showVictorySwipeAction = false
     @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
 
     private var purityStrictness: PurityStrictness {
@@ -21,8 +20,7 @@ struct AppShellView: View {
                     backgroundTheme: $backgroundTheme,
                     dashboard: $dashboard,
                     logEntries: $logEntries,
-                    purityCalculationDate: $purityCalculationDate,
-                    showVictorySwipeAction: showVictorySwipeAction
+                    purityCalculationDate: $purityCalculationDate
                 )
             }
             .tabItem {
@@ -39,7 +37,6 @@ struct AppShellView: View {
             NavigationStack {
                 SettingsView(
                     backgroundTheme: $backgroundTheme,
-                    showVictorySwipeAction: $showVictorySwipeAction,
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,

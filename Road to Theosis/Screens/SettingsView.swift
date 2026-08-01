@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @Binding var showVictorySwipeAction: Bool
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
@@ -27,10 +26,7 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
-                    HomeSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        showVictorySwipeAction: $showVictorySwipeAction
-                    )
+                    HomeSettingsPage(backgroundTheme: $backgroundTheme)
                 } label: {
                     SettingsLinkRow(
                         title: "Home",
@@ -191,22 +187,9 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @Binding var showVictorySwipeAction: Bool
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
-    @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
-    @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
-
-    private var focusSliderStyleBinding: Binding<FocusSliderStyle> {
-        Binding {
-            FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
-        } set: { newValue in
-            focusSliderStyleRaw = newValue.rawValue
-        }
-    }
-
-
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -215,41 +198,11 @@ private struct HomeSettingsPage: View {
                 Section(header: Text("Layout")) {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
-                    Toggle("Use frequency sliders", isOn: $usesFocusProgressSliders)
-                    Toggle("Show resistance swipe action", isOn: $showVictorySwipeAction)
-
-                    if usesFocusProgressSliders {
-                        Picker("Slider style", selection: focusSliderStyleBinding) {
-                            ForEach(FocusSliderStyle.allCases) { style in
-                                Text(style.title).tag(style)
-                            }
-                        }
-
-                        Text((FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean).subtitle)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-
-
-                    if usesFocusProgressSliders {
-                        Picker("Slider style", selection: focusSliderStyleBinding) {
-                            ForEach(FocusSliderStyle.allCases) { style in
-                                Text(style.title).tag(style)
-                            }
-                        }
-
-                        Text((FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean).subtitle)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
 
                     Button(role: .destructive) {
                         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
                         showRecentActivity = true
                         compactSinRows = false
-                        usesFocusProgressSliders = true
-                        focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
-                        showVictorySwipeAction = false
                     } label: {
                         Label("Reset Home Screen", systemImage: "arrow.counterclockwise")
                     }
@@ -289,16 +242,12 @@ private struct PuritySettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Strictness"), footer: Text("Strictness controls both the recent history range and how long a sin must stay clean before it becomes Pure.")) {
+                Section(header: Text("Strictness")) {
                     Picker("Purity strictness", selection: strictnessBinding) {
                         ForEach(PurityStrictness.allCases) { strictness in
                             Text(strictness.title).tag(strictness)
                         }
                     }
-
-                    Text(selectedStrictness.subtitle)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
 
                 Section(header: Text("Current Standard")) {
@@ -547,7 +496,6 @@ private struct DeveloperSettingsPage: View {
 
             List {
                 Section(header: Text("Display Mode"), footer: Text("Use this to check the exact same sin list in slider mode and bar mode.")) {
-                    Toggle("Use frequency sliders", isOn: $usesFocusProgressSliders)
 
                     if usesFocusProgressSliders {
                         Picker("Slider style", selection: focusSliderStyleBinding) {
@@ -831,7 +779,6 @@ private struct SettingsNoteRow: View {
     NavigationStack {
         SettingsView(
             backgroundTheme: .constant(.blood),
-            showVictorySwipeAction: .constant(false),
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
