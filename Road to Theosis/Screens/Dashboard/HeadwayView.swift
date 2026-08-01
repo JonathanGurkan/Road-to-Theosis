@@ -9,7 +9,7 @@ struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
-    let showVictorySwipeAction: Bool
+    @Binding var purityCalculationDate: Date
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -25,6 +25,7 @@ struct HeadwayView: View {
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
     @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -41,6 +42,10 @@ struct HeadwayView: View {
 
     private var focusSliderStyle: FocusSliderStyle {
         FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
+    }
+
+    private var purityStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
     }
 
     var homeScreenLayout: HomeScreenLayout {
@@ -112,13 +117,26 @@ struct HeadwayView: View {
     }
 
     private func simulateDailyProgress() {
-        dashboard.advanceDailyProgress()
+        purityCalculationDate = Calendar.current.date(byAdding: .day, value: 1, to: purityCalculationDate) ?? purityCalculationDate
+        recalculatePurity()
+    }
+
+    private func saveEntry(_ entry: LogEntry, now: Date? = nil) {
+        let calculationDate = max(now ?? purityCalculationDate, entry.occurredAt)
+        purityCalculationDate = calculationDate
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
+
+        recalculatePurity(now: calculationDate)
+    }
+
+    private func recalculatePurity(now: Date? = nil) {
+        dashboard.recalculatePurity(from: logEntries, now: now ?? purityCalculationDate, strictness: purityStrictness)
     }
 
     private func logSwipeOutcome(_ kind: LogEntry.Kind, for itemID: SinCategory.ID, in sectionIndex: Int) -> Bool {
         guard dashboard.sections.indices.contains(sectionIndex),
-              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }),
-              shouldRecordSwipeOutcome(kind, progress: item.progress) else {
+              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }) else {
             return false
         }
 
@@ -130,19 +148,8 @@ struct HeadwayView: View {
             prayerMinutes: 0,
             occurredAt: Date()
         )
-        logEntries.insert(entry, at: 0)
+        saveEntry(entry)
         return true
-    }
-
-    private func shouldRecordSwipeOutcome(_ kind: LogEntry.Kind, progress: Double) -> Bool {
-        switch kind {
-        case .victory:
-            return progress < 1
-        case .loss:
-            return progress > 0
-        case .prayer, .quickPrayer, .progressUpdate, .sliderProgressUpdate, .note:
-            return true
-        }
     }
 
     private var selectedFocusContexts: [FocusedSinContext] {
@@ -216,14 +223,7 @@ struct HeadwayView: View {
     private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
         guard logSwipeOutcome(kind, for: context.item.id, in: context.sectionIndex) else { return }
 
-        switch kind {
-        case .victory:
-            dashboard.markVictory(in: context.item.id)
-        case .loss:
-            dashboard.resetItem(context.item.id)
-        case .prayer, .quickPrayer, .progressUpdate, .sliderProgressUpdate, .note:
-            break
-        }
+        // Purity is recalculated from the saved log entry in logSwipeOutcome.
     }
 
     private func logFocusedPrayer(context: FocusedSinContext) {
@@ -235,8 +235,7 @@ struct HeadwayView: View {
             prayerMinutes: 1,
             occurredAt: Date()
         )
-        logEntries.insert(entry, at: 0)
-        dashboard.record(entry)
+        saveEntry(entry)
     }
 
     private func toggleFocus(for itemID: SinCategory.ID) {
@@ -279,7 +278,7 @@ struct HeadwayView: View {
             progressPercentage: draft.progressPercentage,
             occurredAt: Date()
         )
-        logEntries.insert(entry, at: 0)
+        saveEntry(entry)
     }
 
     var body: some View {
@@ -364,14 +363,12 @@ struct HeadwayView: View {
         }
         .sheet(isPresented: $isShowingAddView) {
             AddLoggingView(backgroundTheme: $backgroundTheme) { entry in
-                logEntries.insert(entry, at: 0)
-                dashboard.record(entry)
+                saveEntry(entry)
             }
         }
         .sheet(isPresented: $isShowingQuickPrayer) {
             AddLoggingView(backgroundTheme: $backgroundTheme, onSave: { entry in
-                logEntries.insert(entry, at: 0)
-                dashboard.record(entry)
+                saveEntry(entry)
             }, initialMode: .quickPrayer)
         }
         .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
@@ -381,8 +378,7 @@ struct HeadwayView: View {
         }
         .fullScreenCover(isPresented: $isShowingPrayerTimer) {
             PrayerTimerView(backgroundTheme: $backgroundTheme) { entry in
-                logEntries.insert(entry, at: 0)
-                dashboard.record(entry)
+                saveEntry(entry)
             }
         }
         .sheet(item: $selectedDefenseItem) { item in
@@ -529,7 +525,7 @@ struct HeadwayView: View {
                             Spacer()
                         }
                         .frame(height: 4)
-                        Text("\(dashboard.dailyCheckIns) checks • \(dashboard.activeStreak)d streak")
+                        Text("\(dashboard.dailyCheckIns) checks • \(dashboard.overallResistanceCount) resist")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -567,6 +563,7 @@ struct HeadwayView: View {
                     HStack(spacing: 6) {
                         compactOverviewInfoPill(value: "\(dashboard.dailyCheckIns)", label: "Checks", icon: "checklist")
                         compactOverviewInfoPill(value: "\(dashboard.activeStreak)d", label: "Streak", icon: "flame.fill")
+                        compactOverviewInfoPill(value: "\(dashboard.overallResistanceCount)", label: "Resist", icon: "checkmark.shield.fill")
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -680,6 +677,11 @@ struct HeadwayView: View {
                 .padding(.leading, 38)
 
             overviewStackedStat(title: "Active streak", value: "\(dashboard.activeStreak)d", icon: "flame.fill")
+
+            Divider()
+                .padding(.leading, 38)
+
+            overviewStackedStat(title: "Overall resistance", value: "\(dashboard.overallResistanceCount)", icon: "checkmark.shield.fill")
         }
     }
 
@@ -908,7 +910,7 @@ struct HeadwayView: View {
                     SinSectionCardView(
                         section: $dashboard.sections[index],
                         isCompact: compactSinRows,
-                        showsVictoryAction: showVictorySwipeAction,
+                        showsVictoryAction: true,
                         usesProgressSliders: usesFocusProgressSliders,
                         sliderStyle: focusSliderStyle,
                         focusedItemIDs: activeFocusIDs,
@@ -919,12 +921,10 @@ struct HeadwayView: View {
                             toggleFocus(for: itemID)
                         },
                         onVictory: { itemID in
-                            guard logSwipeOutcome(.victory, for: itemID, in: index) else { return }
-                            dashboard.markVictory(in: itemID)
+                            _ = logSwipeOutcome(.victory, for: itemID, in: index)
                         },
                         onReset: { itemID in
-                            guard logSwipeOutcome(.loss, for: itemID, in: index) else { return }
-                            dashboard.resetItem(itemID)
+                            _ = logSwipeOutcome(.loss, for: itemID, in: index)
                         },
                         onProgressChanged: { itemID, progress in
                             prepareProgressLog(for: itemID, progress: progress, in: index)
@@ -1483,7 +1483,7 @@ struct HeadwayView: View {
             backgroundTheme: .constant(.blood),
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
-            showVictorySwipeAction: true
+            purityCalculationDate: .constant(Date())
         )
     }
 }

@@ -19,7 +19,7 @@ struct LogEntry: Identifiable {
             case .quickPrayer:
                 return "Quick Prayer"
             case .victory:
-                return "Victory"
+                return "Resistance"
             case .loss:
                 return "Loss"
             case .progressUpdate:

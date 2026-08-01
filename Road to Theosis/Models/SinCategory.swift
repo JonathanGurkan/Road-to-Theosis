@@ -15,6 +15,7 @@ struct SinCategory: Identifiable {
     var tint: Color
     let watchword: String
     var progress: Double
+    var recentResistanceCount = 0
 
     static func item(
         _ title: String,

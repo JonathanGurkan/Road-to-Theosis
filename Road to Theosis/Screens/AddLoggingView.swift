@@ -613,7 +613,7 @@ private enum SinOutcome: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .victory:
-            return "Victory"
+            return "Resistance"
         case .loss:
             return "Loss"
         case .note:
@@ -635,11 +635,11 @@ private enum SinOutcome: String, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .victory:
-            return "Use this for a win, a completed check-in, or a moment of progress."
+            return "Use this when temptation was present and you actively resisted it."
         case .loss:
             return "Use this for a setback, lapse, or moment where you want to regain footing."
         case .note:
-            return "Use this for anything short that you want to remember without pushing it into a victory or loss."
+            return "Use this for anything short that you want to remember without pushing it into resistance or loss."
         }
     }
 }
