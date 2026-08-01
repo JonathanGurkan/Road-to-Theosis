@@ -195,7 +195,7 @@ struct PurityProgressBarView: View {
     let tint: Color
     var showsNextIndicator = false
 
-    private let trackHeight: CGFloat = 8
+    private let trackHeight: CGFloat = 6
     private let indicatorWidth: CGFloat = 10
     private let indicatorHeight: CGFloat = 3
 

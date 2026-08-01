@@ -20,6 +20,7 @@ struct HeadwayView: View {
     @State private var pendingProgressLog: ProgressLogDraft?
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
+    @State private var isShowingModeToggleLabel = false
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
@@ -863,16 +864,37 @@ struct HeadwayView: View {
                 .foregroundStyle(.primary)
             Spacer()
             Button {
-                usesFocusProgressSliders.toggle()
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    usesFocusProgressSliders.toggle()
+                    isShowingModeToggleLabel = true
+                }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                        isShowingModeToggleLabel = false
+                    }
+                }
             } label: {
-                Image(systemName: usesFocusProgressSliders ? "chart.bar.fill" : "slider.horizontal.3")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(backgroundTheme.glowColor)
-                    .frame(width: 28, height: 28)
-                    .background(backgroundTheme.glowColor.opacity(0.14), in: Circle())
+                HStack(spacing: isShowingModeToggleLabel ? 6 : 0) {
+                    Image(systemName: usesFocusProgressSliders ? "slider.horizontal.3" : "chart.bar.fill")
+                        .font(.caption.weight(.semibold))
+
+                    if isShowingModeToggleLabel {
+                        Text(usesFocusProgressSliders ? "Slider" : "Bar")
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                            .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .trailing)))
+                    }
+                }
+                .foregroundStyle(backgroundTheme.glowColor)
+                .padding(.horizontal, isShowingModeToggleLabel ? 10 : 0)
+                .frame(width: isShowingModeToggleLabel ? 78 : 28, height: 28)
+                .background(backgroundTheme.glowColor.opacity(0.14), in: Capsule())
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(usesFocusProgressSliders ? "Show progress bars" : "Show progress sliders")
+            .animation(.spring(response: 0.28, dampingFraction: 0.86), value: isShowingModeToggleLabel)
+            .accessibilityLabel(usesFocusProgressSliders ? "Current mode: slider" : "Current mode: bar")
         }
         .padding(.horizontal, 2)
     }

@@ -11,9 +11,9 @@ enum SinFrequencyScale {
     static let levels: [SinFrequencyLevel] = [
         SinFrequencyLevel(id: "rockBottom", title: "Rock bottom", detail: "daily or near daily", rangeText: "0-20%"),
         SinFrequencyLevel(id: "daily", title: "Daily", detail: "daily or near daily", rangeText: "21-40%"),
-        SinFrequencyLevel(id: "severalWeekly", title: "Several times weekly", detail: "2-4 times weekly", rangeText: "41-55%"),
+        SinFrequencyLevel(id: "severalWeekly", title: "Often", detail: "2-4 times weekly", rangeText: "41-55%"),
         SinFrequencyLevel(id: "weekly", title: "Weekly", detail: "about once weekly", rangeText: "56-70%"),
-        SinFrequencyLevel(id: "repeatedMonthly", title: "Repeated monthly", detail: "2-3 times monthly", rangeText: "71-85%"),
+        SinFrequencyLevel(id: "repeatedMonthly", title: "Occasional", detail: "2-3 times monthly", rangeText: "71-85%"),
         SinFrequencyLevel(id: "monthly", title: "Monthly", detail: "about once a month", rangeText: "86-95%"),
         SinFrequencyLevel(id: "rare", title: "Rare", detail: "less than monthly", rangeText: "96-99%"),
         SinFrequencyLevel(id: "pure", title: "Pure", detail: "not recently", rangeText: "100%")
