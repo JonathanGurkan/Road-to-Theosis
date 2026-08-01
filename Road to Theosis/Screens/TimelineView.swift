@@ -160,7 +160,7 @@ private struct TimelineRow: View {
                 if let progressPercentage = entry.progressPercentage {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text("Sin frequency")
+                            Text("Purity")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
 
@@ -197,7 +197,7 @@ private struct TimelineRow: View {
                     }
 
                     if let progressPercentage = entry.progressPercentage {
-                        Text("Set to \(SinFrequencyScale.label(for: progressPercentage))")
+                        Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
                     } else {

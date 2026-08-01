@@ -7,7 +7,7 @@ struct ProgressLogDraft: Identifiable {
     let progressPercentage: Int
     let tint: Color
 
-    var frequencyLabel: String {
+    var purityLabel: String {
         SinFrequencyScale.label(for: progressPercentage)
     }
 }
@@ -37,7 +37,7 @@ struct ProgressLogSheetView: View {
                                     .font(.largeTitle.weight(.semibold))
                                     .foregroundStyle(.primary)
 
-                                Text("Frequency changed to \(draft.frequencyLabel).")
+                                Text("Purity changed to \(draft.purityLabel).")
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
 
@@ -74,7 +74,7 @@ struct ProgressLogSheetView: View {
                                     .font(.headline.weight(.semibold))
                                     .foregroundStyle(.primary)
 
-                                Text("Add context for this frequency change, or save it without a note.")
+                                Text("Add context for this purity change, or save it without a note.")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)

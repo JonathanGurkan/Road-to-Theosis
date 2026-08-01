@@ -35,7 +35,14 @@ struct SinCategory: Identifiable {
     }
 
     func frequencyDescription(for level: SinFrequencyLevel) -> String {
-        "\(frequencyAction) \(level.detail)"
+        switch level.id {
+        case "pure":
+            return "No recent pattern"
+        case "rockBottom":
+            return "\(frequencyAction) daily or near daily"
+        default:
+            return "\(frequencyAction) \(level.detail)"
+        }
     }
 
     private var frequencyAction: String {
