@@ -3,8 +3,8 @@ import SwiftUI
 struct FrequencyProgressBarView: View {
     let value: Double
     let tint: Color
-    var trackHeight: CGFloat = 7
-    var dotSize: CGFloat = 7
+    var trackHeight: CGFloat = 8
+    var dotSize: CGFloat = 4
 
     private var clampedValue: Double {
         min(max(value, 0), 1)
@@ -20,22 +20,21 @@ struct FrequencyProgressBarView: View {
                     .frame(height: trackHeight)
 
                 RoundedRectangle(cornerRadius: trackHeight / 2, style: .continuous)
-                    .fill(tint.gradient)
-                    .frame(width: max(dotSize / 2, width * CGFloat(clampedValue)), height: trackHeight)
+                    .fill(tint.opacity(0.88))
+                    .frame(width: max(0, width * CGFloat(clampedValue)), height: trackHeight)
 
                 ForEach(SinFrequencyScale.milestoneProgresses, id: \.self) { milestone in
                     let position = min(max(CGFloat(milestone) * width, dotSize / 2), width - dotSize / 2)
 
                     Circle()
-                        .fill(milestone <= clampedValue ? tint : Color(uiColor: .systemBackground))
-                        .overlay(Circle().stroke(tint.opacity(0.48), lineWidth: 1))
+                        .fill(milestone <= clampedValue ? Color(uiColor: .systemBackground).opacity(0.92) : tint.opacity(0.34))
                         .frame(width: dotSize, height: dotSize)
-                        .position(x: position, y: dotSize / 2)
+                        .position(x: position, y: trackHeight / 2)
                 }
             }
-            .frame(height: dotSize)
+            .frame(height: trackHeight)
         }
-        .frame(height: max(trackHeight, dotSize))
+        .frame(height: trackHeight)
         .accessibilityHidden(true)
     }
 }

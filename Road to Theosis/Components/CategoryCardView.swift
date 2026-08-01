@@ -221,11 +221,10 @@ private struct FrequencySliderView: View {
 
                 if style.showsMilestones {
                     ForEach(SinFrequencyScale.milestoneProgresses, id: \.self) { milestone in
-                        let position = min(max(CGFloat(milestone) * width, 2.5), width - 2.5)
+                        let position = min(max(CGFloat(milestone) * width, 2), width - 2)
                         Circle()
-                            .fill(milestone <= clampedValue ? tint : Color(uiColor: .systemBackground))
-                            .overlay(Circle().stroke(tint.opacity(0.45), lineWidth: 1))
-                            .frame(width: 5, height: 5)
+                            .fill(milestone <= clampedValue ? Color(uiColor: .systemBackground).opacity(0.92) : tint.opacity(0.34))
+                            .frame(width: 4, height: 4)
                             .position(x: position, y: style.controlHeight / 2)
                     }
                 }
