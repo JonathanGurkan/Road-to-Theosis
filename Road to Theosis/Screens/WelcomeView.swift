@@ -35,6 +35,18 @@ struct WelcomeView: View {
             ]
         ),
         .init(
+            title: "Understand purity",
+            subtitle: "The percentage shows current purity for each struggle: 0% is rock bottom and 100% is pure.",
+            icon: "chart.bar.fill",
+            tint: .indigo,
+            points: [
+                "Recent losses set the main score, so the bar reflects actual frequency instead of a slow daily climb.",
+                "Fewer recent losses move a sin into clearer levels like Occasional, Rare, and Pure.",
+                "Clean time matters most when the recent loss window clears, with Pure reserved for a longer clean stretch.",
+                "Manual sliders still let you calibrate a sin when the score needs a direct correction."
+            ]
+        ),
+        .init(
             title: "Pray with purpose",
             subtitle: "Use the prayer timer when you want a dedicated, distraction-free session that you can save and revisit later.",
             icon: "timer",
