@@ -36,18 +36,7 @@ struct DashboardViewModel {
     }
 
     mutating func advanceDailyProgress(days: Int = 1) {
-        let elapsedDays = max(days, 0)
-        guard elapsedDays > 0 else { return }
-
-        for sectionIndex in sections.indices {
-            for itemIndex in sections[sectionIndex].items.indices {
-                let currentProgress = sections[sectionIndex].items[itemIndex].progress
-                guard currentProgress < 1 else { continue }
-
-                let recoveryDelta = dailyRecoveryDelta(for: currentProgress, elapsedDays: elapsedDays)
-                sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + recoveryDelta)
-            }
-        }
+        // Kept as a compatibility no-op. Purity now comes from log history.
     }
 
     mutating func recalculatePurity(from entries: [LogEntry], now: Date = .now) {
@@ -72,17 +61,13 @@ struct DashboardViewModel {
 
                 sections[sectionIndex].items[itemIndex].recentResistanceCount = recentResistanceCount
 
-                guard let latestLossDate = lossEntries.map(\.`occurredAt`).max() else {
+                guard let latestLossDate = lossEntries.map(\.occurredAt).max() else {
                     continue
                 }
 
                 let lossPressure = effectiveLossPressure(recentLossCount: recentLossCount, recentResistanceCount: recentResistanceCount)
                 let purity = purityScore(lossPressure: lossPressure, latestLossDate: latestLossDate, pureStart: pureStart)
                 sections[sectionIndex].items[itemIndex].progress = purity
-            }
-        }
-    }
-
             }
         }
     }
@@ -189,12 +174,6 @@ struct DashboardViewModel {
         sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + delta)
     }
 
-    private func dailyRecoveryDelta(for progress: Double, elapsedDays: Int) -> Double {
-        let remainingPurity = max(0, 1 - progress)
-        let dailyRecoveryRate = 0.012
-        return remainingPurity * (1 - pow(1 - dailyRecoveryRate, Double(elapsedDays)))
-    }
-
     private func effectiveLossPressure(recentLossCount: Int, recentResistanceCount: Int) -> Double {
         guard recentLossCount > 0 else { return 0 }
 
@@ -220,8 +199,6 @@ struct DashboardViewModel {
         default:
             return latestLossDate <= pureStart ? 1.0 : 0.97
         }
-    }
-
     }
 
     private func clampedProgress(_ progress: Double) -> Double {
