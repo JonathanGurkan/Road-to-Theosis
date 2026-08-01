@@ -65,12 +65,9 @@ struct AppShellView: View {
     }
 
     private func saveEntry(_ entry: LogEntry) {
+        purityCalculationDate = max(purityCalculationDate, entry.occurredAt)
         logEntries.insert(entry, at: 0)
         dashboard.record(entry)
-
-        guard entry.kind != .progressUpdate, entry.kind != .sliderProgressUpdate else {
-            return
-        }
 
         dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
     }

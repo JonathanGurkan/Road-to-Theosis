@@ -118,13 +118,10 @@ struct HeadwayView: View {
     }
 
     private func saveEntry(_ entry: LogEntry, now: Date? = nil) {
-        let calculationDate = now ?? purityCalculationDate
+        let calculationDate = max(now ?? purityCalculationDate, entry.occurredAt)
+        purityCalculationDate = calculationDate
         logEntries.insert(entry, at: 0)
         dashboard.record(entry)
-
-        guard entry.kind != .progressUpdate, entry.kind != .sliderProgressUpdate else {
-            return
-        }
 
         dashboard.recalculatePurity(from: logEntries, now: calculationDate)
     }

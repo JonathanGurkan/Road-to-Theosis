@@ -62,6 +62,9 @@ struct DashboardViewModel {
                 sections[sectionIndex].items[itemIndex].recentResistanceCount = recentResistanceCount
 
                 guard let latestLossDate = lossEntries.map(\.occurredAt).max() else {
+                    if recentResistanceCount > 0 {
+                        sections[sectionIndex].items[itemIndex].progress = 1.0
+                    }
                     continue
                 }
 
