@@ -40,10 +40,10 @@ struct WelcomeView: View {
             icon: "chart.bar.fill",
             tint: .indigo,
             points: [
-                "Recent losses set the main score, so the bar reflects actual frequency instead of a slow daily climb.",
-                "Fewer recent losses move a sin into clearer levels like Occasional, Rare, and Pure.",
-                "Clean time matters most when the recent loss window clears, with Pure reserved for a longer clean stretch.",
-                "Manual sliders still let you calibrate a sin when the score needs a direct correction."
+                "Losses, clean time, and your selected strictness decide the current purity level.",
+                "Strictness controls how much history counts and how long a clean stretch must be before Pure.",
+                "Resistance is counted separately so effort stays visible without distorting the purity score.",
+                "Manual sliders create a new baseline when you know the current score needs a correction."
             ]
         ),
         .init(
