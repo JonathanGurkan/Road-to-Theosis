@@ -42,7 +42,7 @@ struct TimelineView: View {
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "Prayer sessions, victories, losses, and notes appear here in time order." : "Prayers, victories, losses, and notes appear here in time order.")
+                Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -54,7 +54,7 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(isPrayerTimingEnabled ? "Your victories, losses, notes, and prayer time will appear here once you start logging." : "Your victories, losses, notes, and prayers will appear here once you start logging.")
+                Text(isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

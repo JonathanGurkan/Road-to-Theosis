@@ -165,6 +165,16 @@ struct CategoryCardView: View {
 
             Spacer(minLength: 8)
 
+            if category.recentResistanceCount > 0 {
+                Label("Resistance \(category.recentResistanceCount)", systemImage: "checkmark.shield.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(category.tint)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(category.tint.opacity(0.12), in: Capsule())
+                    .accessibilityLabel("\(category.recentResistanceCount) recent resistance logs")
+            }
+
             Text(category.frequencyDescription(for: frequencyLevel))
                 .font(.caption)
                 .foregroundStyle(.secondary)

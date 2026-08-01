@@ -198,7 +198,7 @@ private struct HomeSettingsPage: View {
                     Toggle("Show recent activity", isOn: $showRecentActivity)
                     Toggle("Compact sin list", isOn: $compactSinRows)
                     Toggle("Use frequency sliders", isOn: $usesFocusProgressSliders)
-                    Toggle("Show victory swipe action", isOn: $showVictorySwipeAction)
+                    Toggle("Show resistance swipe action", isOn: $showVictorySwipeAction)
 
                     if usesFocusProgressSliders {
                         Picker("Slider style", selection: focusSliderStyleBinding) {
@@ -390,7 +390,10 @@ private struct DeveloperSettingsPage: View {
         .init(title: "Occasional", detail: "3 recent losses", lossDayOffsets: [0, 10, 20]),
         .init(title: "Rare", detail: "1 recent loss", lossDayOffsets: [0]),
         .init(title: "Clean window", detail: "last loss 31 days ago", lossDayOffsets: [31]),
-        .init(title: "Pure", detail: "last loss 91 days ago", lossDayOffsets: [91])
+        .init(title: "Pure", detail: "last loss 91 days ago", lossDayOffsets: [91]),
+        .init(title: "Resistance only", detail: "6 recent resistances", lossDayOffsets: [], resistanceDayOffsets: [0, 2, 4, 6, 8, 10]),
+        .init(title: "Mixed pressure", detail: "4 losses, 4 resistances", lossDayOffsets: [0, 7, 14, 21], resistanceDayOffsets: [1, 8, 15, 22]),
+        .init(title: "Capped resistance", detail: "16 losses, 16 resistances", lossDayOffsets: Array(0..<16), resistanceDayOffsets: Array(0..<16))
     ]
 
     private var selectedSection: SinSection? {
@@ -404,8 +407,12 @@ private struct DeveloperSettingsPage: View {
     }
 
     private var selectedLevelText: String {
-        guard let selectedItem else { return "No sin selected" }
-        return SinFrequencyScale.label(for: selectedItem.progress)
+        guard let selectedSection, let selectedItem else { return "No sin selected" }
+        let recentLosses = recentEntryCount(kind: .loss, sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+        let recentResistance = recentEntryCount(kind: .victory, sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+        let pressure = effectiveLossPressure(recentLossCount: recentLosses, recentResistanceCount: recentResistance)
+        let pressureText = Self.pressureFormatter.string(from: NSNumber(value: pressure)) ?? "0"
+        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(recentLosses) | Resistance \(recentResistance) | Pressure \(pressureText)"
     }
 
     private var focusSliderStyleBinding: Binding<FocusSliderStyle> {
@@ -507,7 +514,7 @@ private struct DeveloperSettingsPage: View {
                         addLiveEntry(kind: .loss)
                     }
 
-                    Button("Log victory now") {
+                    Button("Log resistance now") {
                         addLiveEntry(kind: .victory)
                     }
 
@@ -517,6 +524,12 @@ private struct DeveloperSettingsPage: View {
                 }
 
                 Section(header: Text("Reset")) {
+                    Button(role: .destructive) {
+                        clearSelectedSinLogs()
+                    } label: {
+                        Label("Clear Selected Sin Logs", systemImage: "eraser")
+                    }
+
                     Button(role: .destructive) {
                         logEntries.removeAll()
                         dashboard = DashboardViewModel()
@@ -538,21 +551,29 @@ private struct DeveloperSettingsPage: View {
         guard let selectedSection, let selectedItem else { return }
         removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
 
-        let seededEntries = scenario.lossDayOffsets.compactMap { dayOffset in
-            Calendar.current.date(byAdding: .day, value: -dayOffset, to: purityCalculationDate).map { date in
-                LogEntry(
-                    kind: .loss,
-                    sectionTitle: selectedSection.title,
-                    sinTitle: selectedItem.title,
-                    note: "Developer scenario: \(scenario.title)",
-                    prayerMinutes: 0,
-                    occurredAt: date
-                )
-            }
+        let lossEntries = scenario.lossDayOffsets.compactMap { dayOffset in
+            scenarioEntry(kind: .loss, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
+        }
+        let resistanceEntries = scenario.resistanceDayOffsets.compactMap { dayOffset in
+            scenarioEntry(kind: .victory, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
         }
 
+        let seededEntries = lossEntries + resistanceEntries
         logEntries.insert(contentsOf: seededEntries.sorted { $0.occurredAt > $1.occurredAt }, at: 0)
         dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+    }
+
+    private func scenarioEntry(kind: LogEntry.Kind, dayOffset: Int, sectionTitle: String, sinTitle: String, title: String) -> LogEntry? {
+        Calendar.current.date(byAdding: .day, value: -dayOffset, to: purityCalculationDate).map { date in
+            LogEntry(
+                kind: kind,
+                sectionTitle: sectionTitle,
+                sinTitle: sinTitle,
+                note: "Developer scenario: \(title)",
+                prayerMinutes: 0,
+                occurredAt: date
+            )
+        }
     }
 
     private func addLiveEntry(kind: LogEntry.Kind, prayerMinutes: Int = 0) {
@@ -576,6 +597,31 @@ private struct DeveloperSettingsPage: View {
         dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
     }
 
+    private func clearSelectedSinLogs() {
+        guard let selectedSection, let selectedItem else { return }
+        removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+    }
+
+    private func recentEntryCount(kind: LogEntry.Kind, sectionTitle: String, sinTitle: String) -> Int {
+        let windowStart = Calendar.current.date(byAdding: .day, value: -30, to: purityCalculationDate) ?? purityCalculationDate
+        return logEntries.filter { entry in
+            entry.kind == kind &&
+            entry.sectionTitle == sectionTitle &&
+            entry.sinTitle == sinTitle &&
+            entry.occurredAt >= windowStart &&
+            entry.occurredAt <= purityCalculationDate
+        }.count
+    }
+
+    private func effectiveLossPressure(recentLossCount: Int, recentResistanceCount: Int) -> Double {
+        guard recentLossCount > 0 else { return 0 }
+
+        let resistanceCredit = Double(recentResistanceCount) * 0.5
+        let maxCredit = Double(recentLossCount) * 0.25
+        return max(1, Double(recentLossCount) - min(resistanceCredit, maxCredit))
+    }
+
     private func removeEntriesForSelectedSin(sectionTitle: String, sinTitle: String) {
         logEntries.removeAll { entry in
             entry.sectionTitle == sectionTitle && entry.sinTitle == sinTitle
@@ -588,12 +634,20 @@ private struct DeveloperSettingsPage: View {
         formatter.timeStyle = .none
         return formatter
     }()
+
+    private static let pressureFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.maximumFractionDigits = 1
+        formatter.minimumFractionDigits = 0
+        return formatter
+    }()
 }
 
 private struct DeveloperPurityScenario: Identifiable {
     let title: String
     let detail: String
     let lossDayOffsets: [Int]
+    var resistanceDayOffsets: [Int] = []
 
     var id: String { title }
 }

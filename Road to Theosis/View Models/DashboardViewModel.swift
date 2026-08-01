@@ -48,19 +48,25 @@ struct DashboardViewModel {
             for itemIndex in sections[sectionIndex].items.indices {
                 let sectionTitle = sections[sectionIndex].title
                 let sinTitle = sections[sectionIndex].items[itemIndex].title
-                let lossEntries = entries.filter { entry in
-                    entry.kind == .loss &&
+                let sinEntries = entries.filter { entry in
                     entry.sectionTitle == sectionTitle &&
                     entry.sinTitle == sinTitle &&
                     entry.occurredAt <= now
                 }
+                let lossEntries = sinEntries.filter { $0.kind == .loss }
+                let recentLossCount = lossEntries.filter { $0.occurredAt >= windowStart }.count
+                let recentResistanceCount = sinEntries.filter { entry in
+                    entry.kind == .victory && entry.occurredAt >= windowStart
+                }.count
+
+                sections[sectionIndex].items[itemIndex].recentResistanceCount = recentResistanceCount
 
                 guard let latestLossDate = lossEntries.map(\.occurredAt).max() else {
                     continue
                 }
 
-                let recentLossCount = lossEntries.filter { $0.occurredAt >= windowStart }.count
-                let purity = purityScore(recentLossCount: recentLossCount, latestLossDate: latestLossDate, pureStart: pureStart)
+                let lossPressure = effectiveLossPressure(recentLossCount: recentLossCount, recentResistanceCount: recentResistanceCount)
+                let purity = purityScore(lossPressure: lossPressure, latestLossDate: latestLossDate, pureStart: pureStart)
                 sections[sectionIndex].items[itemIndex].progress = purity
             }
         }
@@ -168,19 +174,27 @@ struct DashboardViewModel {
         sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + delta)
     }
 
-    private func purityScore(recentLossCount: Int, latestLossDate: Date, pureStart: Date) -> Double {
-        switch recentLossCount {
+    private func effectiveLossPressure(recentLossCount: Int, recentResistanceCount: Int) -> Double {
+        guard recentLossCount > 0 else { return 0 }
+
+        let resistanceCredit = Double(recentResistanceCount) * 0.5
+        let maxCredit = Double(recentLossCount) * 0.25
+        return max(1, Double(recentLossCount) - min(resistanceCredit, maxCredit))
+    }
+
+    private func purityScore(lossPressure: Double, latestLossDate: Date, pureStart: Date) -> Double {
+        switch lossPressure {
         case 22...:
             return 0.10
-        case 14...21:
+        case 14..<22:
             return 0.30
-        case 8...13:
+        case 8..<14:
             return 0.48
-        case 4...7:
+        case 4..<8:
             return 0.63
-        case 2...3:
+        case 2..<4:
             return 0.78
-        case 1:
+        case 1..<2:
             return 0.90
         default:
             return latestLossDate <= pureStart ? 1.0 : 0.97
