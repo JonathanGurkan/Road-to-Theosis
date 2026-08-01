@@ -65,8 +65,7 @@ struct SinSectionCardView: View {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    ProgressView(value: section.averageProgress)
-                        .tint(section.tint)
+                    PurityProgressBarView(value: section.averageProgress, tint: section.tint)
 
                     HStack(spacing: 8) {
                         Text("Average purity: \(averagePurityText)")
