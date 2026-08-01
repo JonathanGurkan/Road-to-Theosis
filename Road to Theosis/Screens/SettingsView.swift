@@ -419,8 +419,6 @@ private struct DeveloperSettingsPage: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
-    @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
-    @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
     @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @State private var selectedSectionIndex = 0
     @State private var selectedItemIndex = 0
@@ -444,6 +442,7 @@ private struct DeveloperSettingsPage: View {
             .init(title: "Occasional", detail: "A few monthly equivalents", lossDayOffsets: dayOffsets(count: max(1, weeklyLossCount / 2), within: historyDays)),
             .init(title: "Clean window", detail: "Last loss just outside \(historyDays)d", lossDayOffsets: [historyDays + 1]),
             .init(title: "Pure", detail: "Last loss past \(selectedStrictness.pureAfterDays)d", lossDayOffsets: [selectedStrictness.pureAfterDays + 1]),
+            .init(title: "Prayer boost", detail: "Weekly losses plus prayer", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), prayerDayOffsets: dayOffsets(count: 6, within: historyDays)),
             .init(title: "Resistance only", detail: "Resistance without purity penalty", lossDayOffsets: [], resistanceDayOffsets: dayOffsets(count: 6, within: historyDays)),
             .init(title: "Mixed history", detail: "Weekly losses plus resistance", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), resistanceDayOffsets: dayOffsets(count: 4, within: historyDays))
         ]
@@ -466,18 +465,12 @@ private struct DeveloperSettingsPage: View {
             sinTitle: selectedItem.title,
             entries: logEntries,
             now: purityCalculationDate,
-            strictness: selectedStrictness
+            strictness: selectedStrictness,
+            qualifiesForPrayerBoost: selectedItem.qualifiesForPrayerPurityBoost
         )
         let cleanText = snapshot.cleanDayCount.map { "Clean \($0)d" } ?? "No history"
-        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(snapshot.recentLossCount) | Resistance \(snapshot.recentResistanceCount) | \(cleanText)"
-    }
-
-    private var focusSliderStyleBinding: Binding<FocusSliderStyle> {
-        Binding {
-            FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
-        } set: { newValue in
-            focusSliderStyleRaw = newValue.rawValue
-        }
+        let prayerText = selectedItem.qualifiesForPrayerPurityBoost ? " | Prayer +\(SinFrequencyScale.percentage(for: snapshot.prayerPurityBoost))%" : ""
+        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(snapshot.recentLossCount) | Resistance \(snapshot.recentResistanceCount) | \(cleanText)\(prayerText)"
     }
 
     private func dayOffsets(count: Int, within days: Int) -> [Int] {
@@ -495,17 +488,6 @@ private struct DeveloperSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Display Mode"), footer: Text("Use this to check the exact same sin list in slider mode and bar mode.")) {
-
-                    if usesFocusProgressSliders {
-                        Picker("Slider style", selection: focusSliderStyleBinding) {
-                            ForEach(FocusSliderStyle.allCases) { style in
-                                Text(style.title).tag(style)
-                            }
-                        }
-                    }
-                }
-
                 Section(header: Text("Target Sin"), footer: Text(selectedLevelText)) {
                     Picker("Section", selection: $selectedSectionIndex) {
                         ForEach(dashboard.sections.indices, id: \.self) { index in
@@ -525,7 +507,7 @@ private struct DeveloperSettingsPage: View {
                     }
                 }
 
-                Section(header: Text("Purity Scenarios"), footer: Text("Scenarios replace logs only for the selected sin, then recalculate purity from the seeded history.")) {
+                Section(header: Text("Purity Scenarios"), footer: Text("Scenarios replace selected-sin logs and developer prayer scenario logs, then recalculate purity from the seeded history.")) {
                     ForEach(scenarios) { scenario in
                         Button {
                             applyScenario(scenario)
@@ -616,6 +598,7 @@ private struct DeveloperSettingsPage: View {
     private func applyScenario(_ scenario: DeveloperPurityScenario) {
         guard let selectedSection, let selectedItem else { return }
         removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+        removeDeveloperPrayerScenarioEntries()
 
         let lossEntries = scenario.lossDayOffsets.compactMap { dayOffset in
             scenarioEntry(kind: .loss, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
@@ -623,13 +606,16 @@ private struct DeveloperSettingsPage: View {
         let resistanceEntries = scenario.resistanceDayOffsets.compactMap { dayOffset in
             scenarioEntry(kind: .victory, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
         }
+        let prayerEntries = scenario.prayerDayOffsets.compactMap { dayOffset in
+            scenarioEntry(kind: .quickPrayer, dayOffset: dayOffset, sectionTitle: "Prayer", sinTitle: nil, title: scenario.title)
+        }
 
-        let seededEntries = lossEntries + resistanceEntries
+        let seededEntries = lossEntries + resistanceEntries + prayerEntries
         logEntries.insert(contentsOf: seededEntries.sorted { $0.occurredAt > $1.occurredAt }, at: 0)
         recalculatePurity()
     }
 
-    private func scenarioEntry(kind: LogEntry.Kind, dayOffset: Int, sectionTitle: String, sinTitle: String, title: String) -> LogEntry? {
+    private func scenarioEntry(kind: LogEntry.Kind, dayOffset: Int, sectionTitle: String, sinTitle: String?, title: String) -> LogEntry? {
         Calendar.current.date(byAdding: .day, value: -dayOffset, to: purityCalculationDate).map { date in
             LogEntry(
                 kind: kind,
@@ -679,6 +665,14 @@ private struct DeveloperSettingsPage: View {
         }
     }
 
+    private func removeDeveloperPrayerScenarioEntries() {
+        logEntries.removeAll { entry in
+            (entry.kind == .prayer || entry.kind == .quickPrayer) &&
+            entry.sectionTitle == "Prayer" &&
+            entry.note.hasPrefix("Developer scenario:")
+        }
+    }
+
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -693,6 +687,7 @@ private struct DeveloperPurityScenario: Identifiable {
     let detail: String
     let lossDayOffsets: [Int]
     var resistanceDayOffsets: [Int] = []
+    var prayerDayOffsets: [Int] = []
 
     var id: String { title }
 }

@@ -4,6 +4,8 @@ struct PuritySnapshot {
     let progress: Double
     let recentLossCount: Int
     let recentResistanceCount: Int
+    let recentPrayerCount: Int
+    let prayerPurityBoost: Double
     let cleanDayCount: Int?
     let latestLossDate: Date?
     let latestBaselineDate: Date?
@@ -70,6 +72,7 @@ enum PurityCalculator {
         entries: [LogEntry],
         now: Date,
         strictness: PurityStrictness,
+        qualifiesForPrayerBoost: Bool,
         calendar: Calendar = .current
     ) -> PuritySnapshot {
         let targetEntries = entries.filter { entry in
@@ -83,6 +86,8 @@ enum PurityCalculator {
                 progress: 1,
                 recentLossCount: 0,
                 recentResistanceCount: 0,
+                recentPrayerCount: 0,
+                prayerPurityBoost: 0,
                 cleanDayCount: nil,
                 latestLossDate: nil,
                 latestBaselineDate: nil
@@ -112,35 +117,83 @@ enum PurityCalculator {
         let latestLossDate = lossEntries.map(\.occurredAt).max()
         let cleanAnchor = latestLossDate ?? baselineDate
         let cleanDayCount = cleanAnchor.map { max(0, calendar.dateComponents([.day], from: $0, to: now).day ?? 0) }
+        let recentPrayerEntries = qualifiesForPrayerBoost ? prayerEntries(
+            forSectionTitle: sectionTitle,
+            sinTitle: sinTitle,
+            entries: entries,
+            activeStart: activeStart,
+            now: now
+        ) : []
+        let recentPrayerCount = recentPrayerEntries.count
+        let prayerBoost = prayerPurityBoost(
+            for: recentPrayerEntries,
+            historyDays: strictness.historyDays
+        )
 
-        let calculatedProgress: Double
+        let baseProgress: Double
         if recentLossCount > 0 {
             let weeklyLossRate = Double(recentLossCount) / Double(strictness.historyDays) * 7
             let frequencyProgress = progress(forWeeklyLossRate: weeklyLossRate)
             if let baselineProgress {
-                calculatedProgress = clamped(baselineProgress * frequencyProgress)
+                baseProgress = clamped(baselineProgress * frequencyProgress)
             } else {
-                calculatedProgress = frequencyProgress
+                baseProgress = frequencyProgress
             }
         } else if let cleanDayCount {
             let cleanFraction = min(1, Double(cleanDayCount) / Double(strictness.pureAfterDays))
             if let baselineProgress, latestLossDate == nil {
-                calculatedProgress = clamped(baselineProgress + (1 - baselineProgress) * cleanFraction)
+                baseProgress = clamped(baselineProgress + (1 - baselineProgress) * cleanFraction)
             } else {
-                calculatedProgress = clamped(0.96 + 0.04 * cleanFraction)
+                baseProgress = clamped(0.96 + 0.04 * cleanFraction)
             }
         } else {
-            calculatedProgress = baselineProgress ?? 1
+            baseProgress = baselineProgress ?? 1
         }
 
         return PuritySnapshot(
-            progress: calculatedProgress,
+            progress: clamped(baseProgress + prayerBoost),
             recentLossCount: recentLossCount,
             recentResistanceCount: recentResistanceCount,
+            recentPrayerCount: recentPrayerCount,
+            prayerPurityBoost: prayerBoost,
             cleanDayCount: cleanDayCount,
             latestLossDate: latestLossDate,
             latestBaselineDate: baselineDate
         )
+    }
+
+    private static func prayerEntries(
+        forSectionTitle sectionTitle: String,
+        sinTitle: String,
+        entries: [LogEntry],
+        activeStart: Date,
+        now: Date
+    ) -> [LogEntry] {
+        entries.filter { entry in
+            guard entry.occurredAt >= activeStart && entry.occurredAt <= now else {
+                return false
+            }
+
+            let isGeneralPrayer = entry.kind == .prayer || entry.kind == .quickPrayer
+            let isPrayerAttachedToTarget = entry.sectionTitle == sectionTitle &&
+                entry.sinTitle == sinTitle &&
+                entry.prayerDurationSeconds > 0
+
+            return isGeneralPrayer || isPrayerAttachedToTarget
+        }
+    }
+
+    private static func prayerPurityBoost(for entries: [LogEntry], historyDays: Int) -> Double {
+        guard !entries.isEmpty else { return 0 }
+
+        let sessionBoost = min(Double(entries.count) * 0.02, 0.08)
+        let prayerMinutes = entries.reduce(0) { total, entry in
+            total + max(entry.prayerMinutes, entry.kind == .quickPrayer ? 1 : 0)
+        }
+        let targetMinutes = max(5, historyDays * 2)
+        let minuteBoost = min(Double(prayerMinutes) / Double(targetMinutes), 1) * 0.06
+
+        return min(0.12, sessionBoost + minuteBoost)
     }
 
     static func progress(forWeeklyLossRate weeklyLossRate: Double) -> Double {

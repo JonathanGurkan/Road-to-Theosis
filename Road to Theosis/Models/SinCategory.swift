@@ -79,6 +79,10 @@ struct SinCategory: Identifiable {
         }
     }
 
+    var qualifiesForPrayerPurityBoost: Bool {
+        title.localizedCaseInsensitiveContains("prayer")
+    }
+
     var swipeActions: SinSwipeActions {
         switch title {
         case "Idolatry / Abomination":

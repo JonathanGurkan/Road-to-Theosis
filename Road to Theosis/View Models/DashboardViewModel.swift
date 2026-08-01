@@ -56,7 +56,8 @@ struct DashboardViewModel {
                     sinTitle: sinTitle,
                     entries: entries,
                     now: now,
-                    strictness: strictness
+                    strictness: strictness,
+                    qualifiesForPrayerBoost: sections[sectionIndex].items[itemIndex].qualifiesForPrayerPurityBoost
                 )
 
                 sections[sectionIndex].items[itemIndex].progress = snapshot.progress
