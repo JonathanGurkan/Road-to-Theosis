@@ -55,8 +55,10 @@ enum SinFrequencyScale {
         return milestoneProgresses.first { $0 > clampedProgress }
     }
 
-    static func level(forMilestone milestone: Double) -> SinFrequencyLevel {
-        level(for: Int((min(max(milestone, 0), 1) * 100).rounded()))
+    static func nextLevel(after progress: Double) -> SinFrequencyLevel? {
+        guard let milestone = nextMilestone(after: progress) else { return nil }
+        let nextPercentage = min(100, Int((milestone * 100).rounded()) + 1)
+        return level(for: nextPercentage)
     }
 
     static func label(for percentage: Int) -> String {

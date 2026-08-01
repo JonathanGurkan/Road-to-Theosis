@@ -129,9 +129,10 @@ struct CategoryCardView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    NextFrequencyProgressBar(
+                    PurityProgressBarView(
                         value: category.progress,
-                        tint: category.tint
+                        tint: category.tint,
+                        showsNextIndicator: true
                     )
 
                     frequencySummaryRow
@@ -189,9 +190,10 @@ struct CategoryCardView: View {
     }
 }
 
-private struct NextFrequencyProgressBar: View {
+struct PurityProgressBarView: View {
     let value: Double
     let tint: Color
+    var showsNextIndicator = false
 
     private let trackHeight: CGFloat = 8
     private let indicatorWidth: CGFloat = 10
@@ -202,7 +204,13 @@ private struct NextFrequencyProgressBar: View {
     }
 
     private var nextMilestone: Double? {
-        SinFrequencyScale.nextMilestone(after: clampedValue)
+        guard showsNextIndicator else { return nil }
+        return SinFrequencyScale.nextMilestone(after: clampedValue)
+    }
+
+    private var nextLevel: SinFrequencyLevel? {
+        guard showsNextIndicator else { return nil }
+        return SinFrequencyScale.nextLevel(after: clampedValue)
     }
 
     var body: some View {
@@ -217,37 +225,32 @@ private struct NextFrequencyProgressBar: View {
 
                     RoundedRectangle(cornerRadius: trackHeight / 2, style: .continuous)
                         .fill(tint.gradient)
-                        .frame(width: max(0, width * CGFloat(clampedValue)), height: trackHeight)
+                        .frame(width: width * CGFloat(clampedValue), height: trackHeight)
 
                     if let nextMilestone {
                         let xPosition = min(max(CGFloat(nextMilestone) * width, indicatorWidth / 2), width - indicatorWidth / 2)
                         Capsule()
-                            .fill(tint.opacity(0.62))
+                            .fill(tint.opacity(0.68))
                             .frame(width: indicatorWidth, height: indicatorHeight)
                             .position(x: xPosition, y: trackHeight + 5)
                     }
                 }
-                .frame(height: trackHeight + 8)
+                .frame(height: showsNextIndicator ? trackHeight + 8 : trackHeight)
             }
-            .frame(height: trackHeight + 8)
+            .frame(height: showsNextIndicator ? trackHeight + 8 : trackHeight)
 
-            if let nextMilestone {
+            if let nextMilestone, let nextLevel {
                 GeometryReader { proxy in
                     let width = max(proxy.size.width, 1)
-                    let xPosition = min(max(CGFloat(nextMilestone) * width, 24), width - 24)
-                    Text(SinFrequencyScale.level(forMilestone: nextMilestone).title)
+                    let xPosition = min(max(CGFloat(nextMilestone) * width, 26), width - 26)
+                    Text(nextLevel.title)
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(tint.opacity(0.82))
+                        .foregroundStyle(tint.opacity(0.84))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.76)
+                        .minimumScaleFactor(0.72)
                         .position(x: xPosition, y: 7)
                 }
                 .frame(height: 14)
-            } else {
-                Text("Pure")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(tint.opacity(0.82))
-                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .accessibilityHidden(true)
