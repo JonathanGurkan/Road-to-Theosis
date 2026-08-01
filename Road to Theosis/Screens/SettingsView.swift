@@ -3,6 +3,9 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var showVictorySwipeAction: Bool
+    @Binding var dashboard: DashboardViewModel
+    @Binding var logEntries: [LogEntry]
+    @Binding var purityCalculationDate: Date
     let onShowWelcome: () -> Void
     let onSaveEntry: (LogEntry) -> Void
 
@@ -75,6 +78,23 @@ struct SettingsView: View {
                         title: "About",
                         subtitle: "App version and notes",
                         systemImage: "info.circle.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    DeveloperSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        dashboard: $dashboard,
+                        logEntries: $logEntries,
+                        purityCalculationDate: $purityCalculationDate
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Developer",
+                        subtitle: "Test data, modes, and purity scenarios",
+                        systemImage: "hammer.fill"
                     )
                 }
                 .listRowBackground(Color.clear)
@@ -352,6 +372,232 @@ private struct AboutSettingsPage: View {
     }
 }
 
+private struct DeveloperSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var dashboard: DashboardViewModel
+    @Binding var logEntries: [LogEntry]
+    @Binding var purityCalculationDate: Date
+    @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
+    @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+    @State private var selectedSectionIndex = 0
+    @State private var selectedItemIndex = 0
+
+    private let scenarios: [DeveloperPurityScenario] = [
+        .init(title: "Rock bottom", detail: "24 recent losses", lossDayOffsets: Array(0..<24)),
+        .init(title: "Daily", detail: "16 recent losses", lossDayOffsets: Array(0..<16)),
+        .init(title: "Often", detail: "10 recent losses", lossDayOffsets: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]),
+        .init(title: "Weekly", detail: "5 recent losses", lossDayOffsets: [0, 6, 12, 18, 24]),
+        .init(title: "Occasional", detail: "3 recent losses", lossDayOffsets: [0, 10, 20]),
+        .init(title: "Rare", detail: "1 recent loss", lossDayOffsets: [0]),
+        .init(title: "Clean window", detail: "last loss 31 days ago", lossDayOffsets: [31]),
+        .init(title: "Pure", detail: "last loss 91 days ago", lossDayOffsets: [91])
+    ]
+
+    private var selectedSection: SinSection? {
+        guard dashboard.sections.indices.contains(selectedSectionIndex) else { return nil }
+        return dashboard.sections[selectedSectionIndex]
+    }
+
+    private var selectedItem: SinCategory? {
+        guard let selectedSection, selectedSection.items.indices.contains(selectedItemIndex) else { return nil }
+        return selectedSection.items[selectedItemIndex]
+    }
+
+    private var selectedLevelText: String {
+        guard let selectedItem else { return "No sin selected" }
+        return SinFrequencyScale.label(for: selectedItem.progress)
+    }
+
+    private var focusSliderStyleBinding: Binding<FocusSliderStyle> {
+        Binding {
+            FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
+        } set: { newValue in
+            focusSliderStyleRaw = newValue.rawValue
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Display Mode"), footer: Text("Use this to check the exact same sin list in slider mode and bar mode.")) {
+                    Toggle("Use frequency sliders", isOn: $usesFocusProgressSliders)
+
+                    if usesFocusProgressSliders {
+                        Picker("Slider style", selection: focusSliderStyleBinding) {
+                            ForEach(FocusSliderStyle.allCases) { style in
+                                Text(style.title).tag(style)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Target Sin"), footer: Text(selectedLevelText)) {
+                    Picker("Section", selection: $selectedSectionIndex) {
+                        ForEach(dashboard.sections.indices, id: \.self) { index in
+                            Text(dashboard.sections[index].title).tag(index)
+                        }
+                    }
+                    .onChange(of: selectedSectionIndex) { _, _ in
+                        selectedItemIndex = 0
+                    }
+
+                    if let selectedSection {
+                        Picker("Sin", selection: $selectedItemIndex) {
+                            ForEach(selectedSection.items.indices, id: \.self) { index in
+                                Text(selectedSection.items[index].title).tag(index)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Purity Scenarios"), footer: Text("Scenarios replace logs only for the selected sin, then recalculate purity from the seeded history.")) {
+                    ForEach(scenarios) { scenario in
+                        Button {
+                            applyScenario(scenario)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(scenario.title)
+                                        .foregroundStyle(.primary)
+                                    Text(scenario.detail)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Test Clock"), footer: Text("Jump the calculation date to verify that old losses age into Rare, Clean window, and Pure.")) {
+                    HStack {
+                        Text("Calculation date")
+                        Spacer()
+                        Text(Self.dateFormatter.string(from: purityCalculationDate))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button("Advance 1 day") {
+                        advanceCalculationDate(by: 1)
+                    }
+
+                    Button("Advance 7 days") {
+                        advanceCalculationDate(by: 7)
+                    }
+
+                    Button("Advance 30 days") {
+                        advanceCalculationDate(by: 30)
+                    }
+
+                    Button("Reset to today") {
+                        purityCalculationDate = Date()
+                        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+                    }
+                }
+
+                Section(header: Text("Live Logs"), footer: Text("These buttons create normal timeline entries and update dashboard stats.")) {
+                    Button("Log loss now") {
+                        addLiveEntry(kind: .loss)
+                    }
+
+                    Button("Log victory now") {
+                        addLiveEntry(kind: .victory)
+                    }
+
+                    Button("Log quick prayer now") {
+                        addLiveEntry(kind: .quickPrayer, prayerMinutes: 1)
+                    }
+                }
+
+                Section(header: Text("Reset")) {
+                    Button(role: .destructive) {
+                        logEntries.removeAll()
+                        dashboard = DashboardViewModel()
+                        purityCalculationDate = Date()
+                    } label: {
+                        Label("Reset Dashboard Test State", systemImage: "arrow.counterclockwise")
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Developer")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func applyScenario(_ scenario: DeveloperPurityScenario) {
+        guard let selectedSection, let selectedItem else { return }
+        removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+
+        let seededEntries = scenario.lossDayOffsets.compactMap { dayOffset in
+            Calendar.current.date(byAdding: .day, value: -dayOffset, to: purityCalculationDate).map { date in
+                LogEntry(
+                    kind: .loss,
+                    sectionTitle: selectedSection.title,
+                    sinTitle: selectedItem.title,
+                    note: "Developer scenario: \(scenario.title)",
+                    prayerMinutes: 0,
+                    occurredAt: date
+                )
+            }
+        }
+
+        logEntries.insert(contentsOf: seededEntries.sorted { $0.occurredAt > $1.occurredAt }, at: 0)
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+    }
+
+    private func addLiveEntry(kind: LogEntry.Kind, prayerMinutes: Int = 0) {
+        guard let selectedSection, let selectedItem else { return }
+        let entry = LogEntry(
+            kind: kind,
+            sectionTitle: selectedSection.title,
+            sinTitle: selectedItem.title,
+            note: "Developer test log",
+            prayerMinutes: prayerMinutes,
+            occurredAt: purityCalculationDate
+        )
+
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+    }
+
+    private func advanceCalculationDate(by days: Int) {
+        purityCalculationDate = Calendar.current.date(byAdding: .day, value: days, to: purityCalculationDate) ?? purityCalculationDate
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+    }
+
+    private func removeEntriesForSelectedSin(sectionTitle: String, sinTitle: String) {
+        logEntries.removeAll { entry in
+            entry.sectionTitle == sectionTitle && entry.sinTitle == sinTitle
+        }
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
+}
+
+private struct DeveloperPurityScenario: Identifiable {
+    let title: String
+    let detail: String
+    let lossDayOffsets: [Int]
+
+    var id: String { title }
+}
+
 private struct ThemeRow: View {
     let theme: AppBackgroundTheme
     let isSelected: Bool
@@ -435,6 +681,9 @@ private struct SettingsNoteRow: View {
         SettingsView(
             backgroundTheme: .constant(.blood),
             showVictorySwipeAction: .constant(false),
+            dashboard: .constant(DashboardViewModel()),
+            logEntries: .constant([]),
+            purityCalculationDate: .constant(Date()),
             onShowWelcome: {},
             onSaveEntry: { _ in }
         )

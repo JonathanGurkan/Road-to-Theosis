@@ -9,6 +9,7 @@ struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
+    @Binding var purityCalculationDate: Date
     let showVictorySwipeAction: Bool
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
@@ -21,7 +22,6 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
-    @State private var purityCalculationDate = Date()
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
@@ -1484,6 +1484,7 @@ struct HeadwayView: View {
             backgroundTheme: .constant(.blood),
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
+            purityCalculationDate: .constant(Date()),
             showVictorySwipeAction: true
         )
     }

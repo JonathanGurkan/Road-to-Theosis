@@ -5,6 +5,7 @@ struct AppShellView: View {
     @State private var backgroundTheme: AppBackgroundTheme = .blood
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
+    @State private var purityCalculationDate = Date()
     @State private var isShowingWelcome = false
     @State private var showVictorySwipeAction = false
 
@@ -15,6 +16,7 @@ struct AppShellView: View {
                     backgroundTheme: $backgroundTheme,
                     dashboard: $dashboard,
                     logEntries: $logEntries,
+                    purityCalculationDate: $purityCalculationDate,
                     showVictorySwipeAction: showVictorySwipeAction
                 )
             }
@@ -33,6 +35,9 @@ struct AppShellView: View {
                 SettingsView(
                     backgroundTheme: $backgroundTheme,
                     showVictorySwipeAction: $showVictorySwipeAction,
+                    dashboard: $dashboard,
+                    logEntries: $logEntries,
+                    purityCalculationDate: $purityCalculationDate,
                     onShowWelcome: {
                         isShowingWelcome = true
                     }
@@ -53,7 +58,7 @@ struct AppShellView: View {
             }
         }
         .task {
-            dashboard.recalculatePurity(from: logEntries)
+            dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
             guard !hasSeenWelcome else { return }
             isShowingWelcome = true
         }
@@ -67,7 +72,7 @@ struct AppShellView: View {
             return
         }
 
-        dashboard.recalculatePurity(from: logEntries)
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
     }
 }
 
