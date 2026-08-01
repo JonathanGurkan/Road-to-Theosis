@@ -8,6 +8,11 @@ struct AppShellView: View {
     @State private var purityCalculationDate = Date()
     @State private var isShowingWelcome = false
     @State private var showVictorySwipeAction = false
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+
+    private var purityStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+    }
 
     var body: some View {
         TabView {
@@ -58,9 +63,12 @@ struct AppShellView: View {
             }
         }
         .task {
-            dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+            recalculatePurity()
             guard !hasSeenWelcome else { return }
             isShowingWelcome = true
+        }
+        .onChange(of: purityStrictnessRaw) { _, _ in
+            recalculatePurity()
         }
     }
 
@@ -69,7 +77,11 @@ struct AppShellView: View {
         logEntries.insert(entry, at: 0)
         dashboard.record(entry)
 
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+        recalculatePurity()
+    }
+
+    private func recalculatePurity() {
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: purityStrictness)
     }
 }
 

@@ -1,5 +1,172 @@
 import SwiftUI
 
+struct PuritySnapshot {
+    let progress: Double
+    let recentLossCount: Int
+    let recentResistanceCount: Int
+    let cleanDayCount: Int?
+    let latestLossDate: Date?
+    let latestBaselineDate: Date?
+}
+
+enum PurityStrictness: String, CaseIterable, Identifiable {
+    case veryLoose
+    case loose
+    case normal
+    case strict
+
+    static let storageKey = "purityStrictness"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .veryLoose:
+            return "Very Loose"
+        case .loose:
+            return "Loose"
+        case .normal:
+            return "Normal"
+        case .strict:
+            return "Strict"
+        }
+    }
+
+    var historyDays: Int {
+        switch self {
+        case .veryLoose:
+            return 7
+        case .loose:
+            return 14
+        case .normal:
+            return 30
+        case .strict:
+            return 90
+        }
+    }
+
+    var pureAfterDays: Int {
+        switch self {
+        case .veryLoose:
+            return 14
+        case .loose:
+            return 30
+        case .normal:
+            return 90
+        case .strict:
+            return 180
+        }
+    }
+
+    var subtitle: String {
+        "Uses \(historyDays) days of history; Pure after \(pureAfterDays) clean days."
+    }
+}
+
+enum PurityCalculator {
+    static func snapshot(
+        sectionTitle: String,
+        sinTitle: String,
+        entries: [LogEntry],
+        now: Date,
+        strictness: PurityStrictness,
+        calendar: Calendar = .current
+    ) -> PuritySnapshot {
+        let targetEntries = entries.filter { entry in
+            entry.sectionTitle == sectionTitle &&
+            entry.sinTitle == sinTitle &&
+            entry.occurredAt <= now
+        }
+
+        guard !targetEntries.isEmpty else {
+            return PuritySnapshot(
+                progress: 1,
+                recentLossCount: 0,
+                recentResistanceCount: 0,
+                cleanDayCount: nil,
+                latestLossDate: nil,
+                latestBaselineDate: nil
+            )
+        }
+
+        let latestBaseline = targetEntries
+            .filter { ($0.kind == .progressUpdate || $0.kind == .sliderProgressUpdate) && $0.progressPercentage != nil }
+            .max { $0.occurredAt < $1.occurredAt }
+        let baselineProgress = latestBaseline
+            .flatMap { $0.progressPercentage }
+            .map { clamped(Double($0) / 100) }
+        let baselineDate = latestBaseline?.occurredAt
+        let calculationStart = baselineDate ?? .distantPast
+        let historyStart = calendar.date(byAdding: .day, value: -strictness.historyDays, to: now) ?? now
+        let activeStart = max(historyStart, calculationStart)
+
+        let lossEntries = targetEntries.filter { entry in
+            entry.kind == .loss && entry.occurredAt >= calculationStart
+        }
+        let recentLossCount = lossEntries.filter { $0.occurredAt >= activeStart }.count
+        let recentResistanceCount = targetEntries.filter { entry in
+            entry.kind == .victory &&
+            entry.occurredAt >= activeStart &&
+            entry.occurredAt <= now
+        }.count
+        let latestLossDate = lossEntries.map(\.occurredAt).max()
+        let cleanAnchor = latestLossDate ?? baselineDate
+        let cleanDayCount = cleanAnchor.map { max(0, calendar.dateComponents([.day], from: $0, to: now).day ?? 0) }
+
+        let calculatedProgress: Double
+        if recentLossCount > 0 {
+            let weeklyLossRate = Double(recentLossCount) / Double(strictness.historyDays) * 7
+            let frequencyProgress = progress(forWeeklyLossRate: weeklyLossRate)
+            if let baselineProgress {
+                calculatedProgress = clamped(baselineProgress * frequencyProgress)
+            } else {
+                calculatedProgress = frequencyProgress
+            }
+        } else if let cleanDayCount {
+            let cleanFraction = min(1, Double(cleanDayCount) / Double(strictness.pureAfterDays))
+            if let baselineProgress, latestLossDate == nil {
+                calculatedProgress = clamped(baselineProgress + (1 - baselineProgress) * cleanFraction)
+            } else {
+                calculatedProgress = clamped(0.96 + 0.04 * cleanFraction)
+            }
+        } else {
+            calculatedProgress = baselineProgress ?? 1
+        }
+
+        return PuritySnapshot(
+            progress: calculatedProgress,
+            recentLossCount: recentLossCount,
+            recentResistanceCount: recentResistanceCount,
+            cleanDayCount: cleanDayCount,
+            latestLossDate: latestLossDate,
+            latestBaselineDate: baselineDate
+        )
+    }
+
+    static func progress(forWeeklyLossRate weeklyLossRate: Double) -> Double {
+        switch weeklyLossRate {
+        case 5.13...:
+            return 0.10
+        case 3.27..<5.13:
+            return 0.30
+        case 1.87..<3.27:
+            return 0.48
+        case 0.93..<1.87:
+            return 0.63
+        case 0.47..<0.93:
+            return 0.78
+        case 0.01..<0.47:
+            return 0.90
+        default:
+            return 1
+        }
+    }
+
+    private static func clamped(_ progress: Double) -> Double {
+        min(1, max(0, progress))
+    }
+}
+
 struct SinFrequencyLevel: Identifiable {
     let id: String
     let title: String

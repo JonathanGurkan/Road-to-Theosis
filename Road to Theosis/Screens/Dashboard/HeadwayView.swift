@@ -26,6 +26,7 @@ struct HeadwayView: View {
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
     @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
     @AppStorage("enableVerseInventory") private var enableVerseInventory = true
     @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -42,6 +43,10 @@ struct HeadwayView: View {
 
     private var focusSliderStyle: FocusSliderStyle {
         FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
+    }
+
+    private var purityStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
     }
 
     var homeScreenLayout: HomeScreenLayout {
@@ -114,7 +119,7 @@ struct HeadwayView: View {
 
     private func simulateDailyProgress() {
         purityCalculationDate = Calendar.current.date(byAdding: .day, value: 1, to: purityCalculationDate) ?? purityCalculationDate
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+        recalculatePurity()
     }
 
     private func saveEntry(_ entry: LogEntry, now: Date? = nil) {
@@ -123,7 +128,11 @@ struct HeadwayView: View {
         logEntries.insert(entry, at: 0)
         dashboard.record(entry)
 
-        dashboard.recalculatePurity(from: logEntries, now: calculationDate)
+        recalculatePurity(now: calculationDate)
+    }
+
+    private func recalculatePurity(now: Date? = nil) {
+        dashboard.recalculatePurity(from: logEntries, now: now ?? purityCalculationDate, strictness: purityStrictness)
     }
 
     private func logSwipeOutcome(_ kind: LogEntry.Kind, for itemID: SinCategory.ID, in sectionIndex: Int) -> Bool {
@@ -517,7 +526,7 @@ struct HeadwayView: View {
                             Spacer()
                         }
                         .frame(height: 4)
-                        Text("\(dashboard.dailyCheckIns) checks • \(dashboard.activeStreak)d streak")
+                        Text("\(dashboard.dailyCheckIns) checks • \(dashboard.overallResistanceCount) resist")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -555,6 +564,7 @@ struct HeadwayView: View {
                     HStack(spacing: 6) {
                         compactOverviewInfoPill(value: "\(dashboard.dailyCheckIns)", label: "Checks", icon: "checklist")
                         compactOverviewInfoPill(value: "\(dashboard.activeStreak)d", label: "Streak", icon: "flame.fill")
+                        compactOverviewInfoPill(value: "\(dashboard.overallResistanceCount)", label: "Resist", icon: "checkmark.shield.fill")
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -668,6 +678,11 @@ struct HeadwayView: View {
                 .padding(.leading, 38)
 
             overviewStackedStat(title: "Active streak", value: "\(dashboard.activeStreak)d", icon: "flame.fill")
+
+            Divider()
+                .padding(.leading, 38)
+
+            overviewStackedStat(title: "Overall resistance", value: "\(dashboard.overallResistanceCount)", icon: "checkmark.shield.fill")
         }
     }
 

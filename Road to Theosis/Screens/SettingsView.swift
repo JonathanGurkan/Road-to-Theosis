@@ -42,6 +42,23 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
+                    PuritySettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        dashboard: $dashboard,
+                        logEntries: logEntries,
+                        purityCalculationDate: purityCalculationDate
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Purity",
+                        subtitle: "Strictness and clean-time standard",
+                        systemImage: "chart.bar.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
                     PrayerSettingsPage(
                         backgroundTheme: $backgroundTheme,
                         onSaveEntry: onSaveEntry
@@ -189,6 +206,7 @@ private struct HomeSettingsPage: View {
         }
     }
 
+
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -242,6 +260,68 @@ private struct HomeSettingsPage: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private struct PuritySettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var dashboard: DashboardViewModel
+    let logEntries: [LogEntry]
+    let purityCalculationDate: Date
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+
+    private var selectedStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+    }
+
+    private var strictnessBinding: Binding<PurityStrictness> {
+        Binding {
+            selectedStrictness
+        } set: { newValue in
+            purityStrictnessRaw = newValue.rawValue
+            dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: newValue)
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Strictness"), footer: Text("Strictness controls both the recent history range and how long a sin must stay clean before it becomes Pure.")) {
+                    Picker("Purity strictness", selection: strictnessBinding) {
+                        ForEach(PurityStrictness.allCases) { strictness in
+                            Text(strictness.title).tag(strictness)
+                        }
+                    }
+
+                    Text(selectedStrictness.subtitle)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section(header: Text("Current Standard")) {
+                    HStack {
+                        Text("History range")
+                        Spacer()
+                        Text("\(selectedStrictness.historyDays) days")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Pure after")
+                        Spacer()
+                        Text("\(selectedStrictness.pureAfterDays) clean days")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Purity")
         .navigationBarTitleDisplayMode(.large)
     }
 }
@@ -392,22 +472,33 @@ private struct DeveloperSettingsPage: View {
     @Binding var purityCalculationDate: Date
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
     @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @State private var selectedSectionIndex = 0
     @State private var selectedItemIndex = 0
 
-    private let scenarios: [DeveloperPurityScenario] = [
-        .init(title: "Rock bottom", detail: "24 recent losses", lossDayOffsets: Array(0..<24)),
-        .init(title: "Daily", detail: "16 recent losses", lossDayOffsets: Array(0..<16)),
-        .init(title: "Often", detail: "10 recent losses", lossDayOffsets: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]),
-        .init(title: "Weekly", detail: "5 recent losses", lossDayOffsets: [0, 6, 12, 18, 24]),
-        .init(title: "Occasional", detail: "3 recent losses", lossDayOffsets: [0, 10, 20]),
-        .init(title: "Rare", detail: "1 recent loss", lossDayOffsets: [0]),
-        .init(title: "Clean window", detail: "last loss 31 days ago", lossDayOffsets: [31]),
-        .init(title: "Pure", detail: "last loss 91 days ago", lossDayOffsets: [91]),
-        .init(title: "Resistance only", detail: "6 recent resistances", lossDayOffsets: [], resistanceDayOffsets: [0, 2, 4, 6, 8, 10]),
-        .init(title: "Mixed pressure", detail: "4 losses, 4 resistances", lossDayOffsets: [0, 7, 14, 21], resistanceDayOffsets: [1, 8, 15, 22]),
-        .init(title: "Capped resistance", detail: "16 losses, 16 resistances", lossDayOffsets: Array(0..<16), resistanceDayOffsets: Array(0..<16))
-    ]
+    private var selectedStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+    }
+
+    private var scenarios: [DeveloperPurityScenario] {
+        let historyDays = selectedStrictness.historyDays
+        let weeklyLossCount = max(1, Int((Double(historyDays) / 7).rounded()))
+        let oftenLossCount = max(weeklyLossCount + 1, Int((Double(historyDays) * 2.2 / 7).rounded()))
+        let dailyLossCount = max(oftenLossCount + 1, Int((Double(historyDays) * 3.8 / 7).rounded()))
+        let rockBottomLossCount = max(dailyLossCount + 1, Int((Double(historyDays) * 5.5 / 7).rounded()))
+
+        return [
+            .init(title: "Rock bottom", detail: "Very high loss rate in \(historyDays)d", lossDayOffsets: dayOffsets(count: rockBottomLossCount, within: historyDays)),
+            .init(title: "Daily", detail: "Daily-level loss rate in \(historyDays)d", lossDayOffsets: dayOffsets(count: dailyLossCount, within: historyDays)),
+            .init(title: "Often", detail: "Several weekly losses in \(historyDays)d", lossDayOffsets: dayOffsets(count: oftenLossCount, within: historyDays)),
+            .init(title: "Weekly", detail: "About weekly in \(historyDays)d", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays)),
+            .init(title: "Occasional", detail: "A few monthly equivalents", lossDayOffsets: dayOffsets(count: max(1, weeklyLossCount / 2), within: historyDays)),
+            .init(title: "Clean window", detail: "Last loss just outside \(historyDays)d", lossDayOffsets: [historyDays + 1]),
+            .init(title: "Pure", detail: "Last loss past \(selectedStrictness.pureAfterDays)d", lossDayOffsets: [selectedStrictness.pureAfterDays + 1]),
+            .init(title: "Resistance only", detail: "Resistance without purity penalty", lossDayOffsets: [], resistanceDayOffsets: dayOffsets(count: 6, within: historyDays)),
+            .init(title: "Mixed history", detail: "Weekly losses plus resistance", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), resistanceDayOffsets: dayOffsets(count: 4, within: historyDays))
+        ]
+    }
 
     private var selectedSection: SinSection? {
         guard dashboard.sections.indices.contains(selectedSectionIndex) else { return nil }
@@ -421,11 +512,15 @@ private struct DeveloperSettingsPage: View {
 
     private var selectedLevelText: String {
         guard let selectedSection, let selectedItem else { return "No sin selected" }
-        let recentLosses = recentEntryCount(kind: .loss, sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
-        let recentResistance = recentEntryCount(kind: .victory, sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
-        let pressure = effectiveLossPressure(recentLossCount: recentLosses, recentResistanceCount: recentResistance)
-        let pressureText = Self.pressureFormatter.string(from: NSNumber(value: pressure)) ?? "0"
-        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(recentLosses) | Resistance \(recentResistance) | Pressure \(pressureText)"
+        let snapshot = PurityCalculator.snapshot(
+            sectionTitle: selectedSection.title,
+            sinTitle: selectedItem.title,
+            entries: logEntries,
+            now: purityCalculationDate,
+            strictness: selectedStrictness
+        )
+        let cleanText = snapshot.cleanDayCount.map { "Clean \($0)d" } ?? "No history"
+        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(snapshot.recentLossCount) | Resistance \(snapshot.recentResistanceCount) | \(cleanText)"
     }
 
     private var focusSliderStyleBinding: Binding<FocusSliderStyle> {
@@ -433,6 +528,16 @@ private struct DeveloperSettingsPage: View {
             FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
         } set: { newValue in
             focusSliderStyleRaw = newValue.rawValue
+        }
+    }
+
+    private func dayOffsets(count: Int, within days: Int) -> [Int] {
+        guard count > 0 else { return [] }
+        guard count > 1 else { return [0] }
+
+        let maxOffset = max(0, days - 1)
+        return (0..<count).map { index in
+            Int((Double(index) / Double(count - 1) * Double(maxOffset)).rounded())
         }
     }
 
@@ -518,7 +623,7 @@ private struct DeveloperSettingsPage: View {
 
                     Button("Reset to today") {
                         purityCalculationDate = Date()
-                        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+                        recalculatePurity()
                     }
                 }
 
@@ -573,7 +678,7 @@ private struct DeveloperSettingsPage: View {
 
         let seededEntries = lossEntries + resistanceEntries
         logEntries.insert(contentsOf: seededEntries.sorted { $0.occurredAt > $1.occurredAt }, at: 0)
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+        recalculatePurity()
     }
 
     private func scenarioEntry(kind: LogEntry.Kind, dayOffset: Int, sectionTitle: String, sinTitle: String, title: String) -> LogEntry? {
@@ -602,37 +707,22 @@ private struct DeveloperSettingsPage: View {
 
         logEntries.insert(entry, at: 0)
         dashboard.record(entry)
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+        recalculatePurity()
     }
 
     private func advanceCalculationDate(by days: Int) {
         purityCalculationDate = Calendar.current.date(byAdding: .day, value: days, to: purityCalculationDate) ?? purityCalculationDate
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+        recalculatePurity()
     }
 
     private func clearSelectedSinLogs() {
         guard let selectedSection, let selectedItem else { return }
         removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate)
+        recalculatePurity()
     }
 
-    private func recentEntryCount(kind: LogEntry.Kind, sectionTitle: String, sinTitle: String) -> Int {
-        let windowStart = Calendar.current.date(byAdding: .day, value: -30, to: purityCalculationDate) ?? purityCalculationDate
-        return logEntries.filter { entry in
-            entry.kind == kind &&
-            entry.sectionTitle == sectionTitle &&
-            entry.sinTitle == sinTitle &&
-            entry.occurredAt >= windowStart &&
-            entry.occurredAt <= purityCalculationDate
-        }.count
-    }
-
-    private func effectiveLossPressure(recentLossCount: Int, recentResistanceCount: Int) -> Double {
-        guard recentLossCount > 0 else { return 0 }
-
-        let resistanceCredit = Double(recentResistanceCount) * 0.5
-        let maxCredit = Double(recentLossCount) * 0.25
-        return max(1, Double(recentLossCount) - min(resistanceCredit, maxCredit))
+    private func recalculatePurity() {
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: selectedStrictness)
     }
 
     private func removeEntriesForSelectedSin(sectionTitle: String, sinTitle: String) {
@@ -648,12 +738,6 @@ private struct DeveloperSettingsPage: View {
         return formatter
     }()
 
-    private static let pressureFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.maximumFractionDigits = 1
-        formatter.minimumFractionDigits = 0
-        return formatter
-    }()
 }
 
 private struct DeveloperPurityScenario: Identifiable {
