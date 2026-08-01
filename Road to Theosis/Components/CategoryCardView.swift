@@ -91,6 +91,9 @@ struct CategoryCardView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .tracking(0.4)
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
 
                     Button(action: onFocus) {
                         Text(isFocused ? "Remove Focus" : "Focus")
@@ -126,7 +129,8 @@ struct CategoryCardView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    FrequencyProgressBarView(value: category.progress, tint: category.tint)
+                    ProgressView(value: category.progress)
+                        .tint(category.tint)
 
                     frequencySummaryRow
                 }
@@ -221,11 +225,13 @@ private struct FrequencySliderView: View {
 
                 if style.showsMilestones {
                     ForEach(SinFrequencyScale.milestoneProgresses, id: \.self) { milestone in
-                        let position = min(max(CGFloat(milestone) * width, 2), width - 2)
-                        Circle()
-                            .fill(milestone <= clampedValue ? Color(uiColor: .systemBackground).opacity(0.92) : tint.opacity(0.34))
-                            .frame(width: 4, height: 4)
-                            .position(x: position, y: style.controlHeight / 2)
+                        let indicatorWidth: CGFloat = 8
+                        let indicatorHeight: CGFloat = 2
+                        let position = min(max(CGFloat(milestone) * width, indicatorWidth / 2), width - indicatorWidth / 2)
+                        Capsule()
+                            .fill(tint.opacity(milestone <= clampedValue ? 0.32 : 0.14))
+                            .frame(width: indicatorWidth, height: indicatorHeight)
+                            .position(x: position, y: style.controlHeight - indicatorHeight / 2)
                     }
                 }
 
