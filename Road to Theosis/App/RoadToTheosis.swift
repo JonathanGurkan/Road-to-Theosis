@@ -1,5 +1,4 @@
 import SwiftUI
-import Playgrounds
 
 @main
 struct RoadToTheosis: App {

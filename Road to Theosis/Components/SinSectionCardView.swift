@@ -3,9 +3,19 @@ import SwiftUI
 struct SinSectionCardView: View {
     @Binding var section: SinSection
     let isCompact: Bool
+    let showsVictoryAction: Bool
+    let usesProgressSliders: Bool
+    let sliderStyle: FocusSliderStyle
+    let focusedItemIDs: Set<SinCategory.ID>
     let onShowVerses: (SinCategory) -> Void
+    let onFocus: (SinCategory.ID) -> Void
     let onVictory: (SinCategory.ID) -> Void
     let onReset: (SinCategory.ID) -> Void
+    let onProgressChanged: (SinCategory.ID, Double) -> Void
+
+    private var averagePurityText: String {
+        SinFrequencyScale.label(for: section.averageProgress)
+    }
 
     var body: some View {
         AppSurfaceCard(contentPadding: 12) {
@@ -39,11 +49,12 @@ struct SinSectionCardView: View {
                         Spacer(minLength: 8)
 
                         VStack(alignment: .trailing, spacing: 3) {
-                            Text("\(Int(section.averageProgress * 100))%")
+                            Text("\(SinFrequencyScale.percentage(for: section.averageProgress))%")
                                 .font(.caption.weight(.semibold))
+                                .monospacedDigit()
                                 .foregroundStyle(section.tint)
 
-                            Text("\(section.itemCount) items")
+                            Text(SinFrequencyScale.level(for: section.averageProgress).title.uppercased())
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .tracking(0.4)
@@ -54,12 +65,20 @@ struct SinSectionCardView: View {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    ProgressView(value: section.averageProgress)
-                        .tint(section.tint)
+                    PurityProgressBarView(value: section.averageProgress, tint: section.tint)
 
-                    Text("Swipe a row for quick actions.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text("Average purity: \(averagePurityText)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer(minLength: 8)
+
+                        Text("\(section.itemCount) items")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if section.isExpanded {
@@ -68,13 +87,22 @@ struct SinSectionCardView: View {
                             CategoryCardView(
                                 category: $section.items[index],
                                 isCompact: isCompact,
+                                showsVictoryAction: showsVictoryAction,
+                                usesProgressSlider: usesProgressSliders,
+                                sliderStyle: sliderStyle,
+                                isFocused: focusedItemIDs.contains(section.items[index].id),
                                 onIconTap: {
                                     onShowVerses(section.items[index])
+                                },
+                                onFocus: {
+                                    onFocus(section.items[index].id)
                                 }
                             ) {
                                 onVictory(section.items[index].id)
                             } onReset: {
                                 onReset(section.items[index].id)
+                            } onProgressChanged: { progress in
+                                onProgressChanged(section.items[index].id, progress)
                             }
 
                             if index < section.items.count - 1 {
@@ -88,4 +116,21 @@ struct SinSectionCardView: View {
             }
         }
     }
+}
+
+#Preview {
+    SinSectionCardView(
+        section: .constant(SinCategory.sample[0]),
+        isCompact: false,
+        showsVictoryAction: true,
+        usesProgressSliders: true,
+        sliderStyle: .marked,
+        focusedItemIDs: [SinCategory.sample[0].items[0].id],
+        onShowVerses: { _ in },
+        onFocus: { _ in },
+        onVictory: { _ in },
+        onReset: { _ in },
+        onProgressChanged: { _, _ in }
+    )
+    .padding()
 }

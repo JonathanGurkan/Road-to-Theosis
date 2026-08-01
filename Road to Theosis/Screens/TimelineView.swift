@@ -42,7 +42,7 @@ struct TimelineView: View {
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "Prayer sessions, victories, losses, and notes appear here in time order." : "Prayers, victories, losses, and notes appear here in time order.")
+                Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -54,7 +54,7 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(isPrayerTimingEnabled ? "Your victories, losses, notes, and prayer time will appear here once you start logging." : "Your victories, losses, notes, and prayers will appear here once you start logging.")
+                Text(isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -157,7 +157,32 @@ private struct TimelineRow: View {
                         .foregroundStyle(.secondary)
                 }
 
+                if let progressPercentage = entry.progressPercentage {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text("Purity")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            Spacer(minLength: 8)
+
+                            Text(SinFrequencyScale.label(for: progressPercentage))
+                                .font(.caption.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(entry.kind.tint)
+                        }
+
+                        ProgressView(value: Double(progressPercentage) / 100)
+                            .tint(entry.kind.tint)
+                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
                 if !entry.note.isEmpty {
+                  
+                } else if !entry.note.isEmpty {
                     Text(entry.note)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -165,15 +190,21 @@ private struct TimelineRow: View {
                 }
 
                 HStack(spacing: 10) {
-                    if showsPrayerTiming && entry.prayerMinutes > 0 {
-                        Label("\(entry.prayerMinutes)m prayer", systemImage: "hands.sparkles")
+                    if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+                        Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
                     }
 
-                    Label(entry.kind.title, systemImage: entry.kind.symbolName)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    if let progressPercentage = entry.progressPercentage {
+                        Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(entry.kind.tint)
+                    } else {
+                        Label(entry.kind.title, systemImage: entry.kind.symbolName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -185,4 +216,39 @@ private struct TimelineRow: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+#Preview {
+    NavigationStack {
+        TimelineView(
+            backgroundTheme: .constant(.blood),
+            logEntries: .constant([
+                LogEntry(
+                    kind: .victory,
+                    sectionTitle: "Sins Against God",
+                    sinTitle: "Neglect of Prayer",
+                    note: "Stayed focused and prayed before starting the day.",
+                    prayerMinutes: 10,
+                    occurredAt: Date()
+                ),
+                LogEntry(
+                    kind: .loss,
+                    sectionTitle: "Sins of the Tongue",
+                    sinTitle: "Criticism",
+                    note: "Need to slow down before speaking.",
+                    prayerMinutes: 0,
+                    occurredAt: Date().addingTimeInterval(-3600)
+                ),
+                LogEntry(
+                    kind: .sliderProgressUpdate,
+                    sectionTitle: "Sins Against Others",
+                    sinTitle: "Strife / Argumentative",
+                    note: "Adjusted after evening reflection.",
+                    prayerMinutes: 0,
+                    progressPercentage: 62,
+                    occurredAt: Date().addingTimeInterval(-7200)
+                )
+            ])
+        )
+    }
 }

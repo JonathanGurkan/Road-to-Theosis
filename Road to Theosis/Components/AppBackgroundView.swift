@@ -67,3 +67,7 @@ struct AppBackgroundView: View {
         colorScheme == .dark ? .white : .black
     }
 }
+
+#Preview {
+    AppBackgroundView(theme: .blood)
+}
