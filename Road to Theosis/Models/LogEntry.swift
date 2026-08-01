@@ -6,6 +6,8 @@ struct LogEntry: Identifiable {
         case quickPrayer
         case victory
         case loss
+        case progressUpdate
+        case sliderProgressUpdate
         case note
 
         var id: String { rawValue }
@@ -17,9 +19,13 @@ struct LogEntry: Identifiable {
             case .quickPrayer:
                 return "Quick Prayer"
             case .victory:
-                return "Victory"
+                return "Resistance"
             case .loss:
                 return "Loss"
+            case .progressUpdate:
+                return "Progress Set"
+            case .sliderProgressUpdate:
+                return "Purity Adjusted"
             case .note:
                 return "Note"
             }
@@ -35,6 +41,10 @@ struct LogEntry: Identifiable {
                 return "checkmark.circle.fill"
             case .loss:
                 return "xmark.circle.fill"
+            case .progressUpdate:
+                return "slider.horizontal.3"
+            case .sliderProgressUpdate:
+                return "slider.horizontal.below.rectangle"
             case .note:
                 return "text.quote"
             }
@@ -50,6 +60,10 @@ struct LogEntry: Identifiable {
                 return .green
             case .loss:
                 return .orange
+            case .progressUpdate:
+                return .blue
+            case .sliderProgressUpdate:
+                return .indigo
             case .note:
                 return .blue
             }
@@ -63,6 +77,7 @@ struct LogEntry: Identifiable {
     let note: String
     let prayerMinutes: Int
     let prayerDurationSeconds: Int
+    let progressPercentage: Int?
     let occurredAt: Date
 
     init(
@@ -72,6 +87,7 @@ struct LogEntry: Identifiable {
         note: String,
         prayerMinutes: Int,
         prayerDurationSeconds: Int? = nil,
+        progressPercentage: Int? = nil,
         occurredAt: Date
     ) {
         self.kind = kind
@@ -80,6 +96,7 @@ struct LogEntry: Identifiable {
         self.note = note
         self.prayerMinutes = prayerMinutes
         self.prayerDurationSeconds = prayerDurationSeconds ?? max(prayerMinutes, 0) * 60
+        self.progressPercentage = progressPercentage
         self.occurredAt = occurredAt
     }
 

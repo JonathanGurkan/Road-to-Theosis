@@ -1,8 +1,11 @@
+import Foundation
+
 struct DashboardViewModel {
     var sections: [SinSection] = SinCategory.sample
     var dailyCheckIns = 12
     var activeStreak = 18
     var prayerMinutes = 24
+    var overallResistanceCount = 0
 
     var totalProgress: Double {
         let allItems = sections.flatMap { $0.items }
@@ -13,14 +16,54 @@ struct DashboardViewModel {
     }
 
     mutating func markVictory(in itemID: SinCategory.ID) {
-        updateItem(itemID, delta: 0.12)
         activeStreak += 1
         dailyCheckIns += 1
-        prayerMinutes += 2
+        overallResistanceCount += 1
     }
 
     mutating func resetItem(_ itemID: SinCategory.ID) {
-        updateItem(itemID, delta: -0.08)
+        setProgress(0.10, for: itemID)
+    }
+
+    mutating func setProgress(_ progress: Double, for itemID: SinCategory.ID) {
+        for sectionIndex in sections.indices {
+            guard let itemIndex = sections[sectionIndex].items.firstIndex(where: { $0.id == itemID }) else {
+                continue
+            }
+
+            sections[sectionIndex].items[itemIndex].progress = clampedProgress(progress)
+            return
+        }
+    }
+
+    mutating func advanceDailyProgress(days: Int = 1) {
+        // Kept as a compatibility no-op. Purity now comes from log history and the selected strictness.
+    }
+
+    mutating func recalculatePurity(
+        from entries: [LogEntry],
+        now: Date = .now,
+        strictness: PurityStrictness = .normal
+    ) {
+        overallResistanceCount = entries.filter { $0.kind == .victory && $0.occurredAt <= now }.count
+
+        for sectionIndex in sections.indices {
+            for itemIndex in sections[sectionIndex].items.indices {
+                let sectionTitle = sections[sectionIndex].title
+                let sinTitle = sections[sectionIndex].items[itemIndex].title
+                let snapshot = PurityCalculator.snapshot(
+                    sectionTitle: sectionTitle,
+                    sinTitle: sinTitle,
+                    entries: entries,
+                    now: now,
+                    strictness: strictness,
+                    qualifiesForPrayerBoost: sections[sectionIndex].items[itemIndex].qualifiesForPrayerPurityBoost
+                )
+
+                sections[sectionIndex].items[itemIndex].progress = snapshot.progress
+                sections[sectionIndex].items[itemIndex].recentResistanceCount = snapshot.recentResistanceCount
+            }
+        }
     }
 
     mutating func record(_ entry: LogEntry) {
@@ -35,57 +78,48 @@ struct DashboardViewModel {
             dailyCheckIns += 1
         case .victory:
             activeStreak += 1
-            updateLoggedSin(entry, delta: 0.12)
+            overallResistanceCount += 1
         case .loss:
-            updateLoggedSin(entry, delta: -0.08)
+            activeStreak = 0
+        case .progressUpdate, .sliderProgressUpdate:
+            updateLoggedSinProgress(entry)
         }
     }
 
-    private mutating func updateLoggedSin(_ entry: LogEntry, delta: Double) {
-        if let sinTitle = entry.sinTitle {
-            updateItem(named: sinTitle, inSection: entry.sectionTitle, delta: delta)
-        } else {
-            updateFirstItem(in: entry.sectionTitle, delta: delta)
-        }
-    }
-
-    private mutating func updateItem(_ itemID: SinCategory.ID, delta: Double) {
-        for sectionIndex in sections.indices {
-            guard let itemIndex = sections[sectionIndex].items.firstIndex(where: { $0.id == itemID }) else {
-                continue
-            }
-
-            updateItem(at: itemIndex, in: sectionIndex, delta: delta)
+    private mutating func updateLoggedSinProgress(_ entry: LogEntry) {
+        guard let progressPercentage = entry.progressPercentage else {
             return
         }
+
+        let progress = Double(progressPercentage) / 100
+        if let sinTitle = entry.sinTitle {
+            setProgress(progress, named: sinTitle, inSection: entry.sectionTitle)
+        } else {
+            setFirstItemProgress(progress, in: entry.sectionTitle)
+        }
     }
 
-    private mutating func updateItem(named itemTitle: String, inSection sectionTitle: String, delta: Double) {
+    private mutating func setProgress(_ progress: Double, named itemTitle: String, inSection sectionTitle: String) {
         guard let sectionIndex = sections.firstIndex(where: { $0.title == sectionTitle }) else {
-            updateFirstItem(in: sectionTitle, delta: delta)
+            setFirstItemProgress(progress, in: sectionTitle)
             return
         }
 
         guard let itemIndex = sections[sectionIndex].items.firstIndex(where: { $0.title == itemTitle }) else {
-            updateFirstItem(in: sectionTitle, delta: delta)
+            setFirstItemProgress(progress, in: sectionTitle)
             return
         }
 
-        updateItem(at: itemIndex, in: sectionIndex, delta: delta)
+        sections[sectionIndex].items[itemIndex].progress = clampedProgress(progress)
     }
 
-    private mutating func updateFirstItem(in sectionTitle: String, delta: Double) {
+    private mutating func setFirstItemProgress(_ progress: Double, in sectionTitle: String) {
         guard let sectionIndex = sections.firstIndex(where: { $0.title == sectionTitle }),
               let itemIndex = sections[sectionIndex].items.indices.first else {
             return
         }
 
-        updateItem(at: itemIndex, in: sectionIndex, delta: delta)
-    }
-
-    private mutating func updateItem(at itemIndex: Int, in sectionIndex: Int, delta: Double) {
-        let currentProgress = sections[sectionIndex].items[itemIndex].progress
-        sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + delta)
+        sections[sectionIndex].items[itemIndex].progress = clampedProgress(progress)
     }
 
     private func clampedProgress(_ progress: Double) -> Double {

@@ -224,6 +224,13 @@ extension HomeScreenCardSize {
     }
 }
 
+struct FocusedSinContext {
+    let sectionIndex: Int
+    let itemIndex: Int
+    let sectionTitle: String
+    let item: SinCategory
+}
+
 extension HeadwayView {
     static let activityTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()

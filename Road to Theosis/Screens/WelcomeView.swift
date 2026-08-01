@@ -18,7 +18,7 @@ struct WelcomeView: View {
             points: [
                 "Track exact sins instead of only broad categories.",
                 "Log quick prayers, or use the timer when you want a longer, dedicated session.",
-                "Review the latest entries, recent victories, and recent losses in one place.",
+                "Review the latest entries, recent resistance, and recent losses in one place.",
                 "Keep everything in one timeline instead of moving between separate apps."
             ]
         ),
@@ -29,9 +29,21 @@ struct WelcomeView: View {
             tint: .teal,
             points: [
                 "Pick the exact sin from the section list.",
-                "Mark victory, loss, or note the moment so the entry reflects what actually happened.",
+                "Mark resistance, loss, or note the moment so the entry reflects what actually happened.",
                 "Optionally attach prayer time to a sin log if you prayed as part of the response.",
                 "Use quick prayer separately when you just want to record the prayer itself."
+            ]
+        ),
+        .init(
+            title: "Understand purity",
+            subtitle: "The percentage shows current purity for each struggle: 0% is rock bottom and 100% is pure.",
+            icon: "chart.bar.fill",
+            tint: .indigo,
+            points: [
+                "Losses, clean time, and your selected strictness decide the current purity level.",
+                "Strictness controls how much history counts and how long a clean stretch must be before Pure.",
+                "Resistance is counted separately so effort stays visible without distorting the purity score.",
+                "Manual sliders create a new baseline when you know the current score needs a correction."
             ]
         ),
         .init(

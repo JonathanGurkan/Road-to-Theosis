@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var dashboard: DashboardViewModel
+    @Binding var logEntries: [LogEntry]
+    @Binding var purityCalculationDate: Date
     let onShowWelcome: () -> Void
     let onSaveEntry: (LogEntry) -> Void
 
@@ -29,6 +32,23 @@ struct SettingsView: View {
                         title: "Home",
                         subtitle: "Feed density and activity cards",
                         systemImage: "house.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    PuritySettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        dashboard: $dashboard,
+                        logEntries: logEntries,
+                        purityCalculationDate: purityCalculationDate
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Purity",
+                        subtitle: "Strictness and clean-time standard",
+                        systemImage: "chart.bar.fill"
                     )
                 }
                 .listRowBackground(Color.clear)
@@ -71,6 +91,23 @@ struct SettingsView: View {
                         title: "About",
                         subtitle: "App version and notes",
                         systemImage: "info.circle.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    DeveloperSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        dashboard: $dashboard,
+                        logEntries: $logEntries,
+                        purityCalculationDate: $purityCalculationDate
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Developer",
+                        subtitle: "Test data, modes, and purity scenarios",
+                        systemImage: "hammer.fill"
                     )
                 }
                 .listRowBackground(Color.clear)
@@ -153,7 +190,6 @@ private struct HomeSettingsPage: View {
     @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("showRecentActivity") private var showRecentActivity = true
     @AppStorage("compactSinRows") private var compactSinRows = false
-
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -177,6 +213,64 @@ private struct HomeSettingsPage: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private struct PuritySettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var dashboard: DashboardViewModel
+    let logEntries: [LogEntry]
+    let purityCalculationDate: Date
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+
+    private var selectedStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+    }
+
+    private var strictnessBinding: Binding<PurityStrictness> {
+        Binding {
+            selectedStrictness
+        } set: { newValue in
+            purityStrictnessRaw = newValue.rawValue
+            dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: newValue)
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Strictness")) {
+                    Picker("Purity strictness", selection: strictnessBinding) {
+                        ForEach(PurityStrictness.allCases) { strictness in
+                            Text(strictness.title).tag(strictness)
+                        }
+                    }
+                }
+
+                Section(header: Text("Current Standard")) {
+                    HStack {
+                        Text("History range")
+                        Spacer()
+                        Text("\(selectedStrictness.historyDays) days")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Pure after")
+                        Spacer()
+                        Text("\(selectedStrictness.pureAfterDays) clean days")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Purity")
         .navigationBarTitleDisplayMode(.large)
     }
 }
@@ -320,6 +414,284 @@ private struct AboutSettingsPage: View {
     }
 }
 
+private struct DeveloperSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @Binding var dashboard: DashboardViewModel
+    @Binding var logEntries: [LogEntry]
+    @Binding var purityCalculationDate: Date
+    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @State private var selectedSectionIndex = 0
+    @State private var selectedItemIndex = 0
+
+    private var selectedStrictness: PurityStrictness {
+        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+    }
+
+    private var scenarios: [DeveloperPurityScenario] {
+        let historyDays = selectedStrictness.historyDays
+        let weeklyLossCount = max(1, Int((Double(historyDays) / 7).rounded()))
+        let oftenLossCount = max(weeklyLossCount + 1, Int((Double(historyDays) * 2.2 / 7).rounded()))
+        let dailyLossCount = max(oftenLossCount + 1, Int((Double(historyDays) * 3.8 / 7).rounded()))
+        let rockBottomLossCount = max(dailyLossCount + 1, Int((Double(historyDays) * 5.5 / 7).rounded()))
+
+        return [
+            .init(title: "Rock bottom", detail: "Very high loss rate in \(historyDays)d", lossDayOffsets: dayOffsets(count: rockBottomLossCount, within: historyDays)),
+            .init(title: "Daily", detail: "Daily-level loss rate in \(historyDays)d", lossDayOffsets: dayOffsets(count: dailyLossCount, within: historyDays)),
+            .init(title: "Often", detail: "Several weekly losses in \(historyDays)d", lossDayOffsets: dayOffsets(count: oftenLossCount, within: historyDays)),
+            .init(title: "Weekly", detail: "About weekly in \(historyDays)d", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays)),
+            .init(title: "Occasional", detail: "A few monthly equivalents", lossDayOffsets: dayOffsets(count: max(1, weeklyLossCount / 2), within: historyDays)),
+            .init(title: "Clean window", detail: "Last loss just outside \(historyDays)d", lossDayOffsets: [historyDays + 1]),
+            .init(title: "Pure", detail: "Last loss past \(selectedStrictness.pureAfterDays)d", lossDayOffsets: [selectedStrictness.pureAfterDays + 1]),
+            .init(title: "Prayer boost", detail: "Weekly losses plus prayer", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), prayerDayOffsets: dayOffsets(count: 6, within: historyDays)),
+            .init(title: "Resistance only", detail: "Resistance without purity penalty", lossDayOffsets: [], resistanceDayOffsets: dayOffsets(count: 6, within: historyDays)),
+            .init(title: "Mixed history", detail: "Weekly losses plus resistance", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), resistanceDayOffsets: dayOffsets(count: 4, within: historyDays))
+        ]
+    }
+
+    private var selectedSection: SinSection? {
+        guard dashboard.sections.indices.contains(selectedSectionIndex) else { return nil }
+        return dashboard.sections[selectedSectionIndex]
+    }
+
+    private var selectedItem: SinCategory? {
+        guard let selectedSection, selectedSection.items.indices.contains(selectedItemIndex) else { return nil }
+        return selectedSection.items[selectedItemIndex]
+    }
+
+    private var selectedLevelText: String {
+        guard let selectedSection, let selectedItem else { return "No sin selected" }
+        let snapshot = PurityCalculator.snapshot(
+            sectionTitle: selectedSection.title,
+            sinTitle: selectedItem.title,
+            entries: logEntries,
+            now: purityCalculationDate,
+            strictness: selectedStrictness,
+            qualifiesForPrayerBoost: selectedItem.qualifiesForPrayerPurityBoost
+        )
+        let cleanText = snapshot.cleanDayCount.map { "Clean \($0)d" } ?? "No history"
+        let prayerText = selectedItem.qualifiesForPrayerPurityBoost ? " | Prayer +\(SinFrequencyScale.percentage(for: snapshot.prayerPurityBoost))%" : ""
+        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(snapshot.recentLossCount) | Resistance \(snapshot.recentResistanceCount) | \(cleanText)\(prayerText)"
+    }
+
+    private func dayOffsets(count: Int, within days: Int) -> [Int] {
+        guard count > 0 else { return [] }
+        guard count > 1 else { return [0] }
+
+        let maxOffset = max(0, days - 1)
+        return (0..<count).map { index in
+            Int((Double(index) / Double(count - 1) * Double(maxOffset)).rounded())
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Target Sin"), footer: Text(selectedLevelText)) {
+                    Picker("Section", selection: $selectedSectionIndex) {
+                        ForEach(dashboard.sections.indices, id: \.self) { index in
+                            Text(dashboard.sections[index].title).tag(index)
+                        }
+                    }
+                    .onChange(of: selectedSectionIndex) { _, _ in
+                        selectedItemIndex = 0
+                    }
+
+                    if let selectedSection {
+                        Picker("Sin", selection: $selectedItemIndex) {
+                            ForEach(selectedSection.items.indices, id: \.self) { index in
+                                Text(selectedSection.items[index].title).tag(index)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Purity Scenarios"), footer: Text("Scenarios replace selected-sin logs and developer prayer scenario logs, then recalculate purity from the seeded history.")) {
+                    ForEach(scenarios) { scenario in
+                        Button {
+                            applyScenario(scenario)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(scenario.title)
+                                        .foregroundStyle(.primary)
+                                    Text(scenario.detail)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Test Clock"), footer: Text("Jump the calculation date to verify that old losses age into Rare, Clean window, and Pure.")) {
+                    HStack {
+                        Text("Calculation date")
+                        Spacer()
+                        Text(Self.dateFormatter.string(from: purityCalculationDate))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button("Advance 1 day") {
+                        advanceCalculationDate(by: 1)
+                    }
+
+                    Button("Advance 7 days") {
+                        advanceCalculationDate(by: 7)
+                    }
+
+                    Button("Advance 30 days") {
+                        advanceCalculationDate(by: 30)
+                    }
+
+                    Button("Reset to today") {
+                        purityCalculationDate = Date()
+                        recalculatePurity()
+                    }
+                }
+
+                Section(header: Text("Live Logs"), footer: Text("These buttons create normal timeline entries and update dashboard stats.")) {
+                    Button("Log loss now") {
+                        addLiveEntry(kind: .loss)
+                    }
+
+                    Button("Log resistance now") {
+                        addLiveEntry(kind: .victory)
+                    }
+
+                    Button("Log quick prayer now") {
+                        addLiveEntry(kind: .quickPrayer, prayerMinutes: 1)
+                    }
+                }
+
+                Section(header: Text("Reset")) {
+                    Button(role: .destructive) {
+                        clearSelectedSinLogs()
+                    } label: {
+                        Label("Clear Selected Sin Logs", systemImage: "eraser")
+                    }
+
+                    Button(role: .destructive) {
+                        logEntries.removeAll()
+                        dashboard = DashboardViewModel()
+                        purityCalculationDate = Date()
+                    } label: {
+                        Label("Reset Dashboard Test State", systemImage: "arrow.counterclockwise")
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Developer")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func applyScenario(_ scenario: DeveloperPurityScenario) {
+        guard let selectedSection, let selectedItem else { return }
+        removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+        removeDeveloperPrayerScenarioEntries()
+
+        let lossEntries = scenario.lossDayOffsets.compactMap { dayOffset in
+            scenarioEntry(kind: .loss, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
+        }
+        let resistanceEntries = scenario.resistanceDayOffsets.compactMap { dayOffset in
+            scenarioEntry(kind: .victory, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
+        }
+        let prayerEntries = scenario.prayerDayOffsets.compactMap { dayOffset in
+            scenarioEntry(kind: .quickPrayer, dayOffset: dayOffset, sectionTitle: "Prayer", sinTitle: nil, title: scenario.title)
+        }
+
+        let seededEntries = lossEntries + resistanceEntries + prayerEntries
+        logEntries.insert(contentsOf: seededEntries.sorted { $0.occurredAt > $1.occurredAt }, at: 0)
+        recalculatePurity()
+    }
+
+    private func scenarioEntry(kind: LogEntry.Kind, dayOffset: Int, sectionTitle: String, sinTitle: String?, title: String) -> LogEntry? {
+        Calendar.current.date(byAdding: .day, value: -dayOffset, to: purityCalculationDate).map { date in
+            LogEntry(
+                kind: kind,
+                sectionTitle: sectionTitle,
+                sinTitle: sinTitle,
+                note: "Developer scenario: \(title)",
+                prayerMinutes: 0,
+                occurredAt: date
+            )
+        }
+    }
+
+    private func addLiveEntry(kind: LogEntry.Kind, prayerMinutes: Int = 0) {
+        guard let selectedSection, let selectedItem else { return }
+        let entry = LogEntry(
+            kind: kind,
+            sectionTitle: selectedSection.title,
+            sinTitle: selectedItem.title,
+            note: "Developer test log",
+            prayerMinutes: prayerMinutes,
+            occurredAt: purityCalculationDate
+        )
+
+        logEntries.insert(entry, at: 0)
+        dashboard.record(entry)
+        recalculatePurity()
+    }
+
+    private func advanceCalculationDate(by days: Int) {
+        purityCalculationDate = Calendar.current.date(byAdding: .day, value: days, to: purityCalculationDate) ?? purityCalculationDate
+        recalculatePurity()
+    }
+
+    private func clearSelectedSinLogs() {
+        guard let selectedSection, let selectedItem else { return }
+        removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
+        recalculatePurity()
+    }
+
+    private func recalculatePurity() {
+        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: selectedStrictness)
+    }
+
+    private func removeEntriesForSelectedSin(sectionTitle: String, sinTitle: String) {
+        logEntries.removeAll { entry in
+            entry.sectionTitle == sectionTitle && entry.sinTitle == sinTitle
+        }
+    }
+
+    private func removeDeveloperPrayerScenarioEntries() {
+        logEntries.removeAll { entry in
+            (entry.kind == .prayer || entry.kind == .quickPrayer) &&
+            entry.sectionTitle == "Prayer" &&
+            entry.note.hasPrefix("Developer scenario:")
+        }
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
+
+}
+
+private struct DeveloperPurityScenario: Identifiable {
+    let title: String
+    let detail: String
+    let lossDayOffsets: [Int]
+    var resistanceDayOffsets: [Int] = []
+    var prayerDayOffsets: [Int] = []
+
+    var id: String { title }
+}
+
 private struct ThemeRow: View {
     let theme: AppBackgroundTheme
     let isSelected: Bool
@@ -400,6 +772,13 @@ private struct SettingsNoteRow: View {
 
 #Preview {
     NavigationStack {
-        SettingsView(backgroundTheme: .constant(.blood), onShowWelcome: {}, onSaveEntry: { _ in })
+        SettingsView(
+            backgroundTheme: .constant(.blood),
+            dashboard: .constant(DashboardViewModel()),
+            logEntries: .constant([]),
+            purityCalculationDate: .constant(Date()),
+            onShowWelcome: {},
+            onSaveEntry: { _ in }
+        )
     }
 }
