@@ -175,6 +175,7 @@ struct CategoryCardView: View {
                     .accessibilityLabel("\(category.recentResistanceCount) recent resistance logs")
             }
 
+
             Text(category.frequencyDescription(for: frequencyLevel))
                 .font(.caption)
                 .foregroundStyle(.secondary)

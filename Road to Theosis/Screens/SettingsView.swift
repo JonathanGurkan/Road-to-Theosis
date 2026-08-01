@@ -212,6 +212,19 @@ private struct HomeSettingsPage: View {
                             .foregroundStyle(.secondary)
                     }
 
+
+                    if usesFocusProgressSliders {
+                        Picker("Slider style", selection: focusSliderStyleBinding) {
+                            ForEach(FocusSliderStyle.allCases) { style in
+                                Text(style.title).tag(style)
+                            }
+                        }
+
+                        Text((FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean).subtitle)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
                     Button(role: .destructive) {
                         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
                         showRecentActivity = true
