@@ -1,3 +1,5 @@
+import Foundation
+
 struct DashboardViewModel {
     var sections: [SinSection] = SinCategory.sample
     var dailyCheckIns = 12
@@ -35,13 +37,16 @@ struct DashboardViewModel {
     }
 
     mutating func advanceDailyProgress(days: Int = 1) {
-        let progressDelta = 0.01 * Double(max(days, 0))
-        guard progressDelta > 0 else { return }
+        let elapsedDays = max(days, 0)
+        guard elapsedDays > 0 else { return }
 
         for sectionIndex in sections.indices {
             for itemIndex in sections[sectionIndex].items.indices {
                 let currentProgress = sections[sectionIndex].items[itemIndex].progress
-                sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + progressDelta)
+                guard currentProgress < 1 else { continue }
+
+                let recoveryDelta = dailyRecoveryDelta(for: currentProgress, elapsedDays: elapsedDays)
+                sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + recoveryDelta)
             }
         }
     }
@@ -147,6 +152,12 @@ struct DashboardViewModel {
     private mutating func updateItem(at itemIndex: Int, in sectionIndex: Int, delta: Double) {
         let currentProgress = sections[sectionIndex].items[itemIndex].progress
         sections[sectionIndex].items[itemIndex].progress = clampedProgress(currentProgress + delta)
+    }
+
+    private func dailyRecoveryDelta(for progress: Double, elapsedDays: Int) -> Double {
+        let remainingPurity = max(0, 1 - progress)
+        let dailyRecoveryRate = 0.012
+        return remainingPurity * (1 - pow(1 - dailyRecoveryRate, Double(elapsedDays)))
     }
 
     private func clampedProgress(_ progress: Double) -> Double {
