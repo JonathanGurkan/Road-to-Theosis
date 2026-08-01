@@ -131,8 +131,7 @@ struct HeadwayView: View {
 
     private func logSwipeOutcome(_ kind: LogEntry.Kind, for itemID: SinCategory.ID, in sectionIndex: Int) -> Bool {
         guard dashboard.sections.indices.contains(sectionIndex),
-              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }),
-              shouldRecordSwipeOutcome(kind, progress: item.progress) else {
+              let item = dashboard.sections[sectionIndex].items.first(where: { $0.id == itemID }) else {
             return false
         }
 
@@ -146,17 +145,6 @@ struct HeadwayView: View {
         )
         saveEntry(entry)
         return true
-    }
-
-    private func shouldRecordSwipeOutcome(_ kind: LogEntry.Kind, progress: Double) -> Bool {
-        switch kind {
-        case .victory:
-            return progress < 1
-        case .loss:
-            return progress > 0
-        case .prayer, .quickPrayer, .progressUpdate, .sliderProgressUpdate, .note:
-            return true
-        }
     }
 
     private var selectedFocusContexts: [FocusedSinContext] {
