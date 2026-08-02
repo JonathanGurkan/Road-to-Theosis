@@ -9,6 +9,7 @@ enum AppPreferenceKey: String, CaseIterable {
     case focusedSinReferences
     case hasSeenWelcome
     case homeScreenLayout
+    case isGreetingWeatherEnabled
     case isPrayerTimingEnabled
     case keepScreenAwakeDuringPrayer
     case prayerTimerCountingMode

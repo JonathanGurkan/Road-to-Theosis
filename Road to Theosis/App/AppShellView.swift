@@ -13,6 +13,7 @@ struct AppShellView: View {
     @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
     @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferences = "[]"
     @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
     @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
     @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
     @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -51,6 +52,7 @@ struct AppShellView: View {
             AppPreferenceKey.focusedSinReferences.storageKey: focusedSinReferences,
             AppPreferenceKey.hasSeenWelcome.storageKey: String(hasSeenWelcome),
             AppPreferenceKey.homeScreenLayout.storageKey: homeScreenLayoutData,
+            AppPreferenceKey.isGreetingWeatherEnabled.storageKey: String(isGreetingWeatherEnabled),
             AppPreferenceKey.isPrayerTimingEnabled.storageKey: String(isPrayerTimingEnabled),
             AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey: String(keepScreenAwakeDuringPrayer),
             AppPreferenceKey.prayerTimerCountingMode.storageKey: prayerTimerCountingModeRaw,
@@ -183,6 +185,7 @@ struct AppShellView: View {
         focusedSinReferences = "[]"
         hasSeenWelcome = false
         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+        isGreetingWeatherEnabled = true
         isPrayerTimingEnabled = true
         keepScreenAwakeDuringPrayer = true
         prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -236,6 +239,8 @@ struct AppShellView: View {
             hasSeenWelcome = value == "true"
         case AppPreferenceKey.homeScreenLayout.storageKey:
             homeScreenLayoutData = value
+        case AppPreferenceKey.isGreetingWeatherEnabled.storageKey:
+            isGreetingWeatherEnabled = value == "true"
         case AppPreferenceKey.isPrayerTimingEnabled.storageKey:
             isPrayerTimingEnabled = value == "true"
         case AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey:
