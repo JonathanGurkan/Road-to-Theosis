@@ -385,11 +385,24 @@ private struct AboutSettingsPage: View {
     }
 
     private func iCloudFooterText(hasChangedSyncMode: Bool) -> Text {
+        if AppPersistence.isICloudSyncArchived {
+            return Text("iCloud sync is archived in the codebase but disabled for this build so the app can run on a personal development profile. Local saving stays on.")
+        }
+
         if hasChangedSyncMode {
             return Text("Sync mode changes apply the next time you open the app. Existing local data will be kept and uploaded when iCloud sync starts.")
         }
 
         return Text("iCloud sync is optional. Local saving stays on either way.")
+    }
+
+    private var iCloudSyncBinding: Binding<Bool> {
+        Binding {
+            AppPersistence.isICloudSyncArchived ? false : isICloudSyncEnabled
+        } set: { isOn in
+            guard !AppPersistence.isICloudSyncArchived else { return }
+            isICloudSyncEnabled = isOn
+        }
     }
 
     private var deleteAllDataBinding: Binding<Bool> {
@@ -435,8 +448,8 @@ private struct AboutSettingsPage: View {
                     }
                     .padding(.vertical, 2)
 
-                    Toggle("iCloud Sync", isOn: $isICloudSyncEnabled)
-                        .disabled(!iCloudStatus.status.canEnableSync)
+                    Toggle("iCloud Sync", isOn: iCloudSyncBinding)
+                        .disabled(AppPersistence.isICloudSyncArchived || !iCloudStatus.status.canEnableSync)
                         .onChange(of: isICloudSyncEnabled) { _, _ in
                             hasChangedICloudSyncMode = true
                         }

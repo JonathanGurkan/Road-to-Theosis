@@ -3,6 +3,7 @@ import SwiftData
 
 enum AppPersistence {
     static let iCloudSyncEnabledKey = "isICloudSyncEnabled"
+    static let isICloudSyncArchived = true
     static let cloudKitContainerIdentifier = "iCloud.DJJAGBLUE.RoadToTheosis"
 
     static func makeModelContainer() -> ModelContainer {
@@ -14,12 +15,13 @@ enum AppPersistence {
             StoredLogEntry.self,
             StoredAppPreference.self
         ])
+        let effectiveICloudSyncEnabled = isICloudSyncEnabled && !isICloudSyncArchived
         let configuration = ModelConfiguration(
             "RoadToTheosisStore",
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true,
-            cloudKitDatabase: isICloudSyncEnabled ? .private(cloudKitContainerIdentifier) : .none
+            cloudKitDatabase: effectiveICloudSyncEnabled ? .private(cloudKitContainerIdentifier) : .none
         )
 
         do {
