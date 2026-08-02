@@ -376,6 +376,7 @@ private struct AboutSettingsPage: View {
     @State private var hasChangedICloudSyncMode = false
     @State private var isShowingDeleteAllDataConfirmation = false
     @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
+    private let openMeteoURL = URL(string: "https://open-meteo.com/")
 
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -449,6 +450,14 @@ private struct AboutSettingsPage: View {
                         isShowingDeleteAllDataConfirmation = true
                     } label: {
                         Label("Delete All Data", systemImage: "trash.fill")
+                    }
+                }
+
+                Section(header: Text("Weather"), footer: Text("Weather helps tailor the welcome greeting. Location is used only for current local conditions.")) {
+                    if let openMeteoURL {
+                        Link(destination: openMeteoURL) {
+                            Label("Weather data by Open-Meteo", systemImage: "cloud.sun.fill")
+                        }
                     }
                 }
                 
