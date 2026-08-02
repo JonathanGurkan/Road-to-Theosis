@@ -187,9 +187,9 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage("showRecentActivity") private var showRecentActivity = true
-    @AppStorage("compactSinRows") private var compactSinRows = false
+    @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+    @AppStorage(AppPreferenceKey.showRecentActivity.storageKey) private var showRecentActivity = true
+    @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -222,7 +222,7 @@ private struct PuritySettingsPage: View {
     @Binding var dashboard: DashboardViewModel
     let logEntries: [LogEntry]
     let purityCalculationDate: Date
-    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
 
     private var selectedStrictness: PurityStrictness {
         PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
@@ -278,9 +278,9 @@ private struct PuritySettingsPage: View {
 private struct PrayerSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onSaveEntry: (LogEntry) -> Void
-    @AppStorage("keepScreenAwakeDuringPrayer") private var keepScreenAwakeDuringPrayer = true
-    @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
-    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+    @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
+    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     @State private var isShowingPrayerTimer = false
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
@@ -342,8 +342,8 @@ private struct PrayerSettingsPage: View {
 
 private struct ScriptureSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
-    @AppStorage("showVerseApplications") private var showVerseApplications = true
+    @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
+    @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
 
     var body: some View {
         ZStack {
@@ -454,7 +454,7 @@ private struct DeveloperSettingsPage: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
-    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @State private var selectedSectionIndex = 0
     @State private var selectedItemIndex = 0
 

@@ -3,7 +3,7 @@ import SwiftUI
 struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var logEntries: [LogEntry]
-    @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
+    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
 
     var body: some View {
         ZStack {
