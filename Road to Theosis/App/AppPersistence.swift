@@ -3,6 +3,7 @@ import SwiftData
 
 enum AppPersistence {
     static let iCloudSyncEnabledKey = "isICloudSyncEnabled"
+    // Flip this to false when paid Apple Developer provisioning and CloudKit entitlements are restored.
     static let isICloudSyncArchived = true
     static let cloudKitContainerIdentifier = "iCloud.DJJAGBLUE.RoadToTheosis"
 
