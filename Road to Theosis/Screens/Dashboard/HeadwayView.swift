@@ -19,6 +19,8 @@ struct HeadwayView: View {
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
     @State private var pendingProgressLog: ProgressLogDraft?
+    @State private var greetingWeather: GreetingWeatherSnapshot?
+    @State private var greetingWeatherService = GreetingWeatherService()
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
@@ -55,7 +57,7 @@ struct HeadwayView: View {
             context: DynamicGreetingContext(
                 date: .now,
                 recentEntries: recentEntries(limit: 8),
-                weather: nil
+                weather: greetingWeather
             )
         )
     }
@@ -388,6 +390,9 @@ struct HeadwayView: View {
             }
         }
         .onAppear(perform: restoreFocusedSinIDs)
+        .task {
+            greetingWeather = await greetingWeatherService.currentWeather()
+        }
         .onChange(of: focusedSinIDs) { _, _ in
             persistFocusedSinIDs()
         }
