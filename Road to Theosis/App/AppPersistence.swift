@@ -11,7 +11,8 @@ enum AppPersistence {
 
     static func makeModelContainer(isICloudSyncEnabled: Bool) -> ModelContainer {
         let schema = Schema([
-            StoredLogEntry.self
+            StoredLogEntry.self,
+            StoredAppPreference.self
         ])
         let configuration = ModelConfiguration(
             "RoadToTheosisStore",
