@@ -22,6 +22,7 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
+    @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferencesData = "[]"
     @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
     @AppStorage("compactSinRows") private var compactSinRows = false
     @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
@@ -221,6 +222,46 @@ struct HeadwayView: View {
         return nil
     }
 
+    private func focusContext(for reference: FocusedSinReference) -> FocusedSinContext? {
+        for sectionIndex in dashboard.sections.indices where dashboard.sections[sectionIndex].title == reference.sectionTitle {
+            guard let itemIndex = dashboard.sections[sectionIndex].items.firstIndex(where: { $0.title == reference.sinTitle }) else {
+                return nil
+            }
+
+            return FocusedSinContext(
+                sectionIndex: sectionIndex,
+                itemIndex: itemIndex,
+                sectionTitle: dashboard.sections[sectionIndex].title,
+                item: dashboard.sections[sectionIndex].items[itemIndex]
+            )
+        }
+
+        return nil
+    }
+
+    private func restoreFocusedSinIDs() {
+        guard let data = focusedSinReferencesData.data(using: .utf8),
+              let references = try? JSONDecoder().decode([FocusedSinReference].self, from: data) else {
+            focusedSinIDs = []
+            return
+        }
+
+        focusedSinIDs = references.compactMap { focusContext(for: $0)?.item.id }
+    }
+
+    private func persistFocusedSinIDs() {
+        let references = selectedFocusContexts.map {
+            FocusedSinReference(sectionTitle: $0.sectionTitle, sinTitle: $0.item.title)
+        }
+
+        guard let data = try? JSONEncoder().encode(references),
+              let encoded = String(data: data, encoding: .utf8) else {
+            return
+        }
+
+        focusedSinReferencesData = encoded
+    }
+
     private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
         guard logSwipeOutcome(kind, for: context.item.id, in: context.sectionIndex) else { return }
 
@@ -361,6 +402,13 @@ struct HeadwayView: View {
                     }
                 }
             }
+        }
+        .onAppear(perform: restoreFocusedSinIDs)
+        .onChange(of: focusedSinIDs) { _, _ in
+            persistFocusedSinIDs()
+        }
+        .onChange(of: focusedSinReferencesData) { _, _ in
+            restoreFocusedSinIDs()
         }
         .sheet(isPresented: $isShowingAddView) {
             AddLoggingView(backgroundTheme: $backgroundTheme) { entry in
