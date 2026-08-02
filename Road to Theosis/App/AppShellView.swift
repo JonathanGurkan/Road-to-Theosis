@@ -98,7 +98,8 @@ struct AppShellView: View {
                     purityCalculationDate: $purityCalculationDate,
                     onShowWelcome: {
                         isShowingWelcome = true
-                    }
+                    },
+                    onDeleteAllData: deleteAllData
                 ) { entry in
                     saveEntry(entry)
                 }
@@ -156,6 +157,44 @@ struct AppShellView: View {
 
         modelContext.insert(StoredLogEntry(entry: entry))
         try? modelContext.save()
+    }
+
+    private func deleteAllData() {
+        for storedLogEntry in storedLogEntries {
+            modelContext.delete(storedLogEntry)
+        }
+
+        for storedPreference in storedPreferences {
+            modelContext.delete(storedPreference)
+        }
+
+        try? modelContext.save()
+
+        UserDefaults.standard.removeObject(forKey: AppPersistence.iCloudSyncEnabledKey)
+        for key in AppPreferenceKey.allCases.map(\.storageKey) {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+
+        backgroundThemeRaw = AppBackgroundTheme.blood.rawValue
+        compactSinRows = false
+        customDefenseVersesBySin = "{}"
+        enableVerseInventory = true
+        focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+        focusedSinReferences = "[]"
+        hasSeenWelcome = false
+        homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+        isPrayerTimingEnabled = true
+        keepScreenAwakeDuringPrayer = true
+        prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+        purityStrictnessRaw = PurityStrictness.normal.rawValue
+        showRecentActivity = true
+        showVerseApplications = true
+        usesFocusProgressSliders = true
+
+        logEntries = []
+        purityCalculationDate = Date()
+        dashboard.rebuild(from: [], now: purityCalculationDate, strictness: purityStrictness)
+        isShowingWelcome = true
     }
 
     private func mirrorCurrentPreferences() {

@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
     let onShowWelcome: () -> Void
+    let onDeleteAllData: () -> Void
     let onSaveEntry: (LogEntry) -> Void
 
     var body: some View {
@@ -84,7 +85,8 @@ struct SettingsView: View {
                 NavigationLink {
                     AboutSettingsPage(
                         backgroundTheme: $backgroundTheme,
-                        onShowWelcome: onShowWelcome
+                        onShowWelcome: onShowWelcome,
+                        onDeleteAllData: onDeleteAllData
                     )
                 } label: {
                     SettingsLinkRow(
@@ -369,8 +371,11 @@ private struct ScriptureSettingsPage: View {
 private struct AboutSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onShowWelcome: () -> Void
+    let onDeleteAllData: () -> Void
     @State private var iCloudStatus = ICloudAccountStatusViewModel()
     @State private var hasChangedICloudSyncMode = false
+    @State private var isDeleteAllDataToggleOn = false
+    @State private var isShowingDeleteAllDataConfirmation = false
     @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
 
     private var versionText: String {
@@ -385,6 +390,17 @@ private struct AboutSettingsPage: View {
         }
 
         return Text("iCloud sync is optional. Local saving stays on either way.")
+    }
+
+    private var deleteAllDataBinding: Binding<Bool> {
+        Binding {
+            isDeleteAllDataToggleOn
+        } set: { isOn in
+            isDeleteAllDataToggleOn = isOn
+            if isOn {
+                isShowingDeleteAllDataConfirmation = true
+            }
+        }
     }
 
     var body: some View {
@@ -425,6 +441,11 @@ private struct AboutSettingsPage: View {
                             hasChangedICloudSyncMode = true
                         }
                 }
+
+                Section(header: Text("Data"), footer: Text("This removes local logs, preferences, custom verses, and iCloud sync settings from this device. If iCloud sync is enabled, deletions can sync to iCloud on the next sync pass.")) {
+                    Toggle("Delete All Data", isOn: deleteAllDataBinding)
+                        .tint(.red)
+                }
                 
                 Section("Help") {
                     Button {
@@ -440,6 +461,18 @@ private struct AboutSettingsPage: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.large)
+        .alert("Delete all data?", isPresented: $isShowingDeleteAllDataConfirmation) {
+            Button("Delete All Data", role: .destructive) {
+                onDeleteAllData()
+                isDeleteAllDataToggleOn = false
+            }
+
+            Button("Cancel", role: .cancel) {
+                isDeleteAllDataToggleOn = false
+            }
+        } message: {
+            Text("This removes your logs, settings, custom verses, and sync preference from this device.")
+        }
         .task {
             await iCloudStatus.refresh()
         }
@@ -813,6 +846,7 @@ private struct SettingsNoteRow: View {
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
             onShowWelcome: {},
+            onDeleteAllData: {},
             onSaveEntry: { _ in }
         )
     }
