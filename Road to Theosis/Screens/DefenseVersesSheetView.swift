@@ -5,8 +5,8 @@ struct DefenseVersesSheetView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("showVerseApplications") private var showVerseApplications = true
-    @AppStorage("customDefenseVersesBySin") private var customVersesStorage = "{}"
+    @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
+    @AppStorage(AppPreferenceKey.customDefenseVersesBySin.storageKey) private var customVersesStorage = "{}"
     @State private var customVerses: [BibleDefenseVerse] = []
     @State private var verseEditor: VerseEditorContext?
     @State private var pendingDeleteVerse: BibleDefenseVerse?

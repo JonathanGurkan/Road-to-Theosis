@@ -14,8 +14,8 @@ struct AddLoggingView: View {
     @State private var prayerMinutes: Int = 0
     @State private var occurredAt = Date()
     @State private var isShowingTimedPrayer = false
-    @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
-    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
         PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground

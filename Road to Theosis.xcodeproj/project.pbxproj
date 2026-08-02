@@ -18,12 +18,25 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000120 /* Road to Theosis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Road to Theosis.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000120 /* RoadToTheosis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoadToTheosis.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		74912836301F1BB800115A6F /* Exceptions for "Road to Theosis" folder in "Road to Theosis" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Road-to-Theosis-Info.plist",
+			);
+			target = 000000000000000100000000 /* Road to Theosis */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000010 /* Road to Theosis */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				74912836301F1BB800115A6F /* Exceptions for "Road to Theosis" folder in "Road to Theosis" target */,
+			);
 			path = "Road to Theosis";
 			sourceTree = "<group>";
 		};
@@ -49,7 +62,7 @@
 		000000000000000000000020 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000120 /* Road to Theosis.app */,
+				000000000000000000000120 /* RoadToTheosis.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,7 +86,7 @@
 			);
 			name = "Road to Theosis";
 			productName = MyApp;
-			productReference = 000000000000000000000120 /* Road to Theosis.app */;
+			productReference = 000000000000000000000120 /* RoadToTheosis.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -271,6 +284,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Road-to-Theosis-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Road to Theosis";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -287,12 +302,12 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.RoadToTheosis;
+				MARKETING_VERSION = 0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = DJJAGBLUE.RoadToTheosis;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = JonathanGurkan.C1VP0G0X.MyApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = RoadToTheosis;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -319,6 +334,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Road-to-Theosis-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Road to Theosis";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -335,12 +352,12 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.RoadToTheosis;
+				MARKETING_VERSION = 0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = DJJAGBLUE.RoadToTheosis;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = JonathanGurkan.C1VP0G0X.MyApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = RoadToTheosis;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
