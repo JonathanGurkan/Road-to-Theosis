@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct LogEntry: Identifiable {
-    enum Kind: String, CaseIterable, Identifiable {
+struct LogEntry: Codable, Identifiable, Equatable {
+    enum Kind: String, Codable, CaseIterable, Identifiable {
         case prayer
         case quickPrayer
         case victory
@@ -70,7 +70,7 @@ struct LogEntry: Identifiable {
         }
     }
 
-    let id = UUID()
+    let id: UUID
     let kind: Kind
     let sectionTitle: String
     let sinTitle: String?
@@ -81,6 +81,7 @@ struct LogEntry: Identifiable {
     let occurredAt: Date
 
     init(
+        id: UUID = UUID(),
         kind: Kind,
         sectionTitle: String,
         sinTitle: String?,
@@ -90,6 +91,7 @@ struct LogEntry: Identifiable {
         progressPercentage: Int? = nil,
         occurredAt: Date
     ) {
+        self.id = id
         self.kind = kind
         self.sectionTitle = sectionTitle
         self.sinTitle = sinTitle
