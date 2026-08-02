@@ -369,11 +369,22 @@ private struct ScriptureSettingsPage: View {
 private struct AboutSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onShowWelcome: () -> Void
+    @State private var iCloudStatus = ICloudAccountStatusViewModel()
+    @State private var hasChangedICloudSyncMode = false
+    @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
 
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
+    }
+
+    private func iCloudFooterText(hasChangedSyncMode: Bool) -> Text {
+        if hasChangedSyncMode {
+            return Text("Sync mode changes apply the next time you open the app. Existing local data will be kept and uploaded when iCloud sync starts.")
+        }
+
+        return Text("iCloud sync is optional. Local saving stays on either way.")
     }
 
     var body: some View {
@@ -396,6 +407,24 @@ private struct AboutSettingsPage: View {
                     }
                     
                 }
+
+                Section(header: Text("iCloud"), footer: iCloudFooterText(hasChangedSyncMode: hasChangedICloudSyncMode)) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(iCloudStatus.status.title, systemImage: iCloudStatus.status.canEnableSync ? "icloud.fill" : "icloud.slash")
+                            .font(.body.weight(.semibold))
+
+                        Text(iCloudStatus.status.subtitle)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+
+                    Toggle("iCloud Sync", isOn: $isICloudSyncEnabled)
+                        .disabled(!iCloudStatus.status.canEnableSync)
+                        .onChange(of: isICloudSyncEnabled) { _, _ in
+                            hasChangedICloudSyncMode = true
+                        }
+                }
                 
                 Section("Help") {
                     Button {
@@ -411,6 +440,12 @@ private struct AboutSettingsPage: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.large)
+        .task {
+            await iCloudStatus.refresh()
+        }
+        .task {
+            await iCloudStatus.monitorAccountChanges()
+        }
     }
 }
 
