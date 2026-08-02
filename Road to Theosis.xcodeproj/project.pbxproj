@@ -287,7 +287,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.RoadToTheosis;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
@@ -335,7 +335,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = devplaceholder.C1VP0G0X.RoadToTheosis;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
