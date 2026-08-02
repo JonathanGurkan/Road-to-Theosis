@@ -6,6 +6,7 @@ import Observation
 @Observable
 final class ICloudAccountStatusViewModel {
     enum Status: Equatable {
+        case archived
         case checking
         case available
         case noAccount
@@ -16,6 +17,8 @@ final class ICloudAccountStatusViewModel {
 
         var title: String {
             switch self {
+            case .archived:
+                return "iCloud Archived"
             case .checking:
                 return "Checking iCloud"
             case .available:
@@ -35,6 +38,8 @@ final class ICloudAccountStatusViewModel {
 
         var subtitle: String {
             switch self {
+            case .archived:
+                return "CloudKit calls are disabled for this personal-profile build."
             case .checking:
                 return "Looking for the device iCloud account."
             case .available:
@@ -57,14 +62,19 @@ final class ICloudAccountStatusViewModel {
         }
     }
 
-    private let container: CKContainer
-    private(set) var status: Status = .checking
+    private let container: CKContainer?
+    private(set) var status: Status = AppPersistence.isICloudSyncArchived ? .archived : .checking
 
-    init(container: CKContainer = .default()) {
-        self.container = container
+    init(container: CKContainer? = nil) {
+        self.container = AppPersistence.isICloudSyncArchived ? nil : (container ?? .default())
     }
 
     func refresh() async {
+        guard !AppPersistence.isICloudSyncArchived else {
+            status = .archived
+            return
+        }
+
         status = .checking
 
         do {
@@ -76,13 +86,17 @@ final class ICloudAccountStatusViewModel {
     }
 
     func monitorAccountChanges() async {
+        guard !AppPersistence.isICloudSyncArchived else { return }
+
         for await _ in NotificationCenter.default.notifications(named: .CKAccountChanged) {
             await refresh()
         }
     }
 
     private func currentAccountStatus() async throws -> CKAccountStatus {
-        try await withCheckedThrowingContinuation { continuation in
+        guard let container else { return .couldNotDetermine }
+
+        return try await withCheckedThrowingContinuation { continuation in
             container.accountStatus { accountStatus, error in
                 if let error {
                     continuation.resume(throwing: error)

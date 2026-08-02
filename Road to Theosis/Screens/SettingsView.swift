@@ -487,9 +487,11 @@ private struct AboutSettingsPage: View {
             Text("This removes your logs, settings, custom verses, and sync preference from this device.")
         }
         .task {
+            guard !AppPersistence.isICloudSyncArchived else { return }
             await iCloudStatus.refresh()
         }
         .task {
+            guard !AppPersistence.isICloudSyncArchived else { return }
             await iCloudStatus.monitorAccountChanges()
         }
     }
