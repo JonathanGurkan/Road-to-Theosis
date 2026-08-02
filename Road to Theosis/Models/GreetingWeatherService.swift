@@ -45,6 +45,10 @@ final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
     }
 
     private func currentLocation() async throws -> CLLocation {
+        guard Bundle.main.object(forInfoDictionaryKey: "NSLocationWhenInUseUsageDescription") != nil else {
+            throw WeatherError.locationUnavailable
+        }
+
         guard CLLocationManager.locationServicesEnabled() else {
             throw WeatherError.locationUnavailable
         }
