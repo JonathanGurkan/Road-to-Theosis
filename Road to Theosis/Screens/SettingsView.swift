@@ -374,7 +374,6 @@ private struct AboutSettingsPage: View {
     let onDeleteAllData: () -> Void
     @State private var iCloudStatus = ICloudAccountStatusViewModel()
     @State private var hasChangedICloudSyncMode = false
-    @State private var isDeleteAllDataToggleOn = false
     @State private var isShowingDeleteAllDataConfirmation = false
     @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
 
@@ -405,16 +404,6 @@ private struct AboutSettingsPage: View {
         }
     }
 
-    private var deleteAllDataBinding: Binding<Bool> {
-        Binding {
-            isDeleteAllDataToggleOn
-        } set: { isOn in
-            isDeleteAllDataToggleOn = isOn
-            if isOn {
-                isShowingDeleteAllDataConfirmation = true
-            }
-        }
-    }
 
     var body: some View {
         ZStack {
@@ -456,8 +445,11 @@ private struct AboutSettingsPage: View {
                 }
 
                 Section(header: Text("Data"), footer: Text("This removes local logs, preferences, custom verses, and iCloud sync settings from this device. If iCloud sync is enabled, deletions can sync to iCloud on the next sync pass.")) {
-                    Toggle("Delete All Data", isOn: deleteAllDataBinding)
-                        .tint(.red)
+                    Button(role: .destructive) {
+                        isShowingDeleteAllDataConfirmation = true
+                    } label: {
+                        Label("Delete All Data", systemImage: "trash.fill")
+                    }
                 }
                 
                 Section("Help") {
@@ -477,12 +469,9 @@ private struct AboutSettingsPage: View {
         .alert("Delete all data?", isPresented: $isShowingDeleteAllDataConfirmation) {
             Button("Delete All Data", role: .destructive) {
                 onDeleteAllData()
-                isDeleteAllDataToggleOn = false
             }
 
-            Button("Cancel", role: .cancel) {
-                isDeleteAllDataToggleOn = false
-            }
+            Button("Cancel", role: .cancel) { }
         } message: {
             Text("This removes your logs, settings, custom verses, and sync preference from this device.")
         }
