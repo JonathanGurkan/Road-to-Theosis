@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
     let onShowWelcome: () -> Void
+    let onDeleteAllData: () -> Void
     let onSaveEntry: (LogEntry) -> Void
 
     var body: some View {
@@ -84,7 +85,8 @@ struct SettingsView: View {
                 NavigationLink {
                     AboutSettingsPage(
                         backgroundTheme: $backgroundTheme,
-                        onShowWelcome: onShowWelcome
+                        onShowWelcome: onShowWelcome,
+                        onDeleteAllData: onDeleteAllData
                     )
                 } label: {
                     SettingsLinkRow(
@@ -187,9 +189,9 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage(HomeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage("showRecentActivity") private var showRecentActivity = true
-    @AppStorage("compactSinRows") private var compactSinRows = false
+    @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+    @AppStorage(AppPreferenceKey.showRecentActivity.storageKey) private var showRecentActivity = true
+    @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -222,7 +224,7 @@ private struct PuritySettingsPage: View {
     @Binding var dashboard: DashboardViewModel
     let logEntries: [LogEntry]
     let purityCalculationDate: Date
-    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
 
     private var selectedStrictness: PurityStrictness {
         PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
@@ -278,9 +280,9 @@ private struct PuritySettingsPage: View {
 private struct PrayerSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onSaveEntry: (LogEntry) -> Void
-    @AppStorage("keepScreenAwakeDuringPrayer") private var keepScreenAwakeDuringPrayer = true
-    @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
-    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+    @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
+    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     @State private var isShowingPrayerTimer = false
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
@@ -342,8 +344,8 @@ private struct PrayerSettingsPage: View {
 
 private struct ScriptureSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
-    @AppStorage("showVerseApplications") private var showVerseApplications = true
+    @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
+    @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
 
     var body: some View {
         ZStack {
@@ -369,12 +371,39 @@ private struct ScriptureSettingsPage: View {
 private struct AboutSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onShowWelcome: () -> Void
+    let onDeleteAllData: () -> Void
+    @State private var iCloudStatus = ICloudAccountStatusViewModel()
+    @State private var hasChangedICloudSyncMode = false
+    @State private var isShowingDeleteAllDataConfirmation = false
+    @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
 
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
     }
+
+    private func iCloudFooterText(hasChangedSyncMode: Bool) -> Text {
+        if AppPersistence.isICloudSyncArchived {
+            return Text("iCloud sync is archived in the codebase but disabled for this build so the app can run on a personal development profile. Local saving stays on.")
+        }
+
+        if hasChangedSyncMode {
+            return Text("Sync mode changes apply the next time you open the app. Existing local data will be kept and uploaded when iCloud sync starts.")
+        }
+
+        return Text("iCloud sync is optional. Local saving stays on either way.")
+    }
+
+    private var iCloudSyncBinding: Binding<Bool> {
+        Binding {
+            AppPersistence.isICloudSyncArchived ? false : isICloudSyncEnabled
+        } set: { isOn in
+            guard !AppPersistence.isICloudSyncArchived else { return }
+            isICloudSyncEnabled = isOn
+        }
+    }
+
 
     var body: some View {
         ZStack {
@@ -396,6 +425,32 @@ private struct AboutSettingsPage: View {
                     }
                     
                 }
+
+                Section(header: Text("iCloud"), footer: iCloudFooterText(hasChangedSyncMode: hasChangedICloudSyncMode)) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(iCloudStatus.status.title, systemImage: iCloudStatus.status.canEnableSync ? "icloud.fill" : "icloud.slash")
+                            .font(.body.weight(.semibold))
+
+                        Text(iCloudStatus.status.subtitle)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+
+                    Toggle("iCloud Sync", isOn: iCloudSyncBinding)
+                        .disabled(AppPersistence.isICloudSyncArchived || !iCloudStatus.status.canEnableSync)
+                        .onChange(of: isICloudSyncEnabled) { _, _ in
+                            hasChangedICloudSyncMode = true
+                        }
+                }
+
+                Section(header: Text("Data"), footer: Text("This removes local logs, preferences, custom verses, and iCloud sync settings from this device. If iCloud sync is enabled, deletions can sync to iCloud on the next sync pass.")) {
+                    Button(role: .destructive) {
+                        isShowingDeleteAllDataConfirmation = true
+                    } label: {
+                        Label("Delete All Data", systemImage: "trash.fill")
+                    }
+                }
                 
                 Section("Help") {
                     Button {
@@ -411,6 +466,23 @@ private struct AboutSettingsPage: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.large)
+        .alert("Delete all data?", isPresented: $isShowingDeleteAllDataConfirmation) {
+            Button("Delete All Data", role: .destructive) {
+                onDeleteAllData()
+            }
+
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This removes your logs, settings, custom verses, and sync preference from this device.")
+        }
+        .task {
+            guard !AppPersistence.isICloudSyncArchived else { return }
+            await iCloudStatus.refresh()
+        }
+        .task {
+            guard !AppPersistence.isICloudSyncArchived else { return }
+            await iCloudStatus.monitorAccountChanges()
+        }
     }
 }
 
@@ -419,7 +491,7 @@ private struct DeveloperSettingsPage: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
-    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @State private var selectedSectionIndex = 0
     @State private var selectedItemIndex = 0
 
@@ -778,6 +850,7 @@ private struct SettingsNoteRow: View {
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
             onShowWelcome: {},
+            onDeleteAllData: {},
             onSaveEntry: { _ in }
         )
     }

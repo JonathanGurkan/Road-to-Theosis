@@ -10,6 +10,7 @@ struct HeadwayView: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
+    let onSaveEntry: (LogEntry) -> Void
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -21,14 +22,15 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
-    @AppStorage(HomeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage("compactSinRows") private var compactSinRows = false
-    @AppStorage("usesFocusProgressSliders") private var usesFocusProgressSliders = true
-    @AppStorage("focusSliderStyle") private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
-    @AppStorage(PurityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
-    @AppStorage("isPrayerTimingEnabled") private var isPrayerTimingEnabled = true
-    @AppStorage("enableVerseInventory") private var enableVerseInventory = true
-    @AppStorage("prayerTimerCountingMode") private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
+    @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferencesData = "[]"
+    @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+    @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
+    @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
+    @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
+    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
+    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     private let maxFocusedSinCount = 3
 
@@ -122,12 +124,12 @@ struct HeadwayView: View {
     }
 
     private func saveEntry(_ entry: LogEntry, now: Date? = nil) {
-        let calculationDate = max(now ?? purityCalculationDate, entry.occurredAt)
-        purityCalculationDate = calculationDate
-        logEntries.insert(entry, at: 0)
-        dashboard.record(entry)
+        onSaveEntry(entry)
 
-        recalculatePurity(now: calculationDate)
+        if let now {
+            purityCalculationDate = max(now, entry.occurredAt)
+            recalculatePurity(now: purityCalculationDate)
+        }
     }
 
     private func recalculatePurity(now: Date? = nil) {
@@ -218,6 +220,46 @@ struct HeadwayView: View {
         }
 
         return nil
+    }
+
+    private func focusContext(for reference: FocusedSinReference) -> FocusedSinContext? {
+        for sectionIndex in dashboard.sections.indices where dashboard.sections[sectionIndex].title == reference.sectionTitle {
+            guard let itemIndex = dashboard.sections[sectionIndex].items.firstIndex(where: { $0.title == reference.sinTitle }) else {
+                return nil
+            }
+
+            return FocusedSinContext(
+                sectionIndex: sectionIndex,
+                itemIndex: itemIndex,
+                sectionTitle: dashboard.sections[sectionIndex].title,
+                item: dashboard.sections[sectionIndex].items[itemIndex]
+            )
+        }
+
+        return nil
+    }
+
+    private func restoreFocusedSinIDs() {
+        guard let data = focusedSinReferencesData.data(using: .utf8),
+              let references = try? JSONDecoder().decode([FocusedSinReference].self, from: data) else {
+            focusedSinIDs = []
+            return
+        }
+
+        focusedSinIDs = references.compactMap { focusContext(for: $0)?.item.id }
+    }
+
+    private func persistFocusedSinIDs() {
+        let references = selectedFocusContexts.map {
+            FocusedSinReference(sectionTitle: $0.sectionTitle, sinTitle: $0.item.title)
+        }
+
+        guard let data = try? JSONEncoder().encode(references),
+              let encoded = String(data: data, encoding: .utf8) else {
+            return
+        }
+
+        focusedSinReferencesData = encoded
     }
 
     private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
@@ -360,6 +402,13 @@ struct HeadwayView: View {
                     }
                 }
             }
+        }
+        .onAppear(perform: restoreFocusedSinIDs)
+        .onChange(of: focusedSinIDs) { _, _ in
+            persistFocusedSinIDs()
+        }
+        .onChange(of: focusedSinReferencesData) { _, _ in
+            restoreFocusedSinIDs()
         }
         .sheet(isPresented: $isShowingAddView) {
             AddLoggingView(backgroundTheme: $backgroundTheme) { entry in
@@ -1483,7 +1532,8 @@ struct HeadwayView: View {
             backgroundTheme: .constant(.blood),
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
-            purityCalculationDate: .constant(Date())
+            purityCalculationDate: .constant(Date()),
+            onSaveEntry: { _ in }
         )
     }
 }

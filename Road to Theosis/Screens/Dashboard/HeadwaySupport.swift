@@ -231,6 +231,11 @@ struct FocusedSinContext {
     let item: SinCategory
 }
 
+struct FocusedSinReference: Codable, Hashable {
+    let sectionTitle: String
+    let sinTitle: String
+}
+
 extension HeadwayView {
     static let activityTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
