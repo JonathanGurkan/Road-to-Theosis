@@ -83,6 +83,18 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
+                    WeatherSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Weather",
+                        subtitle: "Local conditions for greetings",
+                        systemImage: "cloud.sun.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
                     AboutSettingsPage(
                         backgroundTheme: $backgroundTheme,
                         onShowWelcome: onShowWelcome,
@@ -364,6 +376,46 @@ private struct ScriptureSettingsPage: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle("Scripture")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private struct WeatherSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
+    private let openMeteoURL = URL(string: "https://open-meteo.com/")
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Welcome Greeting"), footer: Text("When enabled, the welcome widget can request your approximate location and use current weather to adjust its greeting. Time of day and recent logs still shape the greeting either way.")) {
+                    Toggle("Use local weather", isOn: $isGreetingWeatherEnabled)
+                }
+
+                Section(header: Text("Location"), footer: Text("Location permission is controlled by iOS. If permission is denied, the app keeps using time of day and recent logs without weather.")) {
+                    HStack {
+                        Label("Approximate location", systemImage: "location.fill")
+                        Spacer()
+                        Text(isGreetingWeatherEnabled ? "On request" : "Off")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section(header: Text("Provider"), footer: Text("Weather data is used only to tune the greeting text and icon.")) {
+                    if let openMeteoURL {
+                        Link(destination: openMeteoURL) {
+                            Label("Weather data by Open-Meteo", systemImage: "cloud.sun.fill")
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Weather")
         .navigationBarTitleDisplayMode(.large)
     }
 }
