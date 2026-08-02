@@ -40,6 +40,20 @@ struct DashboardViewModel {
         // Kept as a compatibility no-op. Purity now comes from log history and the selected strictness.
     }
 
+    mutating func rebuild(from entries: [LogEntry], now: Date = .now, strictness: PurityStrictness = .normal) {
+        sections = SinCategory.sample
+        dailyCheckIns = 0
+        activeStreak = 0
+        prayerMinutes = 0
+        overallResistanceCount = 0
+
+        for entry in entries.sorted(by: { $0.occurredAt < $1.occurredAt }) {
+            record(entry)
+        }
+
+        recalculatePurity(from: entries, now: now, strictness: strictness)
+    }
+
     mutating func recalculatePurity(
         from entries: [LogEntry],
         now: Date = .now,

@@ -1,6 +1,9 @@
+import SwiftData
 import SwiftUI
 
 struct AppShellView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \StoredLogEntry.occurredAt, order: .reverse) private var storedLogEntries: [StoredLogEntry]
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var backgroundTheme: AppBackgroundTheme = .blood
     @State private var dashboard = DashboardViewModel()
@@ -20,7 +23,8 @@ struct AppShellView: View {
                     backgroundTheme: $backgroundTheme,
                     dashboard: $dashboard,
                     logEntries: $logEntries,
-                    purityCalculationDate: $purityCalculationDate
+                    purityCalculationDate: $purityCalculationDate,
+                    onSaveEntry: saveEntry
                 )
             }
             .tabItem {
@@ -60,9 +64,14 @@ struct AppShellView: View {
             }
         }
         .task {
+            syncLogEntriesFromStore()
             recalculatePurity()
             guard !hasSeenWelcome else { return }
             isShowingWelcome = true
+        }
+        .onChange(of: storedLogEntries.map(\.updatedAt)) { _, _ in
+            syncLogEntriesFromStore()
+            recalculatePurity()
         }
         .onChange(of: purityStrictnessRaw) { _, _ in
             recalculatePurity()
@@ -70,15 +79,27 @@ struct AppShellView: View {
     }
 
     private func saveEntry(_ entry: LogEntry) {
+        persistEntry(entry)
         purityCalculationDate = max(purityCalculationDate, entry.occurredAt)
         logEntries.insert(entry, at: 0)
-        dashboard.record(entry)
 
         recalculatePurity()
     }
 
+    private func syncLogEntriesFromStore() {
+        logEntries = storedLogEntries.map(\.entry)
+        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+    }
+
+    private func persistEntry(_ entry: LogEntry) {
+        guard !storedLogEntries.contains(where: { $0.id == entry.id }) else { return }
+
+        modelContext.insert(StoredLogEntry(entry: entry))
+        try? modelContext.save()
+    }
+
     private func recalculatePurity() {
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: purityStrictness)
+        dashboard.rebuild(from: logEntries, now: purityCalculationDate, strictness: purityStrictness)
     }
 }
 

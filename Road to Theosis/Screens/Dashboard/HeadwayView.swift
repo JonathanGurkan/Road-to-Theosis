@@ -10,6 +10,7 @@ struct HeadwayView: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
+    let onSaveEntry: (LogEntry) -> Void
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -122,12 +123,12 @@ struct HeadwayView: View {
     }
 
     private func saveEntry(_ entry: LogEntry, now: Date? = nil) {
-        let calculationDate = max(now ?? purityCalculationDate, entry.occurredAt)
-        purityCalculationDate = calculationDate
-        logEntries.insert(entry, at: 0)
-        dashboard.record(entry)
+        onSaveEntry(entry)
 
-        recalculatePurity(now: calculationDate)
+        if let now {
+            purityCalculationDate = max(now, entry.occurredAt)
+            recalculatePurity(now: purityCalculationDate)
+        }
     }
 
     private func recalculatePurity(now: Date? = nil) {
@@ -1483,7 +1484,8 @@ struct HeadwayView: View {
             backgroundTheme: .constant(.blood),
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
-            purityCalculationDate: .constant(Date())
+            purityCalculationDate: .constant(Date()),
+            onSaveEntry: { _ in }
         )
     }
 }
