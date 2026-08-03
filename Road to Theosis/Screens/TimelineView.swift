@@ -4,6 +4,19 @@ struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var logEntries: [LogEntry]
     @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
+
+    private var timelineRange: TimelineRange {
+        TimelineRange(rawValue: timelineRangeRaw) ?? .always
+    }
+
+    private var timelineRangeBinding: Binding<TimelineRange> {
+        Binding {
+            timelineRange
+        } set: { newValue in
+            timelineRangeRaw = newValue.rawValue
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -13,7 +26,7 @@ struct TimelineView: View {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     headerCard
 
-                    if logEntries.isEmpty {
+                    if filteredEntries.isEmpty {
                         emptyState
                     } else {
                         ForEach(groupedEntries, id: \.date) { group in
@@ -45,6 +58,13 @@ struct TimelineView: View {
                 Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                Picker("Timeline range", selection: timelineRangeBinding) {
+                    ForEach(TimelineRange.allCases) { range in
+                        Text(range.title).tag(range)
+                    }
+                }
+                .pickerStyle(.menu)
             }
         }
     }
@@ -54,11 +74,19 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
+                Text(emptyStateMessage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private var emptyStateMessage: String {
+        if logEntries.isEmpty {
+            return isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging."
+        }
+
+        return "No entries match the current \(timelineRange.title.lowercased()) timeline range."
     }
 
     private func dayCard(for group: (date: Date, entries: [LogEntry])) -> some View {
@@ -92,7 +120,7 @@ struct TimelineView: View {
     }
 
     private var groupedEntries: [(date: Date, entries: [LogEntry])] {
-        let sortedEntries = logEntries.sorted { $0.occurredAt > $1.occurredAt }
+        let sortedEntries = filteredEntries.sorted { $0.occurredAt > $1.occurredAt }
         let grouped = Dictionary(grouping: sortedEntries) { Calendar.current.startOfDay(for: $0.occurredAt) }
 
         return grouped
@@ -100,11 +128,59 @@ struct TimelineView: View {
             .sorted { $0.date > $1.date }
     }
 
+    private var filteredEntries: [LogEntry] {
+        guard let cutoffDate = timelineRange.cutoffDate(from: Date(), calendar: .current) else {
+            return logEntries
+        }
+
+        return logEntries.filter { $0.occurredAt >= cutoffDate }
+    }
+
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         return formatter
     }()
+}
+
+enum TimelineRange: String, CaseIterable, Identifiable {
+    case always
+    case ninetyDays
+    case thirtyDays
+    case fourteenDays
+    case sevenDays
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .always:
+            return "Always"
+        case .ninetyDays:
+            return "90 days"
+        case .thirtyDays:
+            return "30 days"
+        case .fourteenDays:
+            return "14 days"
+        case .sevenDays:
+            return "7 days"
+        }
+    }
+
+    func cutoffDate(from date: Date, calendar: Calendar) -> Date? {
+        switch self {
+        case .always:
+            return nil
+        case .ninetyDays:
+            return calendar.date(byAdding: .day, value: -90, to: date)
+        case .thirtyDays:
+            return calendar.date(byAdding: .day, value: -30, to: date)
+        case .fourteenDays:
+            return calendar.date(byAdding: .day, value: -14, to: date)
+        case .sevenDays:
+            return calendar.date(byAdding: .day, value: -7, to: date)
+        }
+    }
 }
 
 private struct TimelineRow: View {

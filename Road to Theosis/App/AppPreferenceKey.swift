@@ -19,6 +19,7 @@ enum AppPreferenceKey: String, CaseIterable {
     case purityStrictness
     case showRecentActivity
     case showVerseApplications
+    case timelineRange
     case usesFocusProgressSliders
 
     var storageKey: String { rawValue }

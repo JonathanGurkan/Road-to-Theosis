@@ -23,6 +23,7 @@ struct AppShellView: View {
     @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @AppStorage(AppPreferenceKey.showRecentActivity.storageKey) private var showRecentActivity = true
     @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
+    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
     @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
@@ -65,6 +66,7 @@ struct AppShellView: View {
             AppPreferenceKey.purityStrictness.storageKey: purityStrictnessRaw,
             AppPreferenceKey.showRecentActivity.storageKey: String(showRecentActivity),
             AppPreferenceKey.showVerseApplications.storageKey: String(showVerseApplications),
+            AppPreferenceKey.timelineRange.storageKey: timelineRangeRaw,
             AppPreferenceKey.usesFocusProgressSliders.storageKey: String(usesFocusProgressSliders)
         ]
     }
@@ -201,6 +203,7 @@ struct AppShellView: View {
         purityStrictnessRaw = PurityStrictness.normal.rawValue
         showRecentActivity = true
         showVerseApplications = true
+        timelineRangeRaw = TimelineRange.always.rawValue
         usesFocusProgressSliders = true
 
         logEntries = []
@@ -268,6 +271,8 @@ struct AppShellView: View {
             showRecentActivity = value == "true"
         case AppPreferenceKey.showVerseApplications.storageKey:
             showVerseApplications = value == "true"
+        case AppPreferenceKey.timelineRange.storageKey:
+            timelineRangeRaw = value
         case AppPreferenceKey.usesFocusProgressSliders.storageKey:
             usesFocusProgressSliders = value == "true"
         default:
