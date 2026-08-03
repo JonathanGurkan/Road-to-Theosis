@@ -11,8 +11,6 @@ struct HeadwayView: View {
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
     let onSaveEntry: (LogEntry) -> Void
-    let onUpdateEntry: (LogEntry) -> Void
-    let onDeleteEntry: (LogEntry) -> Void
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -20,19 +18,12 @@ struct HeadwayView: View {
     @State var homeGridWidth: CGFloat = 0
     @State var draggingHomeCardID: HomeScreenCardID?
     @State var selectedDefenseItem: SinCategory?
-    @State private var editingRecentActivityEntry: LogEntry?
     @State private var pendingProgressLog: ProgressLogDraft?
-    @State private var greetingWeather: GreetingWeatherSnapshot?
-    @State private var greetingWeatherService = GreetingWeatherService()
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
     @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferencesData = "[]"
     @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
-    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
-    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
-    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
     @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
     @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
     @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
@@ -43,6 +34,10 @@ struct HeadwayView: View {
 
     private let maxFocusedSinCount = 3
 
+    private var isDaytime: Bool {
+        (5..<17).contains(Calendar.current.component(.hour, from: Date()))
+    }
+    
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
         PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
     }
@@ -55,63 +50,46 @@ struct HeadwayView: View {
         PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
     }
 
-    private var greetingWeatherThresholds: GreetingWeatherThresholds {
-        GreetingWeatherThresholds(
-            warmThresholdCelsius: greetingWeatherWarmThresholdCelsius,
-            coldThresholdCelsius: greetingWeatherColdThresholdCelsius,
-            breezyThresholdKilometersPerHour: greetingWeatherBreezyThresholdKilometersPerHour
-        )
-    }
-
-    private var greetingWeatherSettingsSignature: String {
-        [
-            String(isGreetingWeatherEnabled),
-            String(greetingWeatherWarmThresholdCelsius),
-            String(greetingWeatherColdThresholdCelsius),
-            String(greetingWeatherBreezyThresholdKilometersPerHour)
-        ].joined(separator: "|")
-    }
-
     var homeScreenLayout: HomeScreenLayout {
         HomeScreenLayout.decoded(from: homeScreenLayoutData)
     }
 
-    private var dynamicGreeting: DynamicGreeting {
-        DynamicGreetingComposer.compose(
-            context: DynamicGreetingContext(
-                date: .now,
-                recentEntries: recentEntries(limit: 8),
-                weather: greetingWeather
-            )
-        )
-    }
-
     private var greeting: String {
-        dynamicGreeting.title
+        Self.greeting(for: .now)
     }
 
+    private static func greeting(for date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+
+        switch hour {
+        case 5..<12:
+            return "Good morning"
+        case 12..<17:
+            return "Good afternoon"
+        case 17..<22:
+            return "Good evening"
+        default:
+            return "Good night"
+        }
+    }
+    
     private var greetingSubtitle: String {
-        dynamicGreeting.subtitle
+        Self.greetingSubtitle(for: .now)
     }
-
-    private var greetingCompactTitle: String {
-        dynamicGreeting.compactTitle
-    }
-
-    private var greetingCompactSubtitle: String {
-        dynamicGreeting.compactSubtitle
-    }
-
-    private var greetingMinimalTitle: String {
-        dynamicGreeting.minimalTitle
-    }
-
-    private var greetingMinimalSubtitle: String {
-        dynamicGreeting.minimalSubtitle
-    }
-
-    private var greetingSymbolName: String {
-        dynamicGreeting.symbolName
+    
+    private static func greetingSubtitle(for date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+        
+        switch hour {
+        case 5..<12:
+            return "Hopefully you slept well today. Let's start the day with prayer and progress through this blessed day on the path of righteousness. Don't forget to put on the full armor of God!"
+        case 12..<17:
+            return "Hopefully the day is going pretty well so far. Take a moment to be mindfull of all your blessings so far!"
+        case 17..<22:
+            return "Don't forget to be mindfull of your blessings throughout the day so far. God is with you!"
+        default:
+            return "The day is coming to an end. Let's take some time to thank God for today's blessings and reflect on anything that need to be confessed and prayed for."
+        }
     }
 
     private var progressSubtitle: String {
@@ -138,15 +116,6 @@ struct HeadwayView: View {
 
     private func recentEntries(limit: Int) -> [LogEntry] {
         Array(logEntries.sorted { $0.occurredAt > $1.occurredAt }.prefix(limit))
-    }
-
-    private func refreshGreetingWeather() async {
-        guard isGreetingWeatherEnabled else {
-            greetingWeather = nil
-            return
-        }
-
-        greetingWeather = await greetingWeatherService.currentWeather(thresholds: greetingWeatherThresholds)
     }
 
     private func simulateDailyProgress() {
@@ -435,14 +404,6 @@ struct HeadwayView: View {
             }
         }
         .onAppear(perform: restoreFocusedSinIDs)
-        .task {
-            await refreshGreetingWeather()
-        }
-        .onChange(of: greetingWeatherSettingsSignature) { _, _ in
-            Task {
-                await refreshGreetingWeather()
-            }
-        }
         .onChange(of: focusedSinIDs) { _, _ in
             persistFocusedSinIDs()
         }
@@ -477,14 +438,6 @@ struct HeadwayView: View {
                 saveProgressLog(draft, note: note)
             }
         }
-        .sheet(item: $editingRecentActivityEntry) { entry in
-            EditLogEntryView(backgroundTheme: $backgroundTheme, entry: entry, onDelete: {
-                onDeleteEntry(entry)
-                editingRecentActivityEntry = nil
-            }) { updatedEntry in
-                onUpdateEntry(updatedEntry)
-            }
-        }
     }
 
     @ViewBuilder
@@ -509,64 +462,60 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16, fillsAvailableHeight: size.usesFixedGridHeight) {
             switch size {
             case .minimal:
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        minimalIcon(greetingSymbolName, size: 20)
-
-                        Text(greetingMinimalTitle)
-                            .font(.subheadline.weight(.semibold))
+                ZStack(alignment: .topLeading) {
+                    HStack {
+                        minimalIcon(isDaytime ? "sun.max.fill" : "moon.stars.fill", size: 20)
+                        Text(greeting)
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-
-                        Spacer(minLength: 4)
-
+                            .minimumScaleFactor(0.56)
+                    }
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 1) {
+                        Spacer()
                         Text(progressSubtitle)
-                            .font(.system(size: 8, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
+                        Spacer()
+                        Text(isDaytime ? "Enjoy your day's blessings!" : "Hopefully the day is going great. Enjoy the evening!")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .minimumScaleFactor(0.65)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .padding(.horizontal, 5)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            case .compact:
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: isDaytime ? "sun.max.fill" : "moon.stars.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(backgroundTheme.glowColor)
+
+                        Text(greeting)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
 
                     Spacer(minLength: 0)
 
-                    Text(greetingMinimalSubtitle)
-                        .font(.caption2.weight(.semibold))
+                    Text(greetingSubtitle)
+                        .font(.system(size: 16))
                         .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.72)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            case .compact:
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(spacing: 8) {
-                        Image(systemName: greetingSymbolName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(backgroundTheme.glowColor)
-
-                        Text(progressSubtitle)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                    }
-
-                    Text(greetingCompactTitle)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-
-                    Text(greetingCompactSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(6)
-                        .minimumScaleFactor(0.76)
+                        .lineLimit(8)
+                        .minimumScaleFactor(0.68)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Image(systemName: greetingSymbolName)
+                        Image(systemName: isDaytime ? "sun.max.fill" : "moon.stars.fill")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(backgroundTheme.glowColor)
                         Text(progressSubtitle)
@@ -1379,7 +1328,12 @@ struct HeadwayView: View {
                     }
 
                     if let entry = entries.first {
-                        compactRecentActivityRow(for: entry)
+                        compactRecentActivityRow(
+                            title: entry.kind.title,
+                            detail: entry.sinTitle ?? entry.sectionTitle,
+                            icon: entry.kind.symbolName,
+                            tint: entry.kind.tint
+                        )
                     } else {
                         compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                     }
@@ -1404,7 +1358,12 @@ struct HeadwayView: View {
                             compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                         } else {
                             ForEach(entries) { entry in
-                                compactRecentActivityRow(for: entry)
+                                compactRecentActivityRow(
+                                    title: entry.kind.title,
+                                    detail: entry.sinTitle ?? entry.sectionTitle,
+                                    icon: entry.kind.symbolName,
+                                    tint: entry.kind.tint
+                                )
                             }
                         }
                     }
@@ -1440,7 +1399,62 @@ struct HeadwayView: View {
                     } else {
                         VStack(spacing: 0) {
                             ForEach(entries) { entry in
-                                standardRecentActivityRow(for: entry)
+                                HStack(alignment: .top, spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(entry.kind.tint.opacity(0.14))
+
+                                        Image(systemName: entry.kind.symbolName)
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(entry.kind.tint)
+                                    }
+                                    .frame(width: 34, height: 34)
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                            Text(entry.kind.title)
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(.primary)
+
+                                            if let sinTitle = entry.sinTitle {
+                                                VStack(alignment: .leading, spacing: 0) {
+                                                    Text(sinTitle)
+                                                        .font(.caption.weight(.semibold))
+                                                        .foregroundStyle(.secondary)
+                                                        .lineLimit(1)
+
+                                                    Text(entry.sectionTitle)
+                                                        .font(.caption2)
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                            } else {
+                                                Text(entry.sectionTitle)
+                                                    .font(.caption.weight(.semibold))
+                                                    .foregroundStyle(.secondary)
+                                            }
+
+                                            Spacer(minLength: 8)
+
+                                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        if !entry.note.isEmpty {
+                                            Text(entry.note)
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+
+                                        if isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
+                                            Text("\(entry.prayerDurationText) prayer")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(entry.kind.tint)
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 6)
 
                                 if entry.id != entries.last?.id {
                                     Divider()
@@ -1451,99 +1465,6 @@ struct HeadwayView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-        }
-    }
-
-    private func compactRecentActivityRow(for entry: LogEntry) -> some View {
-        Button {
-            editingRecentActivityEntry = entry
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top, spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(entry.kind.tint.opacity(0.14))
-
-                        Image(systemName: entry.kind.symbolName)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(entry.kind.tint)
-                    }
-                    .frame(width: 28, height: 28)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(entry.kind.title)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-
-                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-
-                        Text(entry.encouragementText(showsPrayerTiming: isPrayerTimingEnabled))
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                if isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
-                    Text("\(entry.prayerDurationText) prayer")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(entry.kind.tint)
-                        .lineLimit(1)
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 7)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(entry.kind.tint.opacity(0.8))
-                    .frame(width: 3)
-            }
-        }
-        .buttonStyle(.plain)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-    }
-
-    private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled, showsEditButton: false) {
-            editingRecentActivityEntry = entry
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -1612,9 +1533,7 @@ struct HeadwayView: View {
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
-            onSaveEntry: { _ in },
-            onUpdateEntry: { _ in },
-            onDeleteEntry: { _ in }
+            onSaveEntry: { _ in }
         )
     }
 }
