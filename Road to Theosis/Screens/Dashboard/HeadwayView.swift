@@ -1604,4 +1604,5 @@ struct HeadwayView: View {
             onDeleteEntry: { _ in }
         )
     }
+    .environment(AppPreferenceStore())
 }
