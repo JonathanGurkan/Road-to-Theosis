@@ -191,6 +191,7 @@ enum TimelineRange: String, CaseIterable, Identifiable {
 struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
+    var showsEditButton = true
     let onEdit: () -> Void
 
     private var timeText: String {
@@ -222,15 +223,17 @@ struct TimelineRow: View {
 
                         Spacer(minLength: 8)
 
-                        Button(action: onEdit) {
-                            Label("Edit", systemImage: "pencil")
-                                .labelStyle(.iconOnly)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 28, height: 28)
-                                .background(Color.primary.opacity(0.06), in: Circle())
+                        if showsEditButton {
+                            Button(action: onEdit) {
+                                Label("Edit", systemImage: "pencil")
+                                    .labelStyle(.iconOnly)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.primary.opacity(0.06), in: Circle())
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
 
                     Text(targetText)

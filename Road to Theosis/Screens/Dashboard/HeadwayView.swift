@@ -1520,12 +1520,6 @@ struct HeadwayView: View {
             }
         }
         .contextMenu {
-            Button {
-                editingRecentActivityEntry = entry
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-
             Button(role: .destructive) {
                 onDeleteEntry(entry)
             } label: {
@@ -1535,7 +1529,7 @@ struct HeadwayView: View {
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled) {
+        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled, showsEditButton: false) {
             editingRecentActivityEntry = entry
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -1546,12 +1540,6 @@ struct HeadwayView: View {
             }
         }
         .contextMenu {
-            Button {
-                editingRecentActivityEntry = entry
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-
             Button(role: .destructive) {
                 onDeleteEntry(entry)
             } label: {
