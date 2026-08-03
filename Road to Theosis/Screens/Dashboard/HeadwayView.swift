@@ -7,6 +7,7 @@ private struct FocusWidgetPresentation {
 
 struct HeadwayView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) var preferences
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
@@ -27,53 +28,39 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
-    @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferencesData = "[]"
-    @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
-    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
-    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
-    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
-    @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
-    @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
-    @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
-    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
-    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
-    @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
-    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
-
     private let maxFocusedSinCount = 3
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
-        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+        PrayerTimerCountingMode(rawValue: preferences.prayerTimerCountingModeRaw) ?? .foreground
     }
 
     private var focusSliderStyle: FocusSliderStyle {
-        FocusSliderStyle(rawValue: focusSliderStyleRaw) ?? .clean
+        FocusSliderStyle(rawValue: preferences.focusSliderStyleRaw) ?? .clean
     }
 
     private var purityStrictness: PurityStrictness {
-        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+        PurityStrictness(rawValue: preferences.purityStrictnessRaw) ?? .normal
     }
 
     private var greetingWeatherThresholds: GreetingWeatherThresholds {
         GreetingWeatherThresholds(
-            warmThresholdCelsius: greetingWeatherWarmThresholdCelsius,
-            coldThresholdCelsius: greetingWeatherColdThresholdCelsius,
-            breezyThresholdKilometersPerHour: greetingWeatherBreezyThresholdKilometersPerHour
+            warmThresholdCelsius: preferences.greetingWeatherWarmThresholdCelsius,
+            coldThresholdCelsius: preferences.greetingWeatherColdThresholdCelsius,
+            breezyThresholdKilometersPerHour: preferences.greetingWeatherBreezyThresholdKilometersPerHour
         )
     }
 
     private var greetingWeatherSettingsSignature: String {
         [
-            String(isGreetingWeatherEnabled),
-            String(greetingWeatherWarmThresholdCelsius),
-            String(greetingWeatherColdThresholdCelsius),
-            String(greetingWeatherBreezyThresholdKilometersPerHour)
+            String(preferences.isGreetingWeatherEnabled),
+            String(preferences.greetingWeatherWarmThresholdCelsius),
+            String(preferences.greetingWeatherColdThresholdCelsius),
+            String(preferences.greetingWeatherBreezyThresholdKilometersPerHour)
         ].joined(separator: "|")
     }
 
     var homeScreenLayout: HomeScreenLayout {
-        HomeScreenLayout.decoded(from: homeScreenLayoutData)
+        HomeScreenLayout.decoded(from: preferences.homeScreenLayoutData)
     }
 
     private var dynamicGreeting: DynamicGreeting {
@@ -120,7 +107,7 @@ struct HeadwayView: View {
 
 
     private var quickActionSubtitle: String {
-        guard isPrayerTimingEnabled else {
+        guard preferences.isPrayerTimingEnabled else {
             return "Add a prayer, victory, loss, or note."
         }
 
@@ -141,7 +128,7 @@ struct HeadwayView: View {
     }
 
     private func refreshGreetingWeather() async {
-        guard isGreetingWeatherEnabled else {
+        guard preferences.isGreetingWeatherEnabled else {
             greetingWeather = nil
             return
         }
@@ -271,7 +258,7 @@ struct HeadwayView: View {
     }
 
     private func restoreFocusedSinIDs() {
-        guard let data = focusedSinReferencesData.data(using: .utf8),
+        guard let data = preferences.focusedSinReferences.data(using: .utf8),
               let references = try? JSONDecoder().decode([FocusedSinReference].self, from: data) else {
             focusedSinIDs = []
             return
@@ -290,7 +277,7 @@ struct HeadwayView: View {
             return
         }
 
-        focusedSinReferencesData = encoded
+        preferences.focusedSinReferences = encoded
     }
 
     private func logFocusedOutcome(_ kind: LogEntry.Kind, context: FocusedSinContext) {
@@ -446,7 +433,7 @@ struct HeadwayView: View {
         .onChange(of: focusedSinIDs) { _, _ in
             persistFocusedSinIDs()
         }
-        .onChange(of: focusedSinReferencesData) { _, _ in
+        .onChange(of: preferences.focusedSinReferences) { _, _ in
             restoreFocusedSinIDs()
         }
         .sheet(isPresented: $isShowingAddView) {
@@ -459,7 +446,7 @@ struct HeadwayView: View {
                 saveEntry(entry)
             }, initialMode: .quickPrayer)
         }
-        .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
+        .onChange(of: preferences.isPrayerTimingEnabled) { _, isEnabled in
             if !isEnabled {
                 isShowingPrayerTimer = false
             }
@@ -764,7 +751,7 @@ struct HeadwayView: View {
 
     private var overviewStackedStats: some View {
         VStack(spacing: 3) {
-            if isPrayerTimingEnabled {
+            if preferences.isPrayerTimingEnabled {
                 overviewStackedStat(title: "Prayer minutes", value: "\(dashboard.prayerMinutes)m", icon: "hands.sparkles")
 
                 Divider()
@@ -830,7 +817,7 @@ struct HeadwayView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Spacer()
                         HStack(spacing: 6) {
-                            if isPrayerTimingEnabled {
+                            if preferences.isPrayerTimingEnabled {
                                 compactActionButton(icon: "timer", tint: backgroundTheme.glowColor, size: 36) {
                                     isShowingPrayerTimer = true
                                 }
@@ -864,7 +851,7 @@ struct HeadwayView: View {
 
                     VStack(spacing: 6) {
                         HStack(spacing: 6) {
-                            if isPrayerTimingEnabled {
+                            if preferences.isPrayerTimingEnabled {
                                 compactActionRowButton(title: "Timer", icon: "timer", tint: backgroundTheme.glowColor, minHeight: 46) {
                                     isShowingPrayerTimer = true
                                 }
@@ -896,7 +883,7 @@ struct HeadwayView: View {
 
                     VStack(spacing: 8) {
                         HStack(spacing: 8) {
-                            if isPrayerTimingEnabled {
+                            if preferences.isPrayerTimingEnabled {
                                 ActionButtonView(
                                     title: "Prayer Timer",
                                     icon: "timer",
@@ -967,7 +954,7 @@ struct HeadwayView: View {
             Spacer()
             Button {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                    usesFocusProgressSliders.toggle()
+                    preferences.usesFocusProgressSliders.toggle()
                     isShowingModeToggleLabel = true
                 }
 
@@ -978,11 +965,11 @@ struct HeadwayView: View {
                 }
             } label: {
                 HStack(spacing: isShowingModeToggleLabel ? 6 : 0) {
-                    Image(systemName: usesFocusProgressSliders ? "slider.horizontal.3" : "chart.bar.fill")
+                    Image(systemName: preferences.usesFocusProgressSliders ? "slider.horizontal.3" : "chart.bar.fill")
                         .font(.caption.weight(.semibold))
 
                     if isShowingModeToggleLabel {
-                        Text(usesFocusProgressSliders ? "Slider" : "Bar")
+                        Text(preferences.usesFocusProgressSliders ? "Slider" : "Bar")
                             .font(.caption.weight(.semibold))
                             .lineLimit(1)
                             .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .trailing)))
@@ -996,7 +983,7 @@ struct HeadwayView: View {
             }
             .buttonStyle(.plain)
             .animation(.spring(response: 0.28, dampingFraction: 0.86), value: isShowingModeToggleLabel)
-            .accessibilityLabel(usesFocusProgressSliders ? "Current mode: slider" : "Current mode: bar")
+            .accessibilityLabel(preferences.usesFocusProgressSliders ? "Current mode: slider" : "Current mode: bar")
         }
         .padding(.horizontal, 2)
     }
@@ -1005,13 +992,13 @@ struct HeadwayView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionsHeader
 
-            LazyVStack(spacing: compactSinRows ? 10 : 12) {
+            LazyVStack(spacing: preferences.compactSinRows ? 10 : 12) {
                 ForEach(dashboard.sections.indices, id: \.self) { index in
                     SinSectionCardView(
                         section: $dashboard.sections[index],
-                        isCompact: compactSinRows,
+                        isCompact: preferences.compactSinRows,
                         showsVictoryAction: true,
-                        usesProgressSliders: usesFocusProgressSliders,
+                        usesProgressSliders: preferences.usesFocusProgressSliders,
                         sliderStyle: focusSliderStyle,
                         focusedItemIDs: activeFocusIDs,
                         onShowVerses: { item in
@@ -1484,7 +1471,7 @@ struct HeadwayView: View {
                                 .lineLimit(1)
                         }
 
-                        Text(entry.encouragementText(showsPrayerTiming: isPrayerTimingEnabled))
+                        Text(entry.encouragementText(showsPrayerTiming: preferences.isPrayerTimingEnabled))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -1494,7 +1481,7 @@ struct HeadwayView: View {
                     Spacer(minLength: 0)
                 }
 
-                if isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
+                if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
                     Text("\(entry.prayerDurationText) prayer")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(entry.kind.tint)
@@ -1529,7 +1516,7 @@ struct HeadwayView: View {
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled, showsEditButton: false) {
+        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled, showsEditButton: false) {
             editingRecentActivityEntry = entry
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -1617,4 +1604,5 @@ struct HeadwayView: View {
             onDeleteEntry: { _ in }
         )
     }
+    .environment(AppPreferenceStore())
 }
