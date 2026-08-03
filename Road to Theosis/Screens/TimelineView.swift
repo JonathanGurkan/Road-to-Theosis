@@ -4,6 +4,7 @@ struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var logEntries: [LogEntry]
     let onUpdateEntry: (LogEntry) -> Void
+    let onDeleteEntry: (LogEntry) -> Void
     @State private var editingEntry: LogEntry?
     @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
     @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
@@ -44,7 +45,10 @@ struct TimelineView: View {
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
         .sheet(item: $editingEntry) { entry in
-            EditLogEntryView(backgroundTheme: $backgroundTheme, entry: entry) { updatedEntry in
+            EditLogEntryView(backgroundTheme: $backgroundTheme, entry: entry, onDelete: {
+                onDeleteEntry(entry)
+                editingEntry = nil
+            }) { updatedEntry in
                 onUpdateEntry(updatedEntry)
             }
         }
@@ -116,6 +120,13 @@ struct TimelineView: View {
                     ForEach(group.entries) { entry in
                         TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled) {
                             editingEntry = entry
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                onDeleteEntry(entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
 
                         if entry.id != group.entries.last?.id {
@@ -336,20 +347,24 @@ private struct TimelineMetadataPill: View {
 private struct EditLogEntryView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let entry: LogEntry
+    let onDelete: () -> Void
     let onSave: (LogEntry) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var note: String
     @State private var occurredAt: Date
     @State private var prayerDurationSeconds: Int
     @State private var progressPercentage: Int
+    @State private var isShowingDeleteConfirmation = false
 
     init(
         backgroundTheme: Binding<AppBackgroundTheme>,
         entry: LogEntry,
+        onDelete: @escaping () -> Void,
         onSave: @escaping (LogEntry) -> Void
     ) {
         self._backgroundTheme = backgroundTheme
         self.entry = entry
+        self.onDelete = onDelete
         self.onSave = onSave
         self._note = State(initialValue: entry.note)
         self._occurredAt = State(initialValue: entry.occurredAt)
@@ -379,6 +394,7 @@ private struct EditLogEntryView: View {
                         summaryCard
                         detailsCard
                         noteCard
+                        deleteCard
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
@@ -404,6 +420,16 @@ private struct EditLogEntryView: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .alert("Delete this log?", isPresented: $isShowingDeleteConfirmation) {
+            Button("Delete Log", role: .destructive) {
+                onDelete()
+                dismiss()
+            }
+
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This removes the log entry and recalculates any affected purity progress.")
+        }
     }
 
     private var summaryCard: some View {
@@ -485,6 +511,18 @@ private struct EditLogEntryView: View {
         }
     }
 
+    private var deleteCard: some View {
+        AppSurfaceCard {
+            Button(role: .destructive) {
+                isShowingDeleteConfirmation = true
+            } label: {
+                Label("Delete Log Entry", systemImage: "trash")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
     private var targetText: String {
         if let sinTitle = entry.sinTitle {
             return "\(entry.sectionTitle) / \(sinTitle)"
@@ -552,7 +590,8 @@ private struct EditLogEntryView: View {
                     occurredAt: Date().addingTimeInterval(-7200)
                 )
             ]),
-            onUpdateEntry: { _ in }
+            onUpdateEntry: { _ in },
+            onDeleteEntry: { _ in }
         )
     }
 }

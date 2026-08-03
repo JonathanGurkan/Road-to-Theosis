@@ -97,7 +97,8 @@ struct AppShellView: View {
                 TimelineView(
                     backgroundTheme: backgroundThemeBinding,
                     logEntries: $logEntries,
-                    onUpdateEntry: updateEntry
+                    onUpdateEntry: updateEntry,
+                    onDeleteEntry: deleteEntry
                 )
             }
             .tabItem {
@@ -185,6 +186,17 @@ struct AppShellView: View {
         }
 
         logEntries.sort { $0.occurredAt > $1.occurredAt }
+        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+        recalculatePurity()
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
+            modelContext.delete(storedLogEntry)
+            try? modelContext.save()
+        }
+
+        logEntries.removeAll { $0.id == entry.id }
         purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
         recalculatePurity()
     }
