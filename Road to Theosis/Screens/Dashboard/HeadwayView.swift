@@ -1459,12 +1459,57 @@ struct HeadwayView: View {
         Button {
             editingRecentActivityEntry = entry
         } label: {
-            compactRecentActivityRow(
-                title: entry.kind.title,
-                detail: entry.sinTitle ?? entry.sectionTitle,
-                icon: entry.kind.symbolName,
-                tint: entry.kind.tint
-            )
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(entry.kind.tint.opacity(0.14))
+
+                        Image(systemName: entry.kind.symbolName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(entry.kind.tint)
+                    }
+                    .frame(width: 28, height: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(entry.kind.title)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
+                        Text(entryTargetText(for: entry))
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                if isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
+                    Text("\(entry.prayerDurationText) prayer")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(entry.kind.tint)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(entry.kind.tint.opacity(0.8))
+                    .frame(width: 3)
+            }
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -1490,67 +1535,9 @@ struct HeadwayView: View {
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(entry.kind.tint.opacity(0.14))
-
-                Image(systemName: entry.kind.symbolName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(entry.kind.tint)
-            }
-            .frame(width: 34, height: 34)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(entry.kind.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Text(entry.sinTitle ?? entry.sectionTitle)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-
-                    Spacer(minLength: 8)
-
-                    Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Button {
-                        editingRecentActivityEntry = entry
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 26, height: 26)
-                            .background(Color.primary.opacity(0.06), in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if entry.sinTitle != nil {
-                    Text(entry.sectionTitle)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-
-                if !entry.note.isEmpty {
-                    Text(entry.note)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
-                    Text("\(entry.prayerDurationText) prayer")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(entry.kind.tint)
-                }
-            }
+        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled) {
+            editingRecentActivityEntry = entry
         }
-        .padding(.vertical, 6)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 onDeleteEntry(entry)
@@ -1571,6 +1558,14 @@ struct HeadwayView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    private func entryTargetText(for entry: LogEntry) -> String {
+        if let sinTitle = entry.sinTitle {
+            return "\(sinTitle) / \(entry.sectionTitle)"
+        }
+
+        return entry.sectionTitle
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {

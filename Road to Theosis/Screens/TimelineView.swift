@@ -188,7 +188,7 @@ enum TimelineRange: String, CaseIterable, Identifiable {
     }
 }
 
-private struct TimelineRow: View {
+struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
     let onEdit: () -> Void
