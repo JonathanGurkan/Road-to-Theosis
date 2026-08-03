@@ -2,13 +2,13 @@ import Foundation
 import SwiftData
 
 enum AppPersistence {
-    static let iCloudSyncEnabledKey = "isICloudSyncEnabled"
+    static let legacyICloudSyncEnabledKey = "isICloudSyncEnabled"
     // Flip this to false when paid Apple Developer provisioning and CloudKit entitlements are restored.
     static let isICloudSyncArchived = true
     static let cloudKitContainerIdentifier = "iCloud.DJJAGBLUE.RoadToTheosis"
 
     static func makeModelContainer() -> ModelContainer {
-        makeModelContainer(isICloudSyncEnabled: UserDefaults.standard.bool(forKey: iCloudSyncEnabledKey))
+        makeModelContainer(isICloudSyncEnabled: false)
     }
 
     static func makeModelContainer(isICloudSyncEnabled: Bool) -> ModelContainer {
