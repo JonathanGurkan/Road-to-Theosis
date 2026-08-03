@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AddLoggingView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     let onSave: (LogEntry) -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -14,11 +15,9 @@ struct AddLoggingView: View {
     @State private var prayerMinutes: Int = 0
     @State private var occurredAt = Date()
     @State private var isShowingTimedPrayer = false
-    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
-    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
-        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+        preferences.prayerTimerCountingMode
     }
 
     init(
@@ -59,9 +58,9 @@ struct AddLoggingView: View {
     private var heroSubtitle: String {
         switch entryMode {
         case .sin:
-            return isPrayerTimingEnabled ? "Pick the exact sin first, then choose the outcome. Prayer time is optional and separate." : "Pick the exact sin first, then choose the outcome."
+            return preferences.isPrayerTimingEnabled ? "Pick the exact sin first, then choose the outcome. Prayer time is optional and separate." : "Pick the exact sin first, then choose the outcome."
         case .quickPrayer:
-            return isPrayerTimingEnabled ? "Use this for a brief prayer without the timer. The timed flow still lives in Prayer Timer." : "Use this for a brief prayer without focusing on elapsed time."
+            return preferences.isPrayerTimingEnabled ? "Use this for a brief prayer without the timer. The timed flow still lives in Prayer Timer." : "Use this for a brief prayer without focusing on elapsed time."
         case .note:
             return "Use this for a short reflection without tying it to a sin or prayer session."
         }
@@ -105,7 +104,7 @@ struct AddLoggingView: View {
         case .sin:
             return "Add any context you want to remember with this sin log."
         case .quickPrayer:
-            return isPrayerTimingEnabled ? "Keep this short. Use Prayer Timer if you want the session timed." : "Keep this short and focused on the prayer itself."
+            return preferences.isPrayerTimingEnabled ? "Keep this short. Use Prayer Timer if you want the session timed." : "Keep this short and focused on the prayer itself."
         case .note:
             return "Write anything short you want to remember."
         }
@@ -124,12 +123,12 @@ struct AddLoggingView: View {
                         if entryMode == .sin {
                             sinFocusCard
                             outcomeCard
-                            if isPrayerTimingEnabled {
+                            if preferences.isPrayerTimingEnabled {
                                 prayerCard
                             }
                         } else if entryMode == .quickPrayer {
                             quickPrayerCard
-                            if isPrayerTimingEnabled {
+                            if preferences.isPrayerTimingEnabled {
                                 timedPrayerCard
                             }
                         }
@@ -169,7 +168,7 @@ struct AddLoggingView: View {
                 prayerMinutes = 0
             }
         }
-        .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
+        .onChange(of: preferences.isPrayerTimingEnabled) { _, isEnabled in
             if !isEnabled {
                 includePrayerMinutes = false
                 prayerMinutes = 0
@@ -364,7 +363,7 @@ struct AddLoggingView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "This is a brief prayer entry without a timer. Use Prayer Timer if you want the elapsed time captured." : "This is a brief prayer entry without tracking elapsed time.")
+                Text(preferences.isPrayerTimingEnabled ? "This is a brief prayer entry without a timer. Use Prayer Timer if you want the elapsed time captured." : "This is a brief prayer entry without tracking elapsed time.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -646,4 +645,5 @@ private enum SinOutcome: String, CaseIterable, Identifiable {
 
 #Preview {
     AddLoggingView(backgroundTheme: .constant(.blood)) { _ in }
+        .environment(AppPreferenceStore())
 }

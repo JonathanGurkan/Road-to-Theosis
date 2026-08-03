@@ -2,15 +2,14 @@ import SwiftUI
 
 struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     @Binding var logEntries: [LogEntry]
     let onUpdateEntry: (LogEntry) -> Void
     let onDeleteEntry: (LogEntry) -> Void
     @State private var editingEntry: LogEntry?
-    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
-    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
 
     private var timelineRange: TimelineRange {
-        TimelineRange(rawValue: timelineRangeRaw) ?? .always
+        preferences.timelineRange
     }
 
     var body: some View {
@@ -58,7 +57,7 @@ struct TimelineView: View {
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
+                Text(preferences.isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -79,7 +78,7 @@ struct TimelineView: View {
 
     private var emptyStateMessage: String {
         if logEntries.isEmpty {
-            return isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging."
+            return preferences.isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging."
         }
 
         return "No entries match the current \(timelineRange.title.lowercased()) timeline range."
@@ -103,7 +102,7 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled) {
+                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
                             editingEntry = entry
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -622,4 +621,5 @@ struct EditLogEntryView: View {
             onDeleteEntry: { _ in }
         )
     }
+    .environment(AppPreferenceStore())
 }

@@ -3,10 +3,9 @@ import SwiftUI
 struct DefenseVersesSheetView: View {
     let category: SinCategory
 
+    @Environment(AppPreferenceStore.self) private var preferences
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
-    @AppStorage(AppPreferenceKey.customDefenseVersesBySin.storageKey) private var customVersesStorage = "{}"
     @State private var customVerses: [BibleDefenseVerse] = []
     @State private var verseEditor: VerseEditorContext?
     @State private var pendingDeleteVerse: BibleDefenseVerse?
@@ -30,7 +29,7 @@ struct DefenseVersesSheetView: View {
                         VerseCardView(
                             verse: verse,
                             accent: category.tint,
-                            showsApplication: showVerseApplications
+                            showsApplication: preferences.showVerseApplications
                         )
                         .padding(.horizontal, 16)
                         .padding(.vertical, 0)
@@ -40,7 +39,7 @@ struct DefenseVersesSheetView: View {
                         VerseCardView(
                             verse: verse,
                             accent: category.tint,
-                            showsApplication: showVerseApplications,
+                            showsApplication: preferences.showVerseApplications,
                             onEdit: {
                                 verseEditor = VerseEditorContext(verse: verse)
                             },
@@ -154,11 +153,11 @@ struct DefenseVersesSheetView: View {
             return
         }
 
-        customVersesStorage = encoded
+        preferences.customDefenseVersesBySin = encoded
     }
 
     private func decodedStorage() -> [String: [BibleDefenseVerse]] {
-        guard let data = customVersesStorage.data(using: .utf8),
+        guard let data = preferences.customDefenseVersesBySin.data(using: .utf8),
               let decoded = try? JSONDecoder().decode([String: [BibleDefenseVerse]].self, from: data) else {
             return [:]
         }
@@ -462,4 +461,5 @@ private struct AddDefenseVerseSheetView: View {
 
 #Preview {
     DefenseVersesSheetView(category: .item("Evil Thoughts", "Unclean or destructive thoughts", icon: "brain.head.profile", tint: .gray, watchword: "Guarded", progress: 0.58))
+        .environment(AppPreferenceStore())
 }
