@@ -109,7 +109,8 @@ final class AppPreferenceStore {
         }
     }
 
-    func mirrorCurrentPreferences(into modelContext: ModelContext, storedPreferences: [StoredAppPreference]) {
+    @discardableResult
+    func mirrorCurrentPreferences(into modelContext: ModelContext, storedPreferences: [StoredAppPreference]) -> Bool {
         for (key, value) in currentValues {
             if let storedPreference = storedPreferences.first(where: { $0.key == key }) {
                 guard storedPreference.value != value else { continue }
@@ -120,7 +121,12 @@ final class AppPreferenceStore {
             }
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            return false
+        }
     }
 
     func reset() {

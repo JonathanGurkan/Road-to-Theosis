@@ -78,7 +78,9 @@ struct AppShellView: View {
         .task {
             syncLogEntriesFromStore()
             preferences.load(from: storedPreferences)
-            preferences.mirrorCurrentPreferences(into: modelContext, storedPreferences: storedPreferences)
+            if preferences.mirrorCurrentPreferences(into: modelContext, storedPreferences: storedPreferences) {
+                preferences.removeLegacyUserDefaults()
+            }
             recalculatePurity()
             guard !preferences.hasSeenWelcome else { return }
             isShowingWelcome = true
