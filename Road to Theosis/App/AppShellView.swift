@@ -12,7 +12,11 @@ struct AppShellView: View {
     @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
     @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
     @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferences = "[]"
+    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
     @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
     @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
     @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
     @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -49,8 +53,12 @@ struct AppShellView: View {
             AppPreferenceKey.enableVerseInventory.storageKey: String(enableVerseInventory),
             AppPreferenceKey.focusSliderStyle.storageKey: focusSliderStyleRaw,
             AppPreferenceKey.focusedSinReferences.storageKey: focusedSinReferences,
+            AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey: String(greetingWeatherBreezyThresholdKilometersPerHour),
+            AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey: String(greetingWeatherColdThresholdCelsius),
+            AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey: String(greetingWeatherWarmThresholdCelsius),
             AppPreferenceKey.hasSeenWelcome.storageKey: String(hasSeenWelcome),
             AppPreferenceKey.homeScreenLayout.storageKey: homeScreenLayoutData,
+            AppPreferenceKey.isGreetingWeatherEnabled.storageKey: String(isGreetingWeatherEnabled),
             AppPreferenceKey.isPrayerTimingEnabled.storageKey: String(isPrayerTimingEnabled),
             AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey: String(keepScreenAwakeDuringPrayer),
             AppPreferenceKey.prayerTimerCountingMode.storageKey: prayerTimerCountingModeRaw,
@@ -181,8 +189,12 @@ struct AppShellView: View {
         enableVerseInventory = true
         focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
         focusedSinReferences = "[]"
+        greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+        greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+        greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
         hasSeenWelcome = false
         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+        isGreetingWeatherEnabled = true
         isPrayerTimingEnabled = true
         keepScreenAwakeDuringPrayer = true
         prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
@@ -232,10 +244,18 @@ struct AppShellView: View {
             focusSliderStyleRaw = value
         case AppPreferenceKey.focusedSinReferences.storageKey:
             focusedSinReferences = value
+        case AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey:
+            greetingWeatherBreezyThresholdKilometersPerHour = Double(value) ?? GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+        case AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey:
+            greetingWeatherColdThresholdCelsius = Double(value) ?? GreetingWeatherThresholds.defaultColdThresholdCelsius
+        case AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey:
+            greetingWeatherWarmThresholdCelsius = Double(value) ?? GreetingWeatherThresholds.defaultWarmThresholdCelsius
         case AppPreferenceKey.hasSeenWelcome.storageKey:
             hasSeenWelcome = value == "true"
         case AppPreferenceKey.homeScreenLayout.storageKey:
             homeScreenLayoutData = value
+        case AppPreferenceKey.isGreetingWeatherEnabled.storageKey:
+            isGreetingWeatherEnabled = value == "true"
         case AppPreferenceKey.isPrayerTimingEnabled.storageKey:
             isPrayerTimingEnabled = value == "true"
         case AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey:

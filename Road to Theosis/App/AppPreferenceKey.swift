@@ -8,7 +8,11 @@ enum AppPreferenceKey: String, CaseIterable {
     case focusSliderStyle
     case focusedSinReferences
     case hasSeenWelcome
+    case greetingWeatherBreezyThresholdKilometersPerHour
+    case greetingWeatherColdThresholdCelsius
+    case greetingWeatherWarmThresholdCelsius
     case homeScreenLayout
+    case isGreetingWeatherEnabled
     case isPrayerTimingEnabled
     case keepScreenAwakeDuringPrayer
     case prayerTimerCountingMode

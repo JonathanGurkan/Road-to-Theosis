@@ -83,6 +83,18 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
+                    WeatherSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Weather",
+                        subtitle: "Local conditions for greetings",
+                        systemImage: "cloud.sun.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
                     AboutSettingsPage(
                         backgroundTheme: $backgroundTheme,
                         onShowWelcome: onShowWelcome,
@@ -368,6 +380,110 @@ private struct ScriptureSettingsPage: View {
     }
 }
 
+private struct WeatherSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
+    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
+    private let openMeteoURL = URL(string: "https://open-meteo.com/")
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Welcome Greeting"), footer: Text("When enabled, the welcome widget can request your approximate location and use current weather to adjust its greeting. Time of day and recent logs still shape the greeting either way.")) {
+                    Toggle("Use local weather", isOn: $isGreetingWeatherEnabled)
+                }
+
+                Section(header: Text("Location"), footer: Text("Location permission is controlled by iOS. If permission is denied, the app keeps using time of day and recent logs without weather.")) {
+                    HStack {
+                        Label("Approximate location", systemImage: "location.fill")
+                        Spacer()
+                        Text(isGreetingWeatherEnabled ? "On request" : "Off")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section(header: Text("Sensitivity"), footer: Text("Adjust when current conditions should count as warm, cold, or breezy in the welcome greeting.")) {
+                    WeatherThresholdSlider(
+                        title: "Warm at",
+                        value: $greetingWeatherWarmThresholdCelsius,
+                        range: 18...38,
+                        unit: "C"
+                    )
+
+                    WeatherThresholdSlider(
+                        title: "Cold at",
+                        value: $greetingWeatherColdThresholdCelsius,
+                        range: -10...12,
+                        unit: "C"
+                    )
+
+                    WeatherThresholdSlider(
+                        title: "Breezy at",
+                        value: $greetingWeatherBreezyThresholdKilometersPerHour,
+                        range: 10...50,
+                        unit: "km/h"
+                    )
+
+                    Button {
+                        resetThresholds()
+                    } label: {
+                        Label("Reset Weather Sensitivity", systemImage: "arrow.counterclockwise")
+                    }
+                }
+                .disabled(!isGreetingWeatherEnabled)
+
+                Section(header: Text("Provider"), footer: Text("Weather data is used only to tune the greeting text and icon.")) {
+                    if let openMeteoURL {
+                        Link(destination: openMeteoURL) {
+                            Label("Weather data by Open-Meteo", systemImage: "cloud.sun.fill")
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Weather")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func resetThresholds() {
+        greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
+        greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+        greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+    }
+}
+
+private struct WeatherThresholdSlider: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let unit: String
+
+    private var valueText: String {
+        "\(Int(value.rounded())) \(unit)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(valueText)
+                    .foregroundStyle(.secondary)
+            }
+
+            Slider(value: $value, in: range, step: 1)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 private struct AboutSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let onShowWelcome: () -> Void
@@ -376,6 +492,7 @@ private struct AboutSettingsPage: View {
     @State private var hasChangedICloudSyncMode = false
     @State private var isShowingDeleteAllDataConfirmation = false
     @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
+    private let openMeteoURL = URL(string: "https://open-meteo.com/")
 
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -449,6 +566,14 @@ private struct AboutSettingsPage: View {
                         isShowingDeleteAllDataConfirmation = true
                     } label: {
                         Label("Delete All Data", systemImage: "trash.fill")
+                    }
+                }
+
+                Section(header: Text("Weather"), footer: Text("Weather helps tailor the welcome greeting. Location is used only for current local conditions.")) {
+                    if let openMeteoURL {
+                        Link(destination: openMeteoURL) {
+                            Label("Weather data by Open-Meteo", systemImage: "cloud.sun.fill")
+                        }
                     }
                 }
                 
