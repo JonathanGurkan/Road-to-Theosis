@@ -213,22 +213,22 @@ private struct AppearanceSettingsPage: View {
 
 private struct HomeSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage(AppPreferenceKey.showRecentActivity.storageKey) private var showRecentActivity = true
-    @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
+    @Environment(AppPreferenceStore.self) private var preferences
+
     var body: some View {
+        @Bindable var preferences = preferences
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
                 Section(header: Text("Layout")) {
-                    Toggle("Show recent activity", isOn: $showRecentActivity)
-                    Toggle("Compact sin list", isOn: $compactSinRows)
+                    Toggle("Show recent activity", isOn: $preferences.showRecentActivity)
+                    Toggle("Compact sin list", isOn: $preferences.compactSinRows)
 
                     Button(role: .destructive) {
-                        homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-                        showRecentActivity = true
-                        compactSinRows = false
+                        preferences.homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+                        preferences.showRecentActivity = true
+                        preferences.compactSinRows = false
                     } label: {
                         Label("Reset Home Screen", systemImage: "arrow.counterclockwise")
                     }
@@ -245,17 +245,13 @@ private struct HomeSettingsPage: View {
 
 private struct TimelineSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
-
-    private var timelineRange: TimelineRange {
-        TimelineRange(rawValue: timelineRangeRaw) ?? .always
-    }
+    @Environment(AppPreferenceStore.self) private var preferences
 
     private var timelineRangeBinding: Binding<TimelineRange> {
         Binding {
-            timelineRange
+            preferences.timelineRange
         } set: { newValue in
-            timelineRangeRaw = newValue.rawValue
+            preferences.timelineRange = newValue
         }
     }
 
@@ -285,19 +281,19 @@ private struct TimelineSettingsPage: View {
 private struct PuritySettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var dashboard: DashboardViewModel
+    @Environment(AppPreferenceStore.self) private var preferences
     let logEntries: [LogEntry]
     let purityCalculationDate: Date
-    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
 
     private var selectedStrictness: PurityStrictness {
-        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+        preferences.purityStrictness
     }
 
     private var strictnessBinding: Binding<PurityStrictness> {
         Binding {
             selectedStrictness
         } set: { newValue in
-            purityStrictnessRaw = newValue.rawValue
+            preferences.purityStrictness = newValue
             dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: newValue)
         }
     }
@@ -342,33 +338,32 @@ private struct PuritySettingsPage: View {
 
 private struct PrayerSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     let onSaveEntry: (LogEntry) -> Void
-    @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
-    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
-    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     @State private var isShowingPrayerTimer = false
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
-        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+        preferences.prayerTimerCountingMode
     }
 
     private var prayerTimerCountingModeBinding: Binding<PrayerTimerCountingMode> {
         Binding {
-            prayerTimerCountingMode
+            preferences.prayerTimerCountingMode
         } set: { newValue in
-            prayerTimerCountingModeRaw = newValue.rawValue
+            preferences.prayerTimerCountingMode = newValue
         }
     }
 
     var body: some View {
+        @Bindable var preferences = preferences
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Timing"), footer: isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
-                    Toggle("Enable prayer timing", isOn: $isPrayerTimingEnabled)
+                Section(header: Text("Timing"), footer: preferences.isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
+                    Toggle("Enable prayer timing", isOn: $preferences.isPrayerTimingEnabled)
 
-                    if isPrayerTimingEnabled {
+                    if preferences.isPrayerTimingEnabled {
                         Picker("Timer counting", selection: prayerTimerCountingModeBinding) {
                             ForEach(PrayerTimerCountingMode.allCases) { mode in
                                 Text(mode.displayName).tag(mode)
@@ -377,9 +372,9 @@ private struct PrayerSettingsPage: View {
                     }
                 }
 
-                if isPrayerTimingEnabled {
+                if preferences.isPrayerTimingEnabled {
                     Section(header: Text("Session"), footer: Text("This keeps the screen awake during a prayer session")) {
-                        Toggle("Keep screen awake", isOn: $keepScreenAwakeDuringPrayer)
+                        Toggle("Keep screen awake", isOn: $preferences.keepScreenAwakeDuringPrayer)
                     }
                     
                 } else {
@@ -392,7 +387,7 @@ private struct PrayerSettingsPage: View {
         }
         .navigationTitle("Prayer")
         .navigationBarTitleDisplayMode(.large) 
-        .onChange(of: isPrayerTimingEnabled) { _, isEnabled in
+        .onChange(of: preferences.isPrayerTimingEnabled) { _, isEnabled in
             if !isEnabled {
                 isShowingPrayerTimer = false
             }
@@ -407,18 +402,18 @@ private struct PrayerSettingsPage: View {
 
 private struct ScriptureSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
-    @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
+    @Environment(AppPreferenceStore.self) private var preferences
 
     var body: some View {
+        @Bindable var preferences = preferences
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
                 Section(header: Text("Verse arsenal"), footer: Text("When you tap on the icon of a sin in the sins list, your verse arsenal shows up. These are verses you note down to use as a counter agains the devil. You can add not only the verse and the bible quote, but also a descriptive note beneath it to, for example, specify what the use is of the verse.")) {
-                    Toggle("Enable verse arsenal", isOn: $enableVerseInventory)
-                    if enableVerseInventory {
-                        Toggle("Show verse desctiptions", isOn: $showVerseApplications)
+                    Toggle("Enable verse arsenal", isOn: $preferences.enableVerseInventory)
+                    if preferences.enableVerseInventory {
+                        Toggle("Show verse desctiptions", isOn: $preferences.showVerseApplications)
                     }
                 }
             }
@@ -433,26 +428,24 @@ private struct ScriptureSettingsPage: View {
 
 private struct WeatherSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
-    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
-    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
-    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
-    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
+    @Environment(AppPreferenceStore.self) private var preferences
     private let openMeteoURL = URL(string: "https://open-meteo.com/")
 
     var body: some View {
+        @Bindable var preferences = preferences
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
                 Section(header: Text("Welcome Greeting"), footer: Text("When enabled, the welcome widget can request your approximate location and use current weather to adjust its greeting. Time of day and recent logs still shape the greeting either way.")) {
-                    Toggle("Use local weather", isOn: $isGreetingWeatherEnabled)
+                    Toggle("Use local weather", isOn: $preferences.isGreetingWeatherEnabled)
                 }
 
                 Section(header: Text("Location"), footer: Text("Location permission is controlled by iOS. If permission is denied, the app keeps using time of day and recent logs without weather.")) {
                     HStack {
                         Label("Approximate location", systemImage: "location.fill")
                         Spacer()
-                        Text(isGreetingWeatherEnabled ? "On request" : "Off")
+                        Text(preferences.isGreetingWeatherEnabled ? "On request" : "Off")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -460,21 +453,21 @@ private struct WeatherSettingsPage: View {
                 Section(header: Text("Sensitivity"), footer: Text("Adjust when current conditions should count as warm, cold, or breezy in the welcome greeting.")) {
                     WeatherThresholdSlider(
                         title: "Warm at",
-                        value: $greetingWeatherWarmThresholdCelsius,
+                        value: $preferences.greetingWeatherWarmThresholdCelsius,
                         range: 18...38,
                         unit: "C"
                     )
 
                     WeatherThresholdSlider(
                         title: "Cold at",
-                        value: $greetingWeatherColdThresholdCelsius,
+                        value: $preferences.greetingWeatherColdThresholdCelsius,
                         range: -10...12,
                         unit: "C"
                     )
 
                     WeatherThresholdSlider(
                         title: "Breezy at",
-                        value: $greetingWeatherBreezyThresholdKilometersPerHour,
+                        value: $preferences.greetingWeatherBreezyThresholdKilometersPerHour,
                         range: 10...50,
                         unit: "km/h"
                     )
@@ -485,7 +478,7 @@ private struct WeatherSettingsPage: View {
                         Label("Reset Weather Sensitivity", systemImage: "arrow.counterclockwise")
                     }
                 }
-                .disabled(!isGreetingWeatherEnabled)
+                .disabled(!preferences.isGreetingWeatherEnabled)
 
                 Section(header: Text("Provider"), footer: Text("Weather data is used only to tune the greeting text and icon.")) {
                     if let openMeteoURL {
@@ -504,9 +497,9 @@ private struct WeatherSettingsPage: View {
     }
 
     private func resetThresholds() {
-        greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
-        greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
-        greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+        preferences.greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
+        preferences.greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+        preferences.greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
     }
 }
 
@@ -537,12 +530,12 @@ private struct WeatherThresholdSlider: View {
 
 private struct AboutSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     let onShowWelcome: () -> Void
     let onDeleteAllData: () -> Void
     @State private var iCloudStatus = ICloudAccountStatusViewModel()
     @State private var hasChangedICloudSyncMode = false
     @State private var isShowingDeleteAllDataConfirmation = false
-    @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     private let openMeteoURL = URL(string: "https://open-meteo.com/")
 
     private var versionText: String {
@@ -565,10 +558,10 @@ private struct AboutSettingsPage: View {
 
     private var iCloudSyncBinding: Binding<Bool> {
         Binding {
-            AppPersistence.isICloudSyncArchived ? false : isICloudSyncEnabled
+            AppPersistence.isICloudSyncArchived ? false : preferences.isICloudSyncEnabled
         } set: { isOn in
             guard !AppPersistence.isICloudSyncArchived else { return }
-            isICloudSyncEnabled = isOn
+            preferences.isICloudSyncEnabled = isOn
         }
     }
 
@@ -607,7 +600,7 @@ private struct AboutSettingsPage: View {
 
                     Toggle("iCloud Sync", isOn: iCloudSyncBinding)
                         .disabled(AppPersistence.isICloudSyncArchived || !iCloudStatus.status.canEnableSync)
-                        .onChange(of: isICloudSyncEnabled) { _, _ in
+                        .onChange(of: preferences.isICloudSyncEnabled) { _, _ in
                             hasChangedICloudSyncMode = true
                         }
                 }
@@ -667,12 +660,12 @@ private struct DeveloperSettingsPage: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
-    @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
+    @Environment(AppPreferenceStore.self) private var preferences
     @State private var selectedSectionIndex = 0
     @State private var selectedItemIndex = 0
 
     private var selectedStrictness: PurityStrictness {
-        PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+        preferences.purityStrictness
     }
 
     private var scenarios: [DeveloperPurityScenario] {
