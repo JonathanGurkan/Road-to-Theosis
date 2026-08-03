@@ -202,108 +202,113 @@ private struct TimelineRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(entry.kind.tint.opacity(0.14))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(entry.kind.tint.opacity(0.14))
 
-                Image(systemName: entry.kind.symbolName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(entry.kind.tint)
-            }
-            .frame(width: 34, height: 34)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(entry.kind.title)
+                    Image(systemName: entry.kind.symbolName)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    if let sinTitle = entry.sinTitle {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(sinTitle)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-
-                            Text(entry.sectionTitle)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Text(entry.sectionTitle)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Text(timeText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color.primary.opacity(0.06), in: Circle())
-                    }
-                    .buttonStyle(.plain)
+                        .foregroundStyle(entry.kind.tint)
                 }
+                .frame(width: 36, height: 36)
 
-                if let progressPercentage = entry.progressPercentage {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 8) {
-                            Text("Purity")
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(entry.kind.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
+                        Text(timeText)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+
+                        Spacer(minLength: 8)
+
+                        Button(action: onEdit) {
+                            Label("Edit", systemImage: "pencil")
+                                .labelStyle(.iconOnly)
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
-
-                            Spacer(minLength: 8)
-
-                            Text(SinFrequencyScale.label(for: progressPercentage))
-                                .font(.caption.weight(.semibold))
-                                .monospacedDigit()
-                                .foregroundStyle(entry.kind.tint)
+                                .frame(width: 28, height: 28)
+                                .background(Color.primary.opacity(0.06), in: Circle())
                         }
-
-                        ProgressView(value: Double(progressPercentage) / 100)
-                            .tint(entry.kind.tint)
+                        .buttonStyle(.plain)
                     }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
 
-                if !entry.note.isEmpty {
-                  
-                } else if !entry.note.isEmpty {
-                    Text(entry.note)
-                        .font(.subheadline)
+                    Text(targetText)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            }
 
-                HStack(spacing: 10) {
-                    if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
-                        Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
+            if !entry.note.isEmpty {
+                Text(entry.note)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.82))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let progressPercentage = entry.progressPercentage {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Purity")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Text(SinFrequencyScale.label(for: progressPercentage))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
+                    }
+
+                    ProgressView(value: Double(progressPercentage) / 100)
+                        .tint(entry.kind.tint)
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    TimelineMetadataPill(text: entry.sectionTitle, systemImage: "folder", tint: .secondary)
+
+                    if let sinTitle = entry.sinTitle {
+                        TimelineMetadataPill(text: sinTitle, systemImage: "target", tint: entry.kind.tint)
+                    }
+
+                    if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+                        TimelineMetadataPill(text: "\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles", tint: entry.kind.tint)
                     }
 
                     if let progressPercentage = entry.progressPercentage {
-                        Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(entry.kind.tint)
-                    } else {
-                        Label(entry.kind.title, systemImage: entry.kind.symbolName)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                        TimelineMetadataPill(text: SinFrequencyScale.label(for: progressPercentage), systemImage: "slider.horizontal.below.rectangle", tint: entry.kind.tint)
                     }
                 }
+                .lineLimit(1)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.045))
+        }
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(entry.kind.tint.opacity(0.8))
+                .frame(width: 3)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var targetText: String {
+        if let sinTitle = entry.sinTitle {
+            return "\(sinTitle) / \(entry.sectionTitle)"
+        }
+
+        return entry.sectionTitle
     }
 
     private static let timeFormatter: DateFormatter = {
@@ -311,6 +316,21 @@ private struct TimelineRow: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+private struct TimelineMetadataPill: View {
+    let text: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        Label(text, systemImage: systemImage)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(Color.primary.opacity(0.055), in: Capsule())
+    }
 }
 
 private struct EditLogEntryView: View {
