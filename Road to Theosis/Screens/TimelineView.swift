@@ -3,6 +3,8 @@ import SwiftUI
 struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Binding var logEntries: [LogEntry]
+    let onUpdateEntry: (LogEntry) -> Void
+    @State private var editingEntry: LogEntry?
     @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
     @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
 
@@ -41,6 +43,11 @@ struct TimelineView: View {
         }
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(item: $editingEntry) { entry in
+            EditLogEntryView(backgroundTheme: $backgroundTheme, entry: entry) { updatedEntry in
+                onUpdateEntry(updatedEntry)
+            }
+        }
     }
 
     private var headerCard: some View {
@@ -107,7 +114,9 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled)
+                        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled) {
+                            editingEntry = entry
+                        }
 
                         if entry.id != group.entries.last?.id {
                             Divider()
@@ -186,6 +195,7 @@ enum TimelineRange: String, CaseIterable, Identifiable {
 private struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
+    let onEdit: () -> Void
 
     private var timeText: String {
         Self.timeFormatter.string(from: entry.occurredAt)
@@ -231,6 +241,15 @@ private struct TimelineRow: View {
                     Text(timeText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.primary.opacity(0.06), in: Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 if let progressPercentage = entry.progressPercentage {
@@ -294,6 +313,194 @@ private struct TimelineRow: View {
     }()
 }
 
+private struct EditLogEntryView: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    let entry: LogEntry
+    let onSave: (LogEntry) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var note: String
+    @State private var occurredAt: Date
+    @State private var prayerDurationSeconds: Int
+    @State private var progressPercentage: Int
+
+    init(
+        backgroundTheme: Binding<AppBackgroundTheme>,
+        entry: LogEntry,
+        onSave: @escaping (LogEntry) -> Void
+    ) {
+        self._backgroundTheme = backgroundTheme
+        self.entry = entry
+        self.onSave = onSave
+        self._note = State(initialValue: entry.note)
+        self._occurredAt = State(initialValue: entry.occurredAt)
+        self._prayerDurationSeconds = State(initialValue: entry.prayerDurationSeconds)
+        self._progressPercentage = State(initialValue: entry.progressPercentage ?? 0)
+    }
+
+    private var trimmedNote: String {
+        note.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canEditPrayerDuration: Bool {
+        entry.kind == .prayer || entry.kind == .quickPrayer || entry.prayerDurationSeconds > 0
+    }
+
+    private var canEditProgress: Bool {
+        entry.progressPercentage != nil
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppBackgroundView(theme: backgroundTheme)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        summaryCard
+                        detailsCard
+                        noteCard
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle("Edit Log")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        save()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var summaryCard: some View {
+        AppSurfaceCard {
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(entry.kind.tint.opacity(0.14))
+
+                    Image(systemName: entry.kind.symbolName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(entry.kind.tint)
+                }
+                .frame(width: 38, height: 38)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(entry.kind.title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(targetText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private var detailsCard: some View {
+        AppSurfaceCard {
+            VStack(alignment: .leading, spacing: 12) {
+                DatePicker("When", selection: $occurredAt, displayedComponents: [.date, .hourAndMinute])
+
+                if canEditPrayerDuration {
+                    Stepper(value: $prayerDurationSeconds, in: 0...10_800, step: 60) {
+                        HStack {
+                            Label("Prayer time", systemImage: "hands.sparkles")
+                            Spacer()
+                            Text(LogEntry.formatPrayerDuration(seconds: prayerDurationSeconds))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if canEditProgress {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Label("Purity", systemImage: "slider.horizontal.below.rectangle")
+                            Spacer()
+                            Text(SinFrequencyScale.label(for: progressPercentage))
+                                .foregroundStyle(entry.kind.tint)
+                        }
+
+                        Slider(value: progressBinding, in: 0...100, step: 1)
+                            .tint(entry.kind.tint)
+                    }
+                }
+            }
+        }
+    }
+
+    private var noteCard: some View {
+        AppSurfaceCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Note")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                TextEditor(text: $note)
+                    .frame(minHeight: 160)
+                    .padding(10)
+                    .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                    )
+            }
+        }
+    }
+
+    private var targetText: String {
+        if let sinTitle = entry.sinTitle {
+            return "\(entry.sectionTitle) / \(sinTitle)"
+        }
+
+        return entry.sectionTitle
+    }
+
+    private var progressBinding: Binding<Double> {
+        Binding {
+            Double(progressPercentage)
+        } set: { newValue in
+            progressPercentage = Int(newValue.rounded())
+        }
+    }
+
+    private func save() {
+        let updatedPrayerDurationSeconds = canEditPrayerDuration ? prayerDurationSeconds : entry.prayerDurationSeconds
+        let updatedPrayerMinutes = canEditPrayerDuration ? updatedPrayerDurationSeconds / 60 : entry.prayerMinutes
+        let updatedEntry = LogEntry(
+            id: entry.id,
+            kind: entry.kind,
+            sectionTitle: entry.sectionTitle,
+            sinTitle: entry.sinTitle,
+            note: trimmedNote,
+            prayerMinutes: updatedPrayerMinutes,
+            prayerDurationSeconds: updatedPrayerDurationSeconds,
+            progressPercentage: canEditProgress ? progressPercentage : entry.progressPercentage,
+            occurredAt: occurredAt
+        )
+
+        onSave(updatedEntry)
+        dismiss()
+    }
+}
+
 #Preview {
     NavigationStack {
         TimelineView(
@@ -324,7 +531,8 @@ private struct TimelineRow: View {
                     progressPercentage: 62,
                     occurredAt: Date().addingTimeInterval(-7200)
                 )
-            ])
+            ]),
+            onUpdateEntry: { _ in }
         )
     }
 }

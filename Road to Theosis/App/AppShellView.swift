@@ -94,7 +94,11 @@ struct AppShellView: View {
             }
 
             NavigationStack {
-                TimelineView(backgroundTheme: backgroundThemeBinding, logEntries: $logEntries)
+                TimelineView(
+                    backgroundTheme: backgroundThemeBinding,
+                    logEntries: $logEntries,
+                    onUpdateEntry: updateEntry
+                )
             }
             .tabItem {
                 Label("Timeline", systemImage: "clock.arrow.circlepath")
@@ -154,6 +158,34 @@ struct AppShellView: View {
         purityCalculationDate = max(purityCalculationDate, entry.occurredAt)
         logEntries.insert(entry, at: 0)
 
+        recalculatePurity()
+    }
+
+    private func updateEntry(_ entry: LogEntry) {
+        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
+            storedLogEntry.kindRawValue = entry.kind.rawValue
+            storedLogEntry.sectionTitle = entry.sectionTitle
+            storedLogEntry.sinTitle = entry.sinTitle
+            storedLogEntry.note = entry.note
+            storedLogEntry.prayerMinutes = entry.prayerMinutes
+            storedLogEntry.prayerDurationSeconds = entry.prayerDurationSeconds
+            storedLogEntry.progressPercentage = entry.progressPercentage
+            storedLogEntry.occurredAt = entry.occurredAt
+            storedLogEntry.updatedAt = Date()
+        } else {
+            modelContext.insert(StoredLogEntry(entry: entry))
+        }
+
+        try? modelContext.save()
+
+        if let index = logEntries.firstIndex(where: { $0.id == entry.id }) {
+            logEntries[index] = entry
+        } else {
+            logEntries.insert(entry, at: 0)
+        }
+
+        logEntries.sort { $0.occurredAt > $1.occurredAt }
+        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
         recalculatePurity()
     }
 
