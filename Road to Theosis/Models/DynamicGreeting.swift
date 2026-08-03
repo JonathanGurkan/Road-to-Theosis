@@ -202,37 +202,37 @@ enum DynamicGreetingComposer {
 
         switch (daypart.kind, weather.condition) {
         case (.morning, .clear), (.morning, .hot):
-            return "Bright morning; begin with prayer."
+            return "Bright morning; begin with prayer before the day starts pulling at you."
         case (.morning, .partlyCloudy), (.morning, .cloudy):
-            return "Soft morning; start steady."
+            return "Soft morning; start steady and keep your eyes on Christ."
         case (.morning, .rain):
-            return "Rain slows the morning; use it for prayer."
+            return "Rain slows the morning; use the quieter rhythm for prayer."
         case (.morning, .breezy):
-            return "Breezy morning; anchor your first step."
+            return "Breezy morning; anchor your first step before the day moves fast."
         case (.afternoon, .clear), (.afternoon, .hot):
-            return "Bright afternoon; keep the next choice clean."
+            return "Bright afternoon; keep your progress humble and the next choice clean."
         case (.afternoon, .rain):
-            return "Rainy afternoon; slow down and reset."
+            return "Rainy afternoon; slow down, reset, and continue the road to theosis."
         case (.afternoon, .breezy):
-            return "Moving afternoon; keep a steady heart."
+            return "Moving afternoon; keep a steady heart before reacting."
         case (.evening, .clear), (.evening, .partlyCloudy):
-            return "Gentle evening; review the day honestly."
+            return "Gentle evening; review the day with gratitude and watchfulness."
         case (.evening, .rain):
-            return "Rainy evening; bring the day to God."
+            return "Rainy evening; bring the day honestly before God."
         case (.night, .clear), (.night, .partlyCloudy):
-            return "Quiet night; close the day in peace."
+            return "Quiet night; close the day with thanksgiving, confession, and peace."
         case (.night, .breezy):
-            return "Breezy night; settle the mind with prayer."
+            return "Breezy night; settle the mind with prayer before sleep."
         case (_, .storm):
-            return "Stormy weather; seek shelter in God."
+            return "Stormy weather; seek shelter in God before anything else."
         case (_, .snow):
-            return "Snow invites quiet attention."
+            return "Snow invites quiet attention; move slowly and keep your soul ordered."
         case (_, .fog):
-            return "Fog narrows the road; take the next step."
+            return "Fog narrows the road; take the faithful next step."
         case (_, .cold):
-            return "Cold outside; keep discipline warm."
+            return "Cold outside; let discipline and prayer keep your direction warm."
         case (_, .cloudy):
-            return "Cloudy sky; the path is still clear."
+            return "Cloudy sky; the path is still clear one faithful choice at a time."
         case (_, .unknown):
             return daypart.defaultCompactWeatherPhrase
         default:
@@ -247,23 +247,23 @@ enum DynamicGreetingComposer {
 
         switch weather.condition {
         case .clear, .hot:
-            return daypart.prefersSunSymbol ? "Bright day." : "Quiet night."
+            return daypart.prefersSunSymbol ? "Bright day; receive it with prayer." : "Quiet night; close it with prayer."
         case .partlyCloudy:
-            return daypart.prefersSunSymbol ? "Soft light." : "Quiet sky."
+            return daypart.prefersSunSymbol ? "Soft light; start steady." : "Quiet sky; stay watchful."
         case .cloudy:
-            return "Stay steady."
+            return "Cloudy sky; stay steady."
         case .rain:
-            return "Slow down."
+            return "Rain slows things down."
         case .snow:
-            return "Move quietly."
+            return "Snow invites quiet attention."
         case .storm:
-            return "Seek shelter."
+            return "Seek shelter in God."
         case .fog:
-            return "Next step."
+            return "Fog means one faithful next step."
         case .breezy:
-            return "Stay anchored."
+            return "Breezy outside; stay anchored."
         case .cold:
-            return "Keep discipline."
+            return "Cold asks for discipline."
         case .unknown:
             return daypart.defaultMinimalWeatherPhrase
         }
@@ -350,26 +350,26 @@ private struct GreetingDaypart: Equatable {
     var defaultCompactWeatherPhrase: String {
         switch kind {
         case .morning:
-            return "Begin with prayer and clear intent."
+            return "Begin with prayer and clear intent before the day starts pulling at you."
         case .afternoon:
-            return "Use this afternoon as a reset point."
+            return "Use this afternoon as a reset point and keep moving toward God."
         case .evening:
-            return "Review the day with grace and honesty."
+            return "Review the day with grace, honesty, and needed repentance."
         case .night:
-            return "Bring the day to God and rest."
+            return "Bring the day to God, release what needs mercy, and rest."
         }
     }
 
     var defaultMinimalWeatherPhrase: String {
         switch kind {
         case .morning:
-            return "Pray first."
+            return "Pray first and set your intention."
         case .afternoon:
-            return "Reset now."
+            return "Reset now and choose the narrow path."
         case .evening:
-            return "Review today."
+            return "Review today with grace and honesty."
         case .night:
-            return "Rest clean."
+            return "Bring the day to God and rest clean."
         }
     }
 
@@ -452,7 +452,7 @@ private struct RecentLogPattern: Equatable {
 
     var minimalPhrase: String {
         if entriesToday.isEmpty {
-            return "Log one step."
+            return "Make the first log intentional."
         }
 
         let victories = entriesToday.filter { $0.kind == .victory }.count
@@ -460,18 +460,18 @@ private struct RecentLogPattern: Equatable {
         let prayers = entriesToday.filter { $0.kind == .prayer || $0.kind == .quickPrayer }.count
 
         if losses > 0 {
-            return "Return now."
+            return "Confess, stand up, and return now."
         }
 
         if victories > 0 {
-            return "Stay watchful."
+            return "Give thanks and stay watchful."
         }
 
         if prayers > 0 {
-            return "Carry prayer."
+            return "Carry that prayer into action."
         }
 
-        return "Choose well."
+        return "Turn the next choice into obedience."
     }
 
     private var latestEntryPhrase: String {

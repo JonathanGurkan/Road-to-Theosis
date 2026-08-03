@@ -507,38 +507,49 @@ struct HeadwayView: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
+
+                        Spacer(minLength: 4)
+
+                        Text(progressSubtitle)
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.65)
                     }
 
                     Spacer(minLength: 0)
 
                     Text(greetingMinimalSubtitle)
-                        .font(.caption.weight(.semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.72)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             case .compact:
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 7) {
                     HStack(spacing: 8) {
                         Image(systemName: greetingSymbolName)
-                            .font(.title3.weight(.semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(backgroundTheme.glowColor)
 
-                        Text(greetingCompactTitle)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                        Text(progressSubtitle)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
                     }
 
-                    Spacer(minLength: 0)
+                    Text(greetingCompactTitle)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
 
                     Text(greetingCompactSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(4)
-                        .minimumScaleFactor(0.82)
+                        .lineLimit(6)
+                        .minimumScaleFactor(0.76)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
