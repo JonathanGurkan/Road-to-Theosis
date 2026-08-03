@@ -12,18 +12,13 @@ struct AppShellView: View {
     @AppStorage(AppPreferenceKey.enableVerseInventory.storageKey) private var enableVerseInventory = true
     @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
     @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferences = "[]"
-    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
-    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
-    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
     @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) private var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
     @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
     @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
     @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @AppStorage(AppPreferenceKey.showRecentActivity.storageKey) private var showRecentActivity = true
     @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
-    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
     @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
@@ -54,19 +49,14 @@ struct AppShellView: View {
             AppPreferenceKey.enableVerseInventory.storageKey: String(enableVerseInventory),
             AppPreferenceKey.focusSliderStyle.storageKey: focusSliderStyleRaw,
             AppPreferenceKey.focusedSinReferences.storageKey: focusedSinReferences,
-            AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey: String(greetingWeatherBreezyThresholdKilometersPerHour),
-            AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey: String(greetingWeatherColdThresholdCelsius),
-            AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey: String(greetingWeatherWarmThresholdCelsius),
             AppPreferenceKey.hasSeenWelcome.storageKey: String(hasSeenWelcome),
             AppPreferenceKey.homeScreenLayout.storageKey: homeScreenLayoutData,
-            AppPreferenceKey.isGreetingWeatherEnabled.storageKey: String(isGreetingWeatherEnabled),
             AppPreferenceKey.isPrayerTimingEnabled.storageKey: String(isPrayerTimingEnabled),
             AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey: String(keepScreenAwakeDuringPrayer),
             AppPreferenceKey.prayerTimerCountingMode.storageKey: prayerTimerCountingModeRaw,
             AppPreferenceKey.purityStrictness.storageKey: purityStrictnessRaw,
             AppPreferenceKey.showRecentActivity.storageKey: String(showRecentActivity),
             AppPreferenceKey.showVerseApplications.storageKey: String(showVerseApplications),
-            AppPreferenceKey.timelineRange.storageKey: timelineRangeRaw,
             AppPreferenceKey.usesFocusProgressSliders.storageKey: String(usesFocusProgressSliders)
         ]
     }
@@ -86,9 +76,7 @@ struct AppShellView: View {
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
-                    onSaveEntry: saveEntry,
-                    onUpdateEntry: updateEntry,
-                    onDeleteEntry: deleteEntry
+                    onSaveEntry: saveEntry
                 )
             }
             .tabItem {
@@ -96,12 +84,7 @@ struct AppShellView: View {
             }
 
             NavigationStack {
-                TimelineView(
-                    backgroundTheme: backgroundThemeBinding,
-                    logEntries: $logEntries,
-                    onUpdateEntry: updateEntry,
-                    onDeleteEntry: deleteEntry
-                )
+                TimelineView(backgroundTheme: backgroundThemeBinding, logEntries: $logEntries)
             }
             .tabItem {
                 Label("Timeline", systemImage: "clock.arrow.circlepath")
@@ -164,45 +147,6 @@ struct AppShellView: View {
         recalculatePurity()
     }
 
-    private func updateEntry(_ entry: LogEntry) {
-        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
-            storedLogEntry.kindRawValue = entry.kind.rawValue
-            storedLogEntry.sectionTitle = entry.sectionTitle
-            storedLogEntry.sinTitle = entry.sinTitle
-            storedLogEntry.note = entry.note
-            storedLogEntry.prayerMinutes = entry.prayerMinutes
-            storedLogEntry.prayerDurationSeconds = entry.prayerDurationSeconds
-            storedLogEntry.progressPercentage = entry.progressPercentage
-            storedLogEntry.occurredAt = entry.occurredAt
-            storedLogEntry.updatedAt = Date()
-        } else {
-            modelContext.insert(StoredLogEntry(entry: entry))
-        }
-
-        try? modelContext.save()
-
-        if let index = logEntries.firstIndex(where: { $0.id == entry.id }) {
-            logEntries[index] = entry
-        } else {
-            logEntries.insert(entry, at: 0)
-        }
-
-        logEntries.sort { $0.occurredAt > $1.occurredAt }
-        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
-        recalculatePurity()
-    }
-
-    private func deleteEntry(_ entry: LogEntry) {
-        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
-            modelContext.delete(storedLogEntry)
-            try? modelContext.save()
-        }
-
-        logEntries.removeAll { $0.id == entry.id }
-        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
-        recalculatePurity()
-    }
-
     private func syncLogEntriesFromStore() {
         logEntries = storedLogEntries.map(\.entry)
         purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
@@ -237,19 +181,14 @@ struct AppShellView: View {
         enableVerseInventory = true
         focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
         focusedSinReferences = "[]"
-        greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
-        greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
-        greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
         hasSeenWelcome = false
         homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
-        isGreetingWeatherEnabled = true
         isPrayerTimingEnabled = true
         keepScreenAwakeDuringPrayer = true
         prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
         purityStrictnessRaw = PurityStrictness.normal.rawValue
         showRecentActivity = true
         showVerseApplications = true
-        timelineRangeRaw = TimelineRange.always.rawValue
         usesFocusProgressSliders = true
 
         logEntries = []
@@ -293,18 +232,10 @@ struct AppShellView: View {
             focusSliderStyleRaw = value
         case AppPreferenceKey.focusedSinReferences.storageKey:
             focusedSinReferences = value
-        case AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey:
-            greetingWeatherBreezyThresholdKilometersPerHour = Double(value) ?? GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
-        case AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey:
-            greetingWeatherColdThresholdCelsius = Double(value) ?? GreetingWeatherThresholds.defaultColdThresholdCelsius
-        case AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey:
-            greetingWeatherWarmThresholdCelsius = Double(value) ?? GreetingWeatherThresholds.defaultWarmThresholdCelsius
         case AppPreferenceKey.hasSeenWelcome.storageKey:
             hasSeenWelcome = value == "true"
         case AppPreferenceKey.homeScreenLayout.storageKey:
             homeScreenLayoutData = value
-        case AppPreferenceKey.isGreetingWeatherEnabled.storageKey:
-            isGreetingWeatherEnabled = value == "true"
         case AppPreferenceKey.isPrayerTimingEnabled.storageKey:
             isPrayerTimingEnabled = value == "true"
         case AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey:
@@ -317,8 +248,6 @@ struct AppShellView: View {
             showRecentActivity = value == "true"
         case AppPreferenceKey.showVerseApplications.storageKey:
             showVerseApplications = value == "true"
-        case AppPreferenceKey.timelineRange.storageKey:
-            timelineRangeRaw = value
         case AppPreferenceKey.usesFocusProgressSliders.storageKey:
             usesFocusProgressSliders = value == "true"
         default:
