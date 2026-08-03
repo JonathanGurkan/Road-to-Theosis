@@ -982,6 +982,7 @@ private struct ThemeRow: View {
                 .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.10), lineWidth: 1)
         )
     }
+    .environment(AppPreferenceStore())
 }
 
 private struct SettingsNoteRow: View {
