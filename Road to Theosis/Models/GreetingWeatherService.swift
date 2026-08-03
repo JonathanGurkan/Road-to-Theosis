@@ -1,6 +1,28 @@
 import CoreLocation
 import Foundation
 
+struct GreetingWeatherThresholds: Equatable, Sendable {
+    static let defaultWarmThresholdCelsius = 29.0
+    static let defaultColdThresholdCelsius = 3.0
+    static let defaultBreezyThresholdKilometersPerHour = 28.0
+
+    static let `default` = GreetingWeatherThresholds()
+
+    let warmThresholdCelsius: Double
+    let coldThresholdCelsius: Double
+    let breezyThresholdKilometersPerHour: Double
+
+    init(
+        warmThresholdCelsius: Double = Self.defaultWarmThresholdCelsius,
+        coldThresholdCelsius: Double = Self.defaultColdThresholdCelsius,
+        breezyThresholdKilometersPerHour: Double = Self.defaultBreezyThresholdKilometersPerHour
+    ) {
+        self.warmThresholdCelsius = warmThresholdCelsius
+        self.coldThresholdCelsius = coldThresholdCelsius
+        self.breezyThresholdKilometersPerHour = breezyThresholdKilometersPerHour
+    }
+}
+
 @MainActor
 final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
     private enum WeatherError: Error {
@@ -35,10 +57,10 @@ final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
         locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
     }
 
-    func currentWeather() async -> GreetingWeatherSnapshot? {
+    func currentWeather(thresholds: GreetingWeatherThresholds) async -> GreetingWeatherSnapshot? {
         do {
             let location = try await currentLocation()
-            return try await fetchWeather(for: location)
+            return try await fetchWeather(for: location, thresholds: thresholds)
         } catch {
             return nil
         }
@@ -81,7 +103,7 @@ final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    private func fetchWeather(for location: CLLocation) async throws -> GreetingWeatherSnapshot {
+    private func fetchWeather(for location: CLLocation, thresholds: GreetingWeatherThresholds) async throws -> GreetingWeatherSnapshot {
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")
         components?.queryItems = [
             URLQueryItem(name: "latitude", value: String(location.coordinate.latitude)),
@@ -102,23 +124,23 @@ final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
 
         let decodedResponse = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
         return GreetingWeatherSnapshot(
-            condition: weatherCondition(from: decodedResponse.current),
+            condition: weatherCondition(from: decodedResponse.current, thresholds: thresholds),
             temperatureCelsius: decodedResponse.current.temperatureCelsius,
             windSpeedKilometersPerHour: decodedResponse.current.windSpeedKilometersPerHour
         )
     }
 
-    private func weatherCondition(from weather: CurrentWeather) -> GreetingWeatherCondition {
-        if let windSpeed = weather.windSpeedKilometersPerHour, windSpeed >= 28 {
+    private func weatherCondition(from weather: CurrentWeather, thresholds: GreetingWeatherThresholds) -> GreetingWeatherCondition {
+        if let windSpeed = weather.windSpeedKilometersPerHour, windSpeed >= thresholds.breezyThresholdKilometersPerHour {
             return .breezy
         }
 
         if let temperature = weather.temperatureCelsius {
-            if temperature >= 29 {
+            if temperature >= thresholds.warmThresholdCelsius {
                 return .hot
             }
 
-            if temperature <= 3 {
+            if temperature <= thresholds.coldThresholdCelsius {
                 return .cold
             }
         }

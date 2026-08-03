@@ -383,6 +383,9 @@ private struct ScriptureSettingsPage: View {
 private struct WeatherSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
+    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
     private let openMeteoURL = URL(string: "https://open-meteo.com/")
 
     var body: some View {
@@ -403,6 +406,36 @@ private struct WeatherSettingsPage: View {
                     }
                 }
 
+                Section(header: Text("Sensitivity"), footer: Text("Adjust when current conditions should count as warm, cold, or breezy in the welcome greeting.")) {
+                    WeatherThresholdSlider(
+                        title: "Warm at",
+                        value: $greetingWeatherWarmThresholdCelsius,
+                        range: 18...38,
+                        unit: "C"
+                    )
+
+                    WeatherThresholdSlider(
+                        title: "Cold at",
+                        value: $greetingWeatherColdThresholdCelsius,
+                        range: -10...12,
+                        unit: "C"
+                    )
+
+                    WeatherThresholdSlider(
+                        title: "Breezy at",
+                        value: $greetingWeatherBreezyThresholdKilometersPerHour,
+                        range: 10...50,
+                        unit: "km/h"
+                    )
+
+                    Button {
+                        resetThresholds()
+                    } label: {
+                        Label("Reset Weather Sensitivity", systemImage: "arrow.counterclockwise")
+                    }
+                }
+                .disabled(!isGreetingWeatherEnabled)
+
                 Section(header: Text("Provider"), footer: Text("Weather data is used only to tune the greeting text and icon.")) {
                     if let openMeteoURL {
                         Link(destination: openMeteoURL) {
@@ -417,6 +450,37 @@ private struct WeatherSettingsPage: View {
         }
         .navigationTitle("Weather")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func resetThresholds() {
+        greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
+        greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+        greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+    }
+}
+
+private struct WeatherThresholdSlider: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let unit: String
+
+    private var valueText: String {
+        "\(Int(value.rounded())) \(unit)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(valueText)
+                    .foregroundStyle(.secondary)
+            }
+
+            Slider(value: $value, in: range, step: 1)
+        }
+        .padding(.vertical, 4)
     }
 }
 

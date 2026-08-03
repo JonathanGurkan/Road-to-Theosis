@@ -26,6 +26,10 @@ struct HeadwayView: View {
     @State private var isShowingModeToggleLabel = false
     @AppStorage(AppPreferenceKey.focusedSinReferences.storageKey) private var focusedSinReferencesData = "[]"
     @AppStorage(AppPreferenceKey.homeScreenLayout.storageKey) var homeScreenLayoutData = HomeScreenLayout.defaultStorageValue
+    @AppStorage(AppPreferenceKey.isGreetingWeatherEnabled.storageKey) private var isGreetingWeatherEnabled = true
+    @AppStorage(AppPreferenceKey.greetingWeatherBreezyThresholdKilometersPerHour.storageKey) private var greetingWeatherBreezyThresholdKilometersPerHour = GreetingWeatherThresholds.defaultBreezyThresholdKilometersPerHour
+    @AppStorage(AppPreferenceKey.greetingWeatherColdThresholdCelsius.storageKey) private var greetingWeatherColdThresholdCelsius = GreetingWeatherThresholds.defaultColdThresholdCelsius
+    @AppStorage(AppPreferenceKey.greetingWeatherWarmThresholdCelsius.storageKey) private var greetingWeatherWarmThresholdCelsius = GreetingWeatherThresholds.defaultWarmThresholdCelsius
     @AppStorage(AppPreferenceKey.compactSinRows.storageKey) private var compactSinRows = false
     @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
     @AppStorage(AppPreferenceKey.focusSliderStyle.storageKey) private var focusSliderStyleRaw = FocusSliderStyle.clean.rawValue
@@ -46,6 +50,23 @@ struct HeadwayView: View {
 
     private var purityStrictness: PurityStrictness {
         PurityStrictness(rawValue: purityStrictnessRaw) ?? .normal
+    }
+
+    private var greetingWeatherThresholds: GreetingWeatherThresholds {
+        GreetingWeatherThresholds(
+            warmThresholdCelsius: greetingWeatherWarmThresholdCelsius,
+            coldThresholdCelsius: greetingWeatherColdThresholdCelsius,
+            breezyThresholdKilometersPerHour: greetingWeatherBreezyThresholdKilometersPerHour
+        )
+    }
+
+    private var greetingWeatherSettingsSignature: String {
+        [
+            String(isGreetingWeatherEnabled),
+            String(greetingWeatherWarmThresholdCelsius),
+            String(greetingWeatherColdThresholdCelsius),
+            String(greetingWeatherBreezyThresholdKilometersPerHour)
+        ].joined(separator: "|")
     }
 
     var homeScreenLayout: HomeScreenLayout {
@@ -102,6 +123,15 @@ struct HeadwayView: View {
 
     private func recentEntries(limit: Int) -> [LogEntry] {
         Array(logEntries.sorted { $0.occurredAt > $1.occurredAt }.prefix(limit))
+    }
+
+    private func refreshGreetingWeather() async {
+        guard isGreetingWeatherEnabled else {
+            greetingWeather = nil
+            return
+        }
+
+        greetingWeather = await greetingWeatherService.currentWeather(thresholds: greetingWeatherThresholds)
     }
 
     private func simulateDailyProgress() {
@@ -391,7 +421,12 @@ struct HeadwayView: View {
         }
         .onAppear(perform: restoreFocusedSinIDs)
         .task {
-            greetingWeather = await greetingWeatherService.currentWeather()
+            await refreshGreetingWeather()
+        }
+        .onChange(of: greetingWeatherSettingsSignature) { _, _ in
+            Task {
+                await refreshGreetingWeather()
+            }
         }
         .onChange(of: focusedSinIDs) { _, _ in
             persistFocusedSinIDs()
