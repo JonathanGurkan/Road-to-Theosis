@@ -2,8 +2,15 @@ import SwiftUI
 
 struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     @Binding var logEntries: [LogEntry]
-    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    let onUpdateEntry: (LogEntry) -> Void
+    let onDeleteEntry: (LogEntry) -> Void
+    @State private var editingEntry: LogEntry?
+
+    private var timelineRange: TimelineRange {
+        preferences.timelineRange
+    }
 
     var body: some View {
         ZStack {
@@ -42,7 +49,7 @@ struct TimelineView: View {
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
+                Text(preferences.isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -59,6 +66,14 @@ struct TimelineView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private var emptyStateMessage: String {
+        if logEntries.isEmpty {
+            return preferences.isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging."
+        }
+
+        return "No entries match the current \(timelineRange.title.lowercased()) timeline range."
     }
 
     private func dayCard(for group: (date: Date, entries: [LogEntry])) -> some View {
@@ -79,7 +94,16 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled)
+                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
+                            editingEntry = entry
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                onDeleteEntry(entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
 
                         if entry.id != group.entries.last?.id {
                             Divider()
@@ -251,4 +275,5 @@ private struct TimelineRow: View {
             ])
         )
     }
+    .environment(AppPreferenceStore())
 }

@@ -4,12 +4,10 @@ import UIKit
 
 struct PrayerTimerView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     let onSave: (LogEntry) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey) private var keepScreenAwakeDuringPrayer = true
-    @AppStorage(AppPreferenceKey.prayerTimerCountingMode.storageKey) private var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
-
     @State private var elapsedSeconds: Int = 0
     @State private var isRunning = true
     @State private var prayerNote = ""
@@ -21,7 +19,7 @@ struct PrayerTimerView: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
-        PrayerTimerCountingMode(rawValue: prayerTimerCountingModeRaw) ?? .foreground
+        preferences.prayerTimerCountingMode
     }
 
     private var currentElapsedSeconds: Int {
@@ -35,7 +33,7 @@ struct PrayerTimerView: View {
     }
 
     private var shouldKeepScreenAwake: Bool {
-        prayerTimerCountingMode == .foreground && keepScreenAwakeDuringPrayer
+        prayerTimerCountingMode == .foreground && preferences.keepScreenAwakeDuringPrayer
     }
 
     var body: some View {
@@ -320,4 +318,5 @@ struct PrayerTimerView: View {
 
 #Preview {
     PrayerTimerView(backgroundTheme: .constant(.blood)) { _ in }
+        .environment(AppPreferenceStore())
 }
