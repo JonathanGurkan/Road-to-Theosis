@@ -13,14 +13,6 @@ struct TimelineView: View {
         TimelineRange(rawValue: timelineRangeRaw) ?? .always
     }
 
-    private var timelineRangeBinding: Binding<TimelineRange> {
-        Binding {
-            timelineRange
-        } set: { newValue in
-            timelineRangeRaw = newValue.rawValue
-        }
-    }
-
     var body: some View {
         ZStack {
             AppBackgroundView(theme: backgroundTheme)
@@ -69,13 +61,6 @@ struct TimelineView: View {
                 Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-
-                Picker("Timeline range", selection: timelineRangeBinding) {
-                    ForEach(TimelineRange.allCases) { range in
-                        Text(range.title).tag(range)
-                    }
-                }
-                .pickerStyle(.menu)
             }
         }
     }
