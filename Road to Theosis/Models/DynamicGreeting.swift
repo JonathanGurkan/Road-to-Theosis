@@ -73,7 +73,10 @@ struct DynamicGreetingContext: Equatable {
 struct DynamicGreeting: Equatable {
     let title: String
     let subtitle: String
+    let compactTitle: String
     let compactSubtitle: String
+    let minimalTitle: String
+    let minimalSubtitle: String
     let symbolName: String
 }
 
@@ -87,7 +90,10 @@ enum DynamicGreetingComposer {
         return DynamicGreeting(
             title: daypart.title,
             subtitle: subtitle(daypart: daypart, weather: weather, recentPattern: recentPattern),
+            compactTitle: daypart.compactTitle,
             compactSubtitle: compactSubtitle(daypart: daypart, weather: weather, recentPattern: recentPattern),
+            minimalTitle: daypart.minimalTitle,
+            minimalSubtitle: minimalSubtitle(daypart: daypart, weather: weather, recentPattern: recentPattern),
             symbolName: symbolName
         )
     }
@@ -122,7 +128,7 @@ enum DynamicGreetingComposer {
         weather: GreetingWeatherSnapshot?,
         recentPattern: RecentLogPattern
     ) -> String {
-        let weatherLine = weatherPhrase(daypart: daypart, weather: weather)
+        let weatherLine = standardWeatherPhrase(daypart: daypart, weather: weather)
         let logLine = recentPattern.subtitlePhrase
         return "\(weatherLine) \(logLine) \(daypart.theosisFocus)"
     }
@@ -132,11 +138,19 @@ enum DynamicGreetingComposer {
         weather: GreetingWeatherSnapshot?,
         recentPattern: RecentLogPattern
     ) -> String {
-        let weatherLine = weatherPhrase(daypart: daypart, weather: weather)
+        let weatherLine = compactWeatherPhrase(daypart: daypart, weather: weather)
         return "\(weatherLine) \(recentPattern.compactPhrase)"
     }
 
-    private static func weatherPhrase(daypart: GreetingDaypart, weather: GreetingWeatherSnapshot?) -> String {
+    private static func minimalSubtitle(
+        daypart: GreetingDaypart,
+        weather: GreetingWeatherSnapshot?,
+        recentPattern: RecentLogPattern
+    ) -> String {
+        "\(minimalWeatherPhrase(daypart: daypart, weather: weather)) \(recentPattern.minimalPhrase)"
+    }
+
+    private static func standardWeatherPhrase(daypart: GreetingDaypart, weather: GreetingWeatherSnapshot?) -> String {
         guard let weather else {
             return daypart.defaultWeatherPhrase
         }
@@ -180,6 +194,80 @@ enum DynamicGreetingComposer {
             return daypart.defaultWeatherPhrase
         }
     }
+
+    private static func compactWeatherPhrase(daypart: GreetingDaypart, weather: GreetingWeatherSnapshot?) -> String {
+        guard let weather else {
+            return daypart.defaultCompactWeatherPhrase
+        }
+
+        switch (daypart.kind, weather.condition) {
+        case (.morning, .clear), (.morning, .hot):
+            return "Bright morning; begin with prayer."
+        case (.morning, .partlyCloudy), (.morning, .cloudy):
+            return "Soft morning; start steady."
+        case (.morning, .rain):
+            return "Rain slows the morning; use it for prayer."
+        case (.morning, .breezy):
+            return "Breezy morning; anchor your first step."
+        case (.afternoon, .clear), (.afternoon, .hot):
+            return "Bright afternoon; keep the next choice clean."
+        case (.afternoon, .rain):
+            return "Rainy afternoon; slow down and reset."
+        case (.afternoon, .breezy):
+            return "Moving afternoon; keep a steady heart."
+        case (.evening, .clear), (.evening, .partlyCloudy):
+            return "Gentle evening; review the day honestly."
+        case (.evening, .rain):
+            return "Rainy evening; bring the day to God."
+        case (.night, .clear), (.night, .partlyCloudy):
+            return "Quiet night; close the day in peace."
+        case (.night, .breezy):
+            return "Breezy night; settle the mind with prayer."
+        case (_, .storm):
+            return "Stormy weather; seek shelter in God."
+        case (_, .snow):
+            return "Snow invites quiet attention."
+        case (_, .fog):
+            return "Fog narrows the road; take the next step."
+        case (_, .cold):
+            return "Cold outside; keep discipline warm."
+        case (_, .cloudy):
+            return "Cloudy sky; the path is still clear."
+        case (_, .unknown):
+            return daypart.defaultCompactWeatherPhrase
+        default:
+            return daypart.defaultCompactWeatherPhrase
+        }
+    }
+
+    private static func minimalWeatherPhrase(daypart: GreetingDaypart, weather: GreetingWeatherSnapshot?) -> String {
+        guard let weather else {
+            return daypart.defaultMinimalWeatherPhrase
+        }
+
+        switch weather.condition {
+        case .clear, .hot:
+            return daypart.prefersSunSymbol ? "Bright day." : "Quiet night."
+        case .partlyCloudy:
+            return daypart.prefersSunSymbol ? "Soft light." : "Quiet sky."
+        case .cloudy:
+            return "Stay steady."
+        case .rain:
+            return "Slow down."
+        case .snow:
+            return "Move quietly."
+        case .storm:
+            return "Seek shelter."
+        case .fog:
+            return "Next step."
+        case .breezy:
+            return "Stay anchored."
+        case .cold:
+            return "Keep discipline."
+        case .unknown:
+            return daypart.defaultMinimalWeatherPhrase
+        }
+    }
 }
 
 private struct GreetingDaypart: Equatable {
@@ -220,6 +308,23 @@ private struct GreetingDaypart: Equatable {
         }
     }
 
+    var compactTitle: String {
+        title
+    }
+
+    var minimalTitle: String {
+        switch kind {
+        case .morning:
+            return "Morning"
+        case .afternoon:
+            return "Afternoon"
+        case .evening:
+            return "Evening"
+        case .night:
+            return "Night"
+        }
+    }
+
     var prefersSunSymbol: Bool {
         switch kind {
         case .morning, .afternoon:
@@ -239,6 +344,32 @@ private struct GreetingDaypart: Equatable {
             return "Let this evening become a quiet review of grace, resistance, and needed repentance."
         case .night:
             return "Bring the day to God, release what needs mercy, and rest with a watchful heart."
+        }
+    }
+
+    var defaultCompactWeatherPhrase: String {
+        switch kind {
+        case .morning:
+            return "Begin with prayer and clear intent."
+        case .afternoon:
+            return "Use this afternoon as a reset point."
+        case .evening:
+            return "Review the day with grace and honesty."
+        case .night:
+            return "Bring the day to God and rest."
+        }
+    }
+
+    var defaultMinimalWeatherPhrase: String {
+        switch kind {
+        case .morning:
+            return "Pray first."
+        case .afternoon:
+            return "Reset now."
+        case .evening:
+            return "Review today."
+        case .night:
+            return "Rest clean."
         }
     }
 
@@ -317,6 +448,30 @@ private struct RecentLogPattern: Equatable {
         }
 
         return "Keep the next choice faithful."
+    }
+
+    var minimalPhrase: String {
+        if entriesToday.isEmpty {
+            return "Log one step."
+        }
+
+        let victories = entriesToday.filter { $0.kind == .victory }.count
+        let losses = entriesToday.filter { $0.kind == .loss }.count
+        let prayers = entriesToday.filter { $0.kind == .prayer || $0.kind == .quickPrayer }.count
+
+        if losses > 0 {
+            return "Return now."
+        }
+
+        if victories > 0 {
+            return "Stay watchful."
+        }
+
+        if prayers > 0 {
+            return "Carry prayer."
+        }
+
+        return "Choose well."
     }
 
     private var latestEntryPhrase: String {

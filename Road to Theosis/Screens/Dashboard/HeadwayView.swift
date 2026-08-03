@@ -91,8 +91,20 @@ struct HeadwayView: View {
         dynamicGreeting.subtitle
     }
 
+    private var greetingCompactTitle: String {
+        dynamicGreeting.compactTitle
+    }
+
     private var greetingCompactSubtitle: String {
         dynamicGreeting.compactSubtitle
+    }
+
+    private var greetingMinimalTitle: String {
+        dynamicGreeting.minimalTitle
+    }
+
+    private var greetingMinimalSubtitle: String {
+        dynamicGreeting.minimalSubtitle
     }
 
     private var greetingSymbolName: String {
@@ -486,33 +498,26 @@ struct HeadwayView: View {
         AppSurfaceCard(contentPadding: size == .minimal ? 8 : 16, fillsAvailableHeight: size.usesFixedGridHeight) {
             switch size {
             case .minimal:
-                ZStack(alignment: .topLeading) {
-                    HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
                         minimalIcon(greetingSymbolName, size: 20)
-                        Text(greeting)
-                            .font(.headline.weight(.semibold))
+
+                        Text(greetingMinimalTitle)
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.56)
+                            .minimumScaleFactor(0.75)
                     }
-                    Spacer()
-                    VStack(alignment: .leading, spacing: 1) {
-                        Spacer()
-                        Text(progressSubtitle)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.65)
-                        Spacer()
-                        Text(greetingCompactSubtitle)
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .minimumScaleFactor(0.65)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .padding(.horizontal, 5)
+
+                    Spacer(minLength: 0)
+
+                    Text(greetingMinimalSubtitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             case .compact:
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -520,7 +525,7 @@ struct HeadwayView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(backgroundTheme.glowColor)
 
-                        Text(greeting)
+                        Text(greetingCompactTitle)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -529,11 +534,11 @@ struct HeadwayView: View {
 
                     Spacer(minLength: 0)
 
-                    Text(greetingSubtitle)
-                        .font(.system(size: 16))
+                    Text(greetingCompactSubtitle)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(8)
-                        .minimumScaleFactor(0.68)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.82)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .standard:
