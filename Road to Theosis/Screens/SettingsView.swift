@@ -39,6 +39,18 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
+                    TimelineSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Timeline",
+                        subtitle: "History range and log visibility",
+                        systemImage: "clock.arrow.circlepath"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
                     PuritySettingsPage(
                         backgroundTheme: $backgroundTheme,
                         dashboard: $dashboard,
@@ -227,6 +239,45 @@ private struct HomeSettingsPage: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private struct TimelineSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
+
+    private var timelineRange: TimelineRange {
+        TimelineRange(rawValue: timelineRangeRaw) ?? .always
+    }
+
+    private var timelineRangeBinding: Binding<TimelineRange> {
+        Binding {
+            timelineRange
+        } set: { newValue in
+            timelineRangeRaw = newValue.rawValue
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("History"), footer: Text("Choose how far back the Timeline tab should show logs. Older logs stay saved and return when you choose a longer range.")) {
+                    Picker("Show logs from", selection: timelineRangeBinding) {
+                        ForEach(TimelineRange.allCases) { range in
+                            Text(range.title).tag(range)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
     }
 }

@@ -23,6 +23,7 @@ struct AppShellView: View {
     @AppStorage(AppPreferenceKey.purityStrictness.storageKey) private var purityStrictnessRaw = PurityStrictness.normal.rawValue
     @AppStorage(AppPreferenceKey.showRecentActivity.storageKey) private var showRecentActivity = true
     @AppStorage(AppPreferenceKey.showVerseApplications.storageKey) private var showVerseApplications = true
+    @AppStorage(AppPreferenceKey.timelineRange.storageKey) private var timelineRangeRaw = TimelineRange.always.rawValue
     @AppStorage(AppPreferenceKey.usesFocusProgressSliders.storageKey) private var usesFocusProgressSliders = true
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
@@ -65,6 +66,7 @@ struct AppShellView: View {
             AppPreferenceKey.purityStrictness.storageKey: purityStrictnessRaw,
             AppPreferenceKey.showRecentActivity.storageKey: String(showRecentActivity),
             AppPreferenceKey.showVerseApplications.storageKey: String(showVerseApplications),
+            AppPreferenceKey.timelineRange.storageKey: timelineRangeRaw,
             AppPreferenceKey.usesFocusProgressSliders.storageKey: String(usesFocusProgressSliders)
         ]
     }
@@ -84,7 +86,9 @@ struct AppShellView: View {
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
-                    onSaveEntry: saveEntry
+                    onSaveEntry: saveEntry,
+                    onUpdateEntry: updateEntry,
+                    onDeleteEntry: deleteEntry
                 )
             }
             .tabItem {
@@ -92,7 +96,12 @@ struct AppShellView: View {
             }
 
             NavigationStack {
-                TimelineView(backgroundTheme: backgroundThemeBinding, logEntries: $logEntries)
+                TimelineView(
+                    backgroundTheme: backgroundThemeBinding,
+                    logEntries: $logEntries,
+                    onUpdateEntry: updateEntry,
+                    onDeleteEntry: deleteEntry
+                )
             }
             .tabItem {
                 Label("Timeline", systemImage: "clock.arrow.circlepath")
@@ -155,6 +164,45 @@ struct AppShellView: View {
         recalculatePurity()
     }
 
+    private func updateEntry(_ entry: LogEntry) {
+        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
+            storedLogEntry.kindRawValue = entry.kind.rawValue
+            storedLogEntry.sectionTitle = entry.sectionTitle
+            storedLogEntry.sinTitle = entry.sinTitle
+            storedLogEntry.note = entry.note
+            storedLogEntry.prayerMinutes = entry.prayerMinutes
+            storedLogEntry.prayerDurationSeconds = entry.prayerDurationSeconds
+            storedLogEntry.progressPercentage = entry.progressPercentage
+            storedLogEntry.occurredAt = entry.occurredAt
+            storedLogEntry.updatedAt = Date()
+        } else {
+            modelContext.insert(StoredLogEntry(entry: entry))
+        }
+
+        try? modelContext.save()
+
+        if let index = logEntries.firstIndex(where: { $0.id == entry.id }) {
+            logEntries[index] = entry
+        } else {
+            logEntries.insert(entry, at: 0)
+        }
+
+        logEntries.sort { $0.occurredAt > $1.occurredAt }
+        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+        recalculatePurity()
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
+            modelContext.delete(storedLogEntry)
+            try? modelContext.save()
+        }
+
+        logEntries.removeAll { $0.id == entry.id }
+        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+        recalculatePurity()
+    }
+
     private func syncLogEntriesFromStore() {
         logEntries = storedLogEntries.map(\.entry)
         purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
@@ -201,6 +249,7 @@ struct AppShellView: View {
         purityStrictnessRaw = PurityStrictness.normal.rawValue
         showRecentActivity = true
         showVerseApplications = true
+        timelineRangeRaw = TimelineRange.always.rawValue
         usesFocusProgressSliders = true
 
         logEntries = []
@@ -268,6 +317,8 @@ struct AppShellView: View {
             showRecentActivity = value == "true"
         case AppPreferenceKey.showVerseApplications.storageKey:
             showVerseApplications = value == "true"
+        case AppPreferenceKey.timelineRange.storageKey:
+            timelineRangeRaw = value
         case AppPreferenceKey.usesFocusProgressSliders.storageKey:
             usesFocusProgressSliders = value == "true"
         default:
