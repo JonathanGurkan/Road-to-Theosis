@@ -194,6 +194,10 @@ struct TimelineRow: View {
     var showsEditButton = true
     let onEdit: () -> Void
 
+    private var categoryStyle: LogEntryCategoryStyle {
+        LogEntryCategoryStyle.style(for: entry)
+    }
+
     private var timeText: String {
         Self.timeFormatter.string(from: entry.occurredAt)
     }
@@ -236,7 +240,7 @@ struct TimelineRow: View {
                         }
                     }
 
-                    Text(targetText)
+                    Text(encouragementText)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -271,7 +275,7 @@ struct TimelineRow: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    TimelineMetadataPill(text: entry.sectionTitle, systemImage: "folder", tint: .secondary)
+                    TimelineMetadataPill(text: entry.sectionTitle, systemImage: categoryStyle.systemImage, tint: categoryStyle.tint)
 
                     if let sinTitle = entry.sinTitle {
                         TimelineMetadataPill(text: sinTitle, systemImage: "target", tint: entry.kind.tint)
@@ -302,12 +306,8 @@ struct TimelineRow: View {
         .padding(.vertical, 4)
     }
 
-    private var targetText: String {
-        if let sinTitle = entry.sinTitle {
-            return "\(sinTitle) / \(entry.sectionTitle)"
-        }
-
-        return entry.sectionTitle
+    private var encouragementText: String {
+        entry.encouragementText(showsPrayerTiming: showsPrayerTiming)
     }
 
     private static let timeFormatter: DateFormatter = {
@@ -315,6 +315,46 @@ struct TimelineRow: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+extension LogEntry {
+    func encouragementText(showsPrayerTiming: Bool) -> String {
+        if showsPrayerTiming && prayerDurationSeconds > 0 {
+            return "Carry this prayer into the next ordinary choice."
+        }
+
+        switch kind {
+        case .victory:
+            return "Receive this resistance as grace, then stay watchful."
+        case .loss:
+            return "Do not spiral; confess, stand up, and return to the path."
+        case .prayer, .quickPrayer:
+            return "Let this prayer shape what you do next."
+        case .note:
+            return "Let this reflection become a small act of obedience."
+        case .progressUpdate, .sliderProgressUpdate:
+            return "Let this check-in become one concrete faithful step."
+        }
+    }
+}
+
+struct LogEntryCategoryStyle {
+    let systemImage: String
+    let tint: Color
+
+    static func style(for entry: LogEntry) -> LogEntryCategoryStyle {
+        if let sinTitle = entry.sinTitle,
+           let category = SinCategory.sample.flatMap(\.items).first(where: { $0.title == sinTitle }) {
+            return LogEntryCategoryStyle(systemImage: category.icon, tint: category.tint)
+        }
+
+        if let section = SinCategory.sample.first(where: { $0.title == entry.sectionTitle }),
+           let firstItem = section.items.first {
+            return LogEntryCategoryStyle(systemImage: firstItem.icon, tint: section.tint)
+        }
+
+        return LogEntryCategoryStyle(systemImage: entry.kind.symbolName, tint: entry.kind.tint)
+    }
 }
 
 private struct TimelineMetadataPill: View {

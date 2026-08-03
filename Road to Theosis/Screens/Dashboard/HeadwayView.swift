@@ -1484,7 +1484,7 @@ struct HeadwayView: View {
                                 .lineLimit(1)
                         }
 
-                        Text(entryTargetText(for: entry))
+                        Text(entry.encouragementText(showsPrayerTiming: isPrayerTimingEnabled))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -1546,14 +1546,6 @@ struct HeadwayView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
-    }
-
-    private func entryTargetText(for entry: LogEntry) -> String {
-        if let sinTitle = entry.sinTitle {
-            return "\(sinTitle) / \(entry.sectionTitle)"
-        }
-
-        return entry.sectionTitle
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {
