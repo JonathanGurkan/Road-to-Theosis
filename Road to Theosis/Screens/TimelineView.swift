@@ -329,7 +329,7 @@ private struct TimelineMetadataPill: View {
     }
 }
 
-private struct EditLogEntryView: View {
+struct EditLogEntryView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let entry: LogEntry
     let onDelete: () -> Void

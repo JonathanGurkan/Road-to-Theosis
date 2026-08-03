@@ -86,7 +86,9 @@ struct AppShellView: View {
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
-                    onSaveEntry: saveEntry
+                    onSaveEntry: saveEntry,
+                    onUpdateEntry: updateEntry,
+                    onDeleteEntry: deleteEntry
                 )
             }
             .tabItem {
