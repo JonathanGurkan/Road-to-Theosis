@@ -210,7 +210,7 @@ extension HeadwayView {
     func updateHomeLayout(_ update: (inout HomeScreenLayout) -> Void) {
         var layout = homeScreenLayout
         update(&layout)
-        homeScreenLayoutData = layout.normalized().encoded()
+        preferences.homeScreenLayout = layout.normalized()
     }
 
     func addHomeCard(_ id: HomeScreenCardID) {

@@ -2,8 +2,24 @@ import SwiftUI
 
 struct TimelineView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
     @Binding var logEntries: [LogEntry]
-    @AppStorage(AppPreferenceKey.isPrayerTimingEnabled.storageKey) private var isPrayerTimingEnabled = true
+    let onUpdateEntry: (LogEntry) -> Void
+    let onDeleteEntry: (LogEntry) -> Void
+    @State private var editingEntry: LogEntry?
+
+    private var timelineRange: TimelineRange {
+        preferences.timelineRange
+    }
+
+    private var filteredEntries: [LogEntry] {
+        let calendar = Calendar.current
+        guard let cutoffDate = timelineRange.cutoffDate(from: .now, calendar: calendar) else {
+            return logEntries
+        }
+
+        return logEntries.filter { $0.occurredAt >= cutoffDate }
+    }
 
     var body: some View {
         ZStack {
@@ -13,7 +29,7 @@ struct TimelineView: View {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     headerCard
 
-                    if logEntries.isEmpty {
+                    if filteredEntries.isEmpty {
                         emptyState
                     } else {
                         ForEach(groupedEntries, id: \.date) { group in
@@ -42,7 +58,7 @@ struct TimelineView: View {
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
+                Text(preferences.isPrayerTimingEnabled ? "Prayer sessions, resistance, losses, and notes appear here in time order." : "Prayers, resistance, losses, and notes appear here in time order.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -54,11 +70,19 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
+                Text(emptyStateMessage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private var emptyStateMessage: String {
+        if logEntries.isEmpty {
+            return preferences.isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging."
+        }
+
+        return "No entries match the current \(timelineRange.title.lowercased()) timeline range."
     }
 
     private func dayCard(for group: (date: Date, entries: [LogEntry])) -> some View {
@@ -79,7 +103,14 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: isPrayerTimingEnabled)
+                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                onDeleteEntry(entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
 
                         if entry.id != group.entries.last?.id {
                             Divider()
@@ -92,7 +123,7 @@ struct TimelineView: View {
     }
 
     private var groupedEntries: [(date: Date, entries: [LogEntry])] {
-        let sortedEntries = logEntries.sorted { $0.occurredAt > $1.occurredAt }
+        let sortedEntries = filteredEntries.sorted { $0.occurredAt > $1.occurredAt }
         let grouped = Dictionary(grouping: sortedEntries) { Calendar.current.startOfDay(for: $0.occurredAt) }
 
         return grouped
@@ -107,7 +138,7 @@ struct TimelineView: View {
     }()
 }
 
-private struct TimelineRow: View {
+struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
 
@@ -181,8 +212,6 @@ private struct TimelineRow: View {
                 }
 
                 if !entry.note.isEmpty {
-                  
-                } else if !entry.note.isEmpty {
                     Text(entry.note)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -248,7 +277,10 @@ private struct TimelineRow: View {
                     progressPercentage: 62,
                     occurredAt: Date().addingTimeInterval(-7200)
                 )
-            ])
+            ]),
+            onUpdateEntry: { _ in },
+            onDeleteEntry: { _ in }
         )
     }
+    .environment(AppPreferenceStore())
 }
