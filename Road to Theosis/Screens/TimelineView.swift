@@ -216,6 +216,14 @@ struct TimelineRow: View {
         }
     }
 
+    private var rowSpacing: CGFloat {
+        entry.kind == .note ? 4 : 6
+    }
+
+    private var headerSpacing: CGFloat {
+        entry.kind == .note ? 6 : 8
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             ZStack {
@@ -228,8 +236,8 @@ struct TimelineRow: View {
             }
             .frame(width: 24, height: 24)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: rowSpacing) {
+                HStack(alignment: .top, spacing: headerSpacing) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.kind.title)
                             .font(.body.weight(.semibold))
@@ -270,11 +278,12 @@ struct TimelineRow: View {
                     Text(entry.note)
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                        .lineLimit(entry.kind == .note ? 3 : nil)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if !detailChips.isEmpty {
-                    HStack(spacing: 6) {
+                    HStack(spacing: entry.kind == .note ? 4 : 6) {
                         ForEach(detailChips, id: \.self) { chip in
                             Text(chip)
                             .font(.caption2.weight(.semibold))
