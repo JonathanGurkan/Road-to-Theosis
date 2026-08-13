@@ -126,7 +126,7 @@ struct TimelineView: View {
 
                         if entry.id != group.entries.last?.id {
                             Divider()
-                                .padding(.leading, 36)
+                                .padding(.leading, 32)
                         }
                     }
                 }
@@ -180,6 +180,10 @@ struct TimelineRow: View {
     private var detailChips: [String] {
         var chips: [String] = []
 
+        if subtitleText == nil, let contextChip = contextChipText {
+            chips.append(contextChip)
+        }
+
         if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
             chips.append(entry.prayerDurationText)
         }
@@ -191,8 +195,29 @@ struct TimelineRow: View {
         return chips
     }
 
+    private var contextChipText: String? {
+        if let subtitleText {
+            return subtitleText
+        }
+
+        switch entry.kind {
+        case .prayer:
+            return "Prayer session"
+        case .quickPrayer:
+            return "Brief prayer"
+        case .victory:
+            return "Resistance log"
+        case .loss:
+            return "Loss log"
+        case .progressUpdate, .sliderProgressUpdate:
+            return "Purity update"
+        case .note:
+            return "Reflection"
+        }
+    }
+
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 8) {
             ZStack {
                 Circle()
                     .fill(entry.kind.tint.opacity(0.14))
@@ -201,13 +226,13 @@ struct TimelineRow: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(entry.kind.tint)
             }
-            .frame(width: 26, height: 26)
+            .frame(width: 24, height: 24)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .top, spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.kind.title)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.body.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -224,7 +249,7 @@ struct TimelineRow: View {
 
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(timeText)
-                            .font(.caption.weight(.medium))
+                            .font(.caption2.weight(.medium))
                             .foregroundStyle(.secondary)
 
                         if let onEdit {
@@ -243,7 +268,7 @@ struct TimelineRow: View {
 
                 if !entry.note.isEmpty {
                     Text(entry.note)
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -252,17 +277,17 @@ struct TimelineRow: View {
                     HStack(spacing: 6) {
                         ForEach(detailChips, id: \.self) { chip in
                             Text(chip)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                            .font(.caption2.weight(.semibold))
+                                .foregroundStyle(entry.kind.tint.opacity(0.95))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.primary.opacity(0.05), in: Capsule())
+                                .background(entry.kind.tint.opacity(0.10), in: Capsule())
                         }
                     }
                 }
             }
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, 5)
     }
 
     private func trimmedSubtitle(_ text: String?) -> String? {
