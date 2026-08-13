@@ -230,10 +230,6 @@ struct TimelineRow: View {
         return nil
     }
 
-    private var showsLayeredBadge: Bool {
-        relatedSinIconName != nil
-    }
-
     private var rowSpacing: CGFloat {
         entry.kind == .note ? 1 : 6
     }
@@ -246,30 +242,70 @@ struct TimelineRow: View {
         entry.kind == .note ? 0 : 2
     }
 
+    private var primaryBadgeIconName: String {
+        entry.kind.symbolName
+    }
+
+    private var secondaryBadgeIconName: String? {
+        relatedSinIconName
+    }
+
+    private var primaryBadgeSize: CGFloat {
+        relatedSinIconName == nil ? 24 : 36
+    }
+
+    private var secondaryBadgeSize: CGFloat {
+        20
+    }
+
+    private var badgeOverlapOffset: CGSize {
+        relatedSinIconName == nil ? .zero : CGSize(width: 10, height: -10)
+    }
+
+    private var titleLineText: String {
+        if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+            return "\(entry.kind.title) - \(entry.prayerDurationText)"
+        }
+
+        return entry.kind.title
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(entry.kind.tint.opacity(0.12))
+                    .fill(entry.kind.tint.opacity(0.16))
+                    .frame(width: primaryBadgeSize, height: primaryBadgeSize)
+                    .shadow(color: .black.opacity(0.10), radius: 1.5, x: 0, y: 1)
 
-                if let relatedSinIconName {
-                    Image(systemName: relatedSinIconName)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(entry.kind.tint.opacity(0.35))
-                        .offset(x: -4, y: -4)
-                }
-
-                Image(systemName: entry.kind.symbolName)
-                    .font(.caption2.weight(.semibold))
+                Image(systemName: primaryBadgeIconName)
+                    .font(relatedSinIconName == nil ? .caption2.weight(.semibold) : .headline.weight(.semibold))
                     .foregroundStyle(entry.kind.tint)
-                    .offset(x: showsLayeredBadge ? 4 : 0, y: showsLayeredBadge ? 4 : 0)
+
+                if let secondaryBadgeIconName {
+                    Circle()
+                        .fill(entry.kind.tint.opacity(0.18))
+                        .overlay(
+                            Circle()
+                                .strokeBorder(.white.opacity(0.8), lineWidth: 1.5)
+                        )
+                        .frame(width: secondaryBadgeSize, height: secondaryBadgeSize)
+                        .shadow(color: .black.opacity(0.12), radius: 1.2, x: 0, y: 1)
+                        .offset(x: badgeOverlapOffset.width, y: badgeOverlapOffset.height)
+
+                    Image(systemName: secondaryBadgeIconName)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(entry.kind.tint.opacity(0.95))
+                        .frame(width: secondaryBadgeSize, height: secondaryBadgeSize)
+                        .offset(x: badgeOverlapOffset.width, y: badgeOverlapOffset.height)
+                }
             }
-            .frame(width: 24, height: 24)
+            .frame(width: primaryBadgeSize + 14, height: primaryBadgeSize + 14)
 
             VStack(alignment: .leading, spacing: rowSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: headerSpacing) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.kind.title)
+                        Text(titleLineText)
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -311,19 +347,6 @@ struct TimelineRow: View {
                         .lineLimit(entry.kind == .note ? 3 : nil)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, noteTopPadding)
-                }
-
-                if !detailChips.isEmpty {
-                    HStack(spacing: entry.kind == .note ? 4 : 6) {
-                        ForEach(detailChips, id: \.self) { chip in
-                            Text(chip)
-                            .font(.caption2.weight(.semibold))
-                                .foregroundStyle(entry.kind.tint.opacity(0.95))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(entry.kind.tint.opacity(0.10), in: Capsule())
-                        }
-                    }
                 }
             }
         }
