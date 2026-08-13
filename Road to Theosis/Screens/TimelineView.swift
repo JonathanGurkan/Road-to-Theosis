@@ -126,7 +126,7 @@ struct TimelineView: View {
 
                         if entry.id != group.entries.last?.id {
                             Divider()
-                                .padding(.leading, 38)
+                                .padding(.leading, 36)
                         }
                     }
                 }
@@ -201,7 +201,7 @@ struct TimelineRow: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(entry.kind.tint)
             }
-            .frame(width: 28, height: 28)
+            .frame(width: 26, height: 26)
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 8) {
@@ -222,7 +222,7 @@ struct TimelineRow: View {
 
                     Spacer(minLength: 8)
 
-                    VStack(alignment: .trailing, spacing: 6) {
+                    VStack(alignment: .trailing, spacing: 4) {
                         Text(timeText)
                             .font(.caption.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -256,13 +256,13 @@ struct TimelineRow: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.primary.opacity(0.06), in: Capsule())
+                                .background(Color.primary.opacity(0.05), in: Capsule())
                         }
                     }
                 }
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 7)
     }
 
     private func trimmedSubtitle(_ text: String?) -> String? {
