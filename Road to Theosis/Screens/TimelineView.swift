@@ -217,7 +217,7 @@ struct TimelineRow: View {
     }
 
     private var rowSpacing: CGFloat {
-        entry.kind == .note ? 4 : 6
+        entry.kind == .note ? 1 : 6
     }
 
     private var headerSpacing: CGFloat {
