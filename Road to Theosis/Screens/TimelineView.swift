@@ -224,6 +224,10 @@ struct TimelineRow: View {
         entry.kind == .note ? 6 : 8
     }
 
+    private var noteTopPadding: CGFloat {
+        entry.kind == .note ? 0 : 2
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             ZStack {
@@ -237,7 +241,7 @@ struct TimelineRow: View {
             .frame(width: 24, height: 24)
 
             VStack(alignment: .leading, spacing: rowSpacing) {
-                HStack(alignment: .top, spacing: headerSpacing) {
+                HStack(alignment: .firstTextBaseline, spacing: headerSpacing) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.kind.title)
                             .font(.body.weight(.semibold))
@@ -255,7 +259,7 @@ struct TimelineRow: View {
 
                     Spacer(minLength: 8)
 
-                    VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 6) {
                         Text(timeText)
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -280,6 +284,7 @@ struct TimelineRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(entry.kind == .note ? 3 : nil)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, noteTopPadding)
                 }
 
                 if !detailChips.isEmpty {
