@@ -216,6 +216,24 @@ struct TimelineRow: View {
         }
     }
 
+    private var relatedSinIconName: String? {
+        guard let sinTitle = entry.sinTitle else { return nil }
+
+        for section in SinCategory.sample {
+            guard section.title == entry.sectionTitle else { continue }
+
+            if let match = section.items.first(where: { $0.title == sinTitle }) {
+                return match.icon
+            }
+        }
+
+        return nil
+    }
+
+    private var showsLayeredBadge: Bool {
+        relatedSinIconName != nil
+    }
+
     private var rowSpacing: CGFloat {
         entry.kind == .note ? 1 : 6
     }
@@ -232,11 +250,19 @@ struct TimelineRow: View {
         HStack(alignment: .top, spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(entry.kind.tint.opacity(0.14))
+                    .fill(entry.kind.tint.opacity(0.12))
+
+                if let relatedSinIconName {
+                    Image(systemName: relatedSinIconName)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(entry.kind.tint.opacity(0.35))
+                        .offset(x: -4, y: -4)
+                }
 
                 Image(systemName: entry.kind.symbolName)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(entry.kind.tint)
+                    .offset(x: showsLayeredBadge ? 4 : 0, y: showsLayeredBadge ? 4 : 0)
             }
             .frame(width: 24, height: 24)
 
