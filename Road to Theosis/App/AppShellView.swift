@@ -28,6 +28,7 @@ struct AppShellView: View {
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
                     onSaveEntry: saveEntry,
+                    onUpdateEntry: updateEntry,
                     onDeleteEntry: deleteEntry
                 )
             }

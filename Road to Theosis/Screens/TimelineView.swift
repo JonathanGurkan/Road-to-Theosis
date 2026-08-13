@@ -44,6 +44,9 @@ struct TimelineView: View {
         }
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(item: $editingEntry) { entry in
+            EditLogEntryView(backgroundTheme: $backgroundTheme, entry: entry, onSave: onUpdateEntry)
+        }
     }
 
     private var headerCard: some View {
@@ -103,7 +106,9 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
+                            editingEntry = entry
+                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 onDeleteEntry(entry)
@@ -141,6 +146,13 @@ struct TimelineView: View {
 struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
+    let onEdit: (() -> Void)?
+
+    init(entry: LogEntry, showsPrayerTiming: Bool, onEdit: (() -> Void)? = nil) {
+        self.entry = entry
+        self.showsPrayerTiming = showsPrayerTiming
+        self.onEdit = onEdit
+    }
 
     private var timeText: String {
         Self.timeFormatter.string(from: entry.occurredAt)
@@ -186,6 +198,17 @@ struct TimelineRow: View {
                     Text(timeText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if let onEdit {
+                        Button(action: onEdit) {
+                            Image(systemName: "pencil")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 28, height: 28)
+                                .background(Color.primary.opacity(0.06), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
                 if let progressPercentage = entry.progressPercentage {

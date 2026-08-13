@@ -12,6 +12,7 @@ struct HeadwayView: View {
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
     let onSaveEntry: (LogEntry) -> Void
+    let onUpdateEntry: (LogEntry) -> Void
     let onDeleteEntry: (LogEntry) -> Void
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
@@ -458,6 +459,17 @@ struct HeadwayView: View {
             ProgressLogSheetView(backgroundTheme: $backgroundTheme, draft: draft) { note in
                 saveProgressLog(draft, note: note)
             }
+        }
+        .sheet(item: $editingRecentActivityEntry) { entry in
+            EditLogEntryView(
+                backgroundTheme: $backgroundTheme,
+                entry: entry,
+                onSave: onUpdateEntry,
+                onDelete: {
+                    onDeleteEntry(entry)
+                    editingRecentActivityEntry = nil
+                }
+            )
         }
     }
 
@@ -1646,6 +1658,7 @@ struct HeadwayView: View {
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
             onSaveEntry: { _ in },
+            onUpdateEntry: { _ in },
             onDeleteEntry: { _ in }
         )
     }
