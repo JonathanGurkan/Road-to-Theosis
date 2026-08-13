@@ -116,10 +116,17 @@ struct TimelineView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                onDeleteEntry(entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
 
                         if entry.id != group.entries.last?.id {
                             Divider()
-                                .padding(.leading, 46)
+                                .padding(.leading, 38)
                         }
                     }
                 }
@@ -158,80 +165,80 @@ struct TimelineRow: View {
         Self.timeFormatter.string(from: entry.occurredAt)
     }
 
+    private var subtitleText: String? {
+        if let sinTitle = trimmedSubtitle(entry.sinTitle), !isRedundantSubtitle(sinTitle) {
+            return sinTitle
+        }
+
+        guard let sectionTitle = trimmedSubtitle(entry.sectionTitle), !isRedundantSubtitle(sectionTitle) else {
+            return nil
+        }
+
+        return sectionTitle
+    }
+
+    private var detailChips: [String] {
+        var chips: [String] = []
+
+        if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+            chips.append(entry.prayerDurationText)
+        }
+
+        if let progressPercentage = entry.progressPercentage {
+            chips.append(SinFrequencyScale.label(for: progressPercentage))
+        }
+
+        return chips
+    }
+
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
             ZStack {
                 Circle()
                     .fill(entry.kind.tint.opacity(0.14))
 
                 Image(systemName: entry.kind.symbolName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(entry.kind.tint)
             }
-            .frame(width: 34, height: 34)
+            .frame(width: 28, height: 28)
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(entry.kind.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.kind.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
 
-                    if let sinTitle = entry.sinTitle {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(sinTitle)
-                                .font(.caption.weight(.semibold))
+                        if let subtitleText {
+                            Text(subtitleText)
+                                .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
-
-                            Text(entry.sectionTitle)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .minimumScaleFactor(0.8)
                         }
-                    } else {
-                        Text(entry.sectionTitle)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
                     }
 
                     Spacer(minLength: 8)
 
-                    Text(timeText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .trailing, spacing: 6) {
+                        Text(timeText)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
 
-                    if let onEdit {
-                        Button(action: onEdit) {
-                            Image(systemName: "pencil")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 28, height: 28)
-                                .background(Color.primary.opacity(0.06), in: Circle())
+                        if let onEdit {
+                            Button(action: onEdit) {
+                                Image(systemName: "pencil")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.primary.opacity(0.06), in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Edit log entry")
                         }
-                        .buttonStyle(.plain)
                     }
-                }
-
-                if let progressPercentage = entry.progressPercentage {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 8) {
-                            Text("Purity")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-
-                            Spacer(minLength: 8)
-
-                            Text(SinFrequencyScale.label(for: progressPercentage))
-                                .font(.caption.weight(.semibold))
-                                .monospacedDigit()
-                                .foregroundStyle(entry.kind.tint)
-                        }
-
-                        ProgressView(value: Double(progressPercentage) / 100)
-                            .tint(entry.kind.tint)
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
 
                 if !entry.note.isEmpty {
@@ -241,26 +248,52 @@ struct TimelineRow: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                HStack(spacing: 10) {
-                    if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
-                        Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(entry.kind.tint)
-                    }
-
-                    if let progressPercentage = entry.progressPercentage {
-                        Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(entry.kind.tint)
-                    } else {
-                        Label(entry.kind.title, systemImage: entry.kind.symbolName)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                if !detailChips.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(detailChips, id: \.self) { chip in
+                            Text(chip)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.primary.opacity(0.06), in: Capsule())
+                        }
                     }
                 }
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
+    }
+
+    private func trimmedSubtitle(_ text: String?) -> String? {
+        guard let text else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func isRedundantSubtitle(_ text: String?) -> Bool {
+        guard let text else { return true }
+
+        let normalizedText = text.lowercased()
+        let normalizedKindTitle = entry.kind.title.lowercased()
+
+        if normalizedText == normalizedKindTitle {
+            return true
+        }
+
+        if normalizedKindTitle.contains("prayer"), normalizedText.contains("prayer") {
+            return true
+        }
+
+        if normalizedKindTitle.contains("note"), normalizedText.contains("note") {
+            return true
+        }
+
+        if normalizedKindTitle.contains("purity"), normalizedText.contains("purity") {
+            return true
+        }
+
+        return false
     }
 
     private static let timeFormatter: DateFormatter = {
