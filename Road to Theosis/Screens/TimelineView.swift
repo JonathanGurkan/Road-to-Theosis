@@ -166,6 +166,10 @@ struct TimelineRow: View {
     }
 
     private var subtitleText: String? {
+        if entry.isPrayerEntry, !entry.prayerConnectedSinTitles.isEmpty {
+            return nil
+        }
+
         if let sinTitle = trimmedSubtitle(entry.sinTitle), !isRedundantSubtitle(sinTitle) {
             return sinTitle
         }
@@ -177,14 +181,18 @@ struct TimelineRow: View {
         return sectionTitle
     }
 
+    private var prayerConnectedSins: [ConnectedSinReference] {
+        entry.prayerConnectedSins
+    }
+
     private var detailChips: [String] {
         var chips: [String] = []
 
-        if subtitleText == nil, let contextChip = contextChipText {
+        if subtitleText == nil, !entry.isPrayerEntry, let contextChip = contextChipText {
             chips.append(contextChip)
         }
 
-        if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
+        if showsPrayerTiming && entry.isPrayerEntry && entry.prayerDurationSeconds > 0 {
             chips.append(entry.prayerDurationText)
         }
 
@@ -217,6 +225,10 @@ struct TimelineRow: View {
     }
 
     private var relatedSinIconName: String? {
+        if entry.isPrayerEntry, let iconName = entry.prayerConnectedSins.first?.resolvedIconName {
+            return iconName
+        }
+
         guard let sinTitle = entry.sinTitle else { return nil }
 
         for section in SinCategory.sample {
@@ -251,7 +263,11 @@ struct TimelineRow: View {
     }
 
     private var primaryBadgeSize: CGFloat {
-        relatedSinIconName == nil ? 24 : 36
+        if entry.kind == .prayer || entry.kind == .quickPrayer || entry.kind == .note {
+            return 36
+        }
+
+        return relatedSinIconName == nil ? 24 : 36
     }
 
     private var secondaryBadgeSize: CGFloat {
@@ -263,11 +279,7 @@ struct TimelineRow: View {
     }
 
     private var titleLineText: String {
-        if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
-            return "\(entry.kind.title) - \(entry.prayerDurationText)"
-        }
-
-        return entry.kind.title
+        entry.kind.title
     }
 
     var body: some View {
@@ -279,7 +291,7 @@ struct TimelineRow: View {
                     .shadow(color: .black.opacity(0.10), radius: 1.5, x: 0, y: 1)
 
                 Image(systemName: primaryBadgeIconName)
-                    .font(relatedSinIconName == nil ? .caption2.weight(.semibold) : .headline.weight(.semibold))
+                    .font(entry.kind == .prayer || entry.kind == .quickPrayer ? .system(size: 20, weight: .semibold) : (entry.kind == .note ? .headline.weight(.semibold) : (relatedSinIconName == nil ? .caption2.weight(.semibold) : .headline.weight(.semibold))))
                     .foregroundStyle(entry.kind.tint)
 
                 if let secondaryBadgeIconName {
@@ -287,7 +299,7 @@ struct TimelineRow: View {
                         .fill(entry.kind.tint.opacity(0.18))
                         .overlay(
                             Circle()
-                                .strokeBorder(.white.opacity(0.8), lineWidth: 1.5)
+                                .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.75)
                         )
                         .frame(width: secondaryBadgeSize, height: secondaryBadgeSize)
                         .shadow(color: .black.opacity(0.12), radius: 1.2, x: 0, y: 1)
@@ -309,14 +321,6 @@ struct TimelineRow: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-
-                        if let subtitleText {
-                            Text(subtitleText)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                        }
                     }
 
                     Spacer(minLength: 8)
@@ -336,6 +340,37 @@ struct TimelineRow: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Edit log entry")
+                        }
+                    }
+                }
+
+                if entry.isPrayerEntry, !prayerConnectedSins.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(prayerConnectedSins, id: \.id) { reference in
+                            Text(reference.displayTitle)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                    }
+                } else if let subtitleText {
+                    Text(subtitleText)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+
+                if !detailChips.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(detailChips, id: \.self) { chip in
+                            Text(chip)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.primary.opacity(0.08), in: Capsule())
                         }
                     }
                 }

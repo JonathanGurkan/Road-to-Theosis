@@ -9,6 +9,7 @@ struct EditLogEntryView: View {
     @State private var note: String
     @State private var occurredAt: Date
     @State private var prayerDurationSeconds: Int
+    @State private var connectedPrayerSins: Set<ConnectedSinReference>
     @State private var progressPercentage: Int
 
     init(
@@ -24,6 +25,7 @@ struct EditLogEntryView: View {
         self._note = State(initialValue: entry.note)
         self._occurredAt = State(initialValue: entry.occurredAt)
         self._prayerDurationSeconds = State(initialValue: entry.prayerDurationSeconds)
+        self._connectedPrayerSins = State(initialValue: Set(entry.prayerConnectedSins))
         self._progressPercentage = State(initialValue: entry.progressPercentage ?? 0)
     }
 
@@ -141,6 +143,12 @@ struct EditLogEntryView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+
+                    PrayerSinPickerView(
+                        title: "Connected sins",
+                        subtitle: "Attach one or more sins to this prayer session.",
+                        selectedReferences: $connectedPrayerSins
+                    )
                 }
 
                 if canEditProgress {
@@ -186,10 +194,11 @@ struct EditLogEntryView: View {
             id: entry.id,
             kind: entry.kind,
             sectionTitle: entry.sectionTitle,
-            sinTitle: entry.sinTitle,
+            sinTitle: entry.isPrayerEntry ? nil : entry.sinTitle,
             note: trimmedNote,
             prayerMinutes: updatedPrayerMinutes,
             prayerDurationSeconds: updatedPrayerDurationSeconds,
+            connectedSins: entry.isPrayerEntry ? ConnectedSinReference.ordered(connectedPrayerSins) : [],
             progressPercentage: canEditProgress ? progressPercentage : entry.progressPercentage,
             occurredAt: occurredAt
         )

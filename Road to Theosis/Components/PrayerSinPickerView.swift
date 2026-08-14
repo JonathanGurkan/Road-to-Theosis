@@ -77,16 +77,18 @@ struct PrayerSinPickerView: View {
                     spacing: 8
                 ) {
                     ForEach(selectedSection.items, id: \.id) { item in
+                        let reference = ConnectedSinReference(sectionTitle: selectedSection.title, sinTitle: item.title)
                         PrayerSinToggleChip(
                             category: item,
-                            isSelected: selectedReferences.contains(.init(sectionTitle: selectedSection.title, sinTitle: item.title))
+                            isSelected: selectedReferences.contains(reference)
                         ) {
-                            let reference = ConnectedSinReference(sectionTitle: selectedSection.title, sinTitle: item.title)
-                            if selectedReferences.contains(reference) {
-                                selectedReferences.remove(reference)
+                            var currentSelection = selectedReferences
+                            if currentSelection.contains(reference) {
+                                currentSelection.remove(reference)
                             } else {
-                                selectedReferences.insert(reference)
+                                currentSelection.insert(reference)
                             }
+                            selectedReferences = currentSelection
                         }
                     }
                 }
@@ -116,7 +118,9 @@ struct PrayerSinPickerView: View {
                                     Spacer(minLength: 0)
 
                                     Button {
-                                        selectedReferences.remove(reference)
+                                        var currentSelection = selectedReferences
+                                        currentSelection.remove(reference)
+                                        selectedReferences = currentSelection
                                     } label: {
                                         Image(systemName: "xmark")
                                             .font(.caption2.weight(.semibold))
