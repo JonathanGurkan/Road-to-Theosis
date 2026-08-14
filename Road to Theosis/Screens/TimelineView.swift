@@ -7,6 +7,7 @@ struct TimelineView: View {
     let onUpdateEntry: (LogEntry) -> Void
     let onDeleteEntry: (LogEntry) -> Void
     @State private var editingEntry: LogEntry?
+    @State private var selectedCheckInEntry: LogEntry?
 
     private var timelineRange: TimelineRange {
         preferences.timelineRange
@@ -35,6 +36,11 @@ struct TimelineView: View {
         }
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(item: $selectedCheckInEntry) { entry in
+            if let record = entry.checkInRecord {
+                CheckInTimelineDetailView(backgroundTheme: backgroundTheme, entry: entry, record: record)
+            }
+        }
     }
 
     private var headerCard: some View {
@@ -95,6 +101,11 @@ struct TimelineView: View {
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
                         TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                guard entry.checkInRecord != nil else { return }
+                                selectedCheckInEntry = entry
+                            }
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 onDeleteEntry(entry)
@@ -127,6 +138,108 @@ struct TimelineView: View {
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
+        return formatter
+    }()
+}
+
+private struct CheckInTimelineDetailView: View {
+    let backgroundTheme: AppBackgroundTheme
+    let entry: LogEntry
+    let record: CheckInRecord
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppBackgroundView(theme: backgroundTheme)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AppSurfaceCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Check-in detail")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .textCase(.uppercase)
+
+                                Text(Self.dateFormatter.string(from: record.completedAt))
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(.primary)
+
+                                Text("\(record.responses.count) answers recalibrated \(record.allChanges.count) purity areas.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        ForEach(record.responses) { response in
+                            responseCard(response)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle("Check-in")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func responseCard(_ response: CheckInResponse) -> some View {
+        AppSurfaceCard(contentPadding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(response.questionShortTitle)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 8)
+                    Text(response.answerTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(backgroundTheme.glowColor)
+                }
+
+                Text(response.questionPrompt)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                ForEach(response.changes) { change in
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(change.sinTitle)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Text(change.sectionTitle)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 8)
+                        Text("\(SinFrequencyScale.percentage(for: change.targetProgress))%")
+                            .font(.caption.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(backgroundTheme.glowColor)
+                    }
+                }
+            }
+        }
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        formatter.timeStyle = .short
         return formatter
     }()
 }
@@ -220,6 +333,10 @@ private struct TimelineRow: View {
 
                     if let progressPercentage = entry.progressPercentage {
                         Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(entry.kind.tint)
+                    } else if entry.checkInRecord != nil {
+                        Label("View answers", systemImage: "chevron.right.circle")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
                     } else {
