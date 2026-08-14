@@ -299,7 +299,7 @@ struct TimelineRow: View {
                         .fill(entry.kind.tint.opacity(0.18))
                         .overlay(
                             Circle()
-                                .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.75)
+                                .strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
                         )
                         .frame(width: secondaryBadgeSize, height: secondaryBadgeSize)
                         .shadow(color: .black.opacity(0.12), radius: 1.2, x: 0, y: 1)
