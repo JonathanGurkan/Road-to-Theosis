@@ -748,7 +748,7 @@ struct HeadwayView: View {
                     .padding(.leading, 38)
             }
 
-            overviewStackedStat(title: "Check-ins", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
+            overviewStackedStat(title: "Loggings", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
 
             Divider()
                 .padding(.leading, 38)
