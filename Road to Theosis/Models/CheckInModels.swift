@@ -155,11 +155,11 @@ enum CheckInQuestionnaire {
     }
 
     static let answerOptions: [CheckInAnswerOption] = [
-        .init(title: "Very steady", detail: "This area has been stable and healthy.", targetProgress: 0.94),
-        .init(title: "Mostly steady", detail: "Small drift, but the pattern stayed strong.", targetProgress: 0.80),
-        .init(title: "Mixed", detail: "Some good days, some real drift.", targetProgress: 0.62),
-        .init(title: "Often troubled", detail: "This area kept pulling against you.", targetProgress: 0.42),
-        .init(title: "Deep struggle", detail: "This area needs immediate attention.", targetProgress: 0.20)
+        .init(title: "Very steady", detail: "Choose this when the question was consistently true and there was little or no repeated failure.", targetProgress: 0.94),
+        .init(title: "Mostly steady", detail: "Choose this when you mostly stayed faithful, with minor drift that did not become the pattern.", targetProgress: 0.80),
+        .init(title: "Mixed", detail: "Choose this when obedience and failure were both present enough that neither clearly describes the whole period.", targetProgress: 0.62),
+        .init(title: "Often troubled", detail: "Choose this when the struggle showed up repeatedly and shaped much of this area.", targetProgress: 0.42),
+        .init(title: "Deep struggle", detail: "Choose this when this area was dominated by failure, avoidance, or an urgent need to repent and rebuild.", targetProgress: 0.20)
     ]
 
     static let questions: [CheckInQuestion] = [
@@ -167,7 +167,7 @@ enum CheckInQuestionnaire {
             id: "prayer",
             shortTitle: "Prayer",
             prompt: "How steady was your prayer life?",
-            detail: "Think about the last stretch of days, not your ideal self.",
+            detail: "Answer by weighing actual prayer, Scripture attention, and responsiveness to God, not intentions or your ideal routine.",
             targets: [
                 .init(sectionTitle: "Sins Against God", sinTitle: "Neglect of Prayer", weight: 1.0),
                 .init(sectionTitle: "Sins Against God", sinTitle: "Neglect of God's Word", weight: 0.72),
@@ -179,7 +179,7 @@ enum CheckInQuestionnaire {
             id: "truth",
             shortTitle: "Truth",
             prompt: "How faithful were you to Scripture and doctrine?",
-            detail: "This covers what shaped your thinking and how often you stayed anchored in truth.",
+            detail: "Answer by weighing whether Scripture and sound doctrine shaped your thinking more than confusion, neglect, or false teaching.",
             targets: [
                 .init(sectionTitle: "Sins Against God", sinTitle: "Neglect of God's Word", weight: 1.0),
                 .init(sectionTitle: "Sins Against God", sinTitle: "Heresies / False Doctrine", weight: 0.78),
@@ -190,7 +190,7 @@ enum CheckInQuestionnaire {
             id: "trust",
             shortTitle: "Trust",
             prompt: "How much did fear, worry, or hopelessness press in?",
-            detail: "Use this to check whether fear was normal or repeatedly pulling you off-center.",
+            detail: "Answer by weighing whether trust in God governed your reactions or fear, worry, and despair repeatedly took control.",
             targets: [
                 .init(sectionTitle: "Sins Against God", sinTitle: "Unbelief / No Trust in God", weight: 0.92),
                 .init(sectionTitle: "Inner Heart / Mental Sins", sinTitle: "Anxiety / Worry / Fearful", weight: 1.0),
@@ -201,7 +201,7 @@ enum CheckInQuestionnaire {
             id: "thoughts",
             shortTitle: "Thoughts",
             prompt: "How guarded were your thoughts and eyes?",
-            detail: "This is about what you entertained, not only what you acted on.",
+            detail: "Answer by weighing what you allowed yourself to look at, imagine, rehearse, or entertain, even when it stayed inward.",
             targets: [
                 .init(sectionTitle: "Sexual Immorality", sinTitle: "Lust / Pornography", weight: 1.0),
                 .init(sectionTitle: "Inner Heart / Mental Sins", sinTitle: "Evil Thoughts", weight: 0.85),
@@ -212,7 +212,7 @@ enum CheckInQuestionnaire {
             id: "speech",
             shortTitle: "Speech",
             prompt: "How guarded was your speech?",
-            detail: "Consider honesty, tone, gossip, criticism, and careless words together.",
+            detail: "Answer by weighing honesty, restraint, tone, gossip, criticism, profanity, and whether your words built up or damaged.",
             targets: [
                 .init(sectionTitle: "Sins of the Tongue", sinTitle: "Lying / Deceit", weight: 0.96),
                 .init(sectionTitle: "Sins of the Tongue", sinTitle: "Gossip / Backbiting", weight: 1.0),
@@ -226,7 +226,7 @@ enum CheckInQuestionnaire {
             id: "relationships",
             shortTitle: "Relationships",
             prompt: "How peaceful and merciful were your relationships?",
-            detail: "Think about patience, forgiveness, and whether conflict ruled your reactions.",
+            detail: "Answer by weighing patience, forgiveness, mercy, love of neighbor, and whether conflict or resentment ruled your reactions.",
             targets: [
                 .init(sectionTitle: "Sins Against Others", sinTitle: "Strife / Argumentative", weight: 1.0),
                 .init(sectionTitle: "Sins Against Others", sinTitle: "Hatred / Wrath / Resentment", weight: 0.90),
@@ -240,7 +240,7 @@ enum CheckInQuestionnaire {
             id: "purity",
             shortTitle: "Purity",
             prompt: "How steady was your sexual purity and self-control?",
-            detail: "Be honest about temptation, indulgence, and where your mind actually went.",
+            detail: "Answer by weighing actions, desires, media, fantasies, and how quickly you resisted or indulged sexual temptation.",
             targets: [
                 .init(sectionTitle: "Sexual Immorality", sinTitle: "Sexual Immorality", weight: 1.0),
                 .init(sectionTitle: "Sexual Immorality", sinTitle: "Adultery", weight: 0.96),
@@ -254,7 +254,7 @@ enum CheckInQuestionnaire {
             id: "humility",
             shortTitle: "Humility",
             prompt: "How humble was your heart?",
-            detail: "Consider pride, vanity, self-promotion, and how quickly you yielded to correction.",
+            detail: "Answer by weighing pride, vanity, boasting, defensiveness, self-promotion, and how readily you received correction.",
             targets: [
                 .init(sectionTitle: "Inner Heart / Mental Sins", sinTitle: "Pride", weight: 1.0),
                 .init(sectionTitle: "Inner Heart / Mental Sins", sinTitle: "Vanity", weight: 0.92),
@@ -266,7 +266,7 @@ enum CheckInQuestionnaire {
             id: "discipline",
             shortTitle: "Discipline",
             prompt: "How disciplined were you with work, time, and effort?",
-            detail: "This checks sloth, delay, passivity, and how often you delayed obedience.",
+            detail: "Answer by weighing diligence, timeliness, follow-through, passivity, procrastination, and whether effort was ordered well.",
             targets: [
                 .init(sectionTitle: "Family & Responsibility", sinTitle: "Sloth", weight: 1.0),
                 .init(sectionTitle: "Family & Responsibility", sinTitle: "Passivity", weight: 0.92),
@@ -279,7 +279,7 @@ enum CheckInQuestionnaire {
             id: "contentment",
             shortTitle: "Contentment",
             prompt: "How content and restrained were you?",
-            detail: "This looks at appetite, consumption, greed, and the urge to grab more.",
+            detail: "Answer by weighing appetite, spending, consumption, greed, envy, excess, and whether you received enough with gratitude.",
             targets: [
                 .init(sectionTitle: "Inner Heart / Mental Sins", sinTitle: "Greed / Covetousness", weight: 1.0),
                 .init(sectionTitle: "False Character & Behavior", sinTitle: "Gluttony", weight: 0.94),
@@ -291,7 +291,7 @@ enum CheckInQuestionnaire {
             id: "allegiance",
             shortTitle: "Allegiance",
             prompt: "How aligned were you with Godly truth and obedience?",
-            detail: "Consider anything that pulled your loyalty away from God.",
+            detail: "Answer by weighing whether loyalty to God stayed first or idols, blasphemy, lawlessness, or hidden compromise pulled you away.",
             targets: [
                 .init(sectionTitle: "Sins Against God", sinTitle: "Idolatry / Abomination", weight: 0.98),
                 .init(sectionTitle: "Sins Against God", sinTitle: "Blasphemy", weight: 0.92),
@@ -303,7 +303,7 @@ enum CheckInQuestionnaire {
             id: "obedience",
             shortTitle: "Obedience",
             prompt: "How responsive were you to conviction and authority?",
-            detail: "This covers repentance, honor, and what happened when you knew better.",
+            detail: "Answer by weighing repentance, honoring rightful authority, honesty, and what you did when conscience made the next step clear.",
             targets: [
                 .init(sectionTitle: "Family & Responsibility", sinTitle: "Disobedient to Parents", weight: 0.96),
                 .init(sectionTitle: "Family & Responsibility", sinTitle: "Not Honoring Your Father and Mother", weight: 0.92),
@@ -317,7 +317,7 @@ enum CheckInQuestionnaire {
             id: "witness",
             shortTitle: "Witness",
             prompt: "How open were you to loving others and speaking about God?",
-            detail: "This checks concern for the lost, mercy, and whether love shaped your posture.",
+            detail: "Answer by weighing concern for the lost, mercy, courage to speak, and whether love shaped how you treated others.",
             targets: [
                 .init(sectionTitle: "Sins Against God", sinTitle: "No Concern for the Lost", weight: 1.0),
                 .init(sectionTitle: "Sins Against Others", sinTitle: "Not Loving Your Neighbour", weight: 0.92),
