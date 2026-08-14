@@ -220,7 +220,7 @@ struct TimelineRow: View {
         case .progressUpdate, .sliderProgressUpdate:
             return "Purity update"
         case .note:
-            return "Reflection"
+            return nil
         }
     }
 
