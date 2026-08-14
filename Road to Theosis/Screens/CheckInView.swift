@@ -9,6 +9,7 @@ struct CheckInView: View {
     @Environment(AppPreferenceStore.self) private var preferences
     @State private var selectedAnswerIndicesByQuestionID: [String: Int] = [:]
     @State private var stepIndex = 0
+    @State private var reviewDraft: CheckInReviewDraft?
 
     private var questions: [CheckInQuestion] {
         CheckInQuestionnaire.questions(for: preferences.checkInEnabledQuestionIDs)
@@ -91,6 +92,18 @@ struct CheckInView: View {
         }
         .onChange(of: questions.count) { _, count in
             stepIndex = min(stepIndex, max(count - 1, 0))
+        }
+        .sheet(item: $reviewDraft) { draft in
+            CheckInReviewSheetView(
+                backgroundTheme: backgroundTheme,
+                record: draft.record,
+                onBack: {
+                    reviewDraft = nil
+                },
+                onApply: {
+                    applyCheckIn(draft.record)
+                }
+            )
         }
     }
 
@@ -241,8 +254,8 @@ struct CheckInView: View {
                 Spacer(minLength: 12)
 
                 ActionButtonView(
-                    title: isLastQuestion ? "Apply Check-in" : "Continue",
-                    icon: isLastQuestion ? "checkmark" : "arrow.right",
+                    title: isLastQuestion ? "Review" : "Continue",
+                    icon: isLastQuestion ? "doc.text.magnifyingglass" : "arrow.right",
                     tint: .red
                 ) {
                     advance()
@@ -306,13 +319,13 @@ struct CheckInView: View {
         guard canAdvance else { return }
 
         if isLastQuestion {
-            saveCheckIn()
+            prepareCheckInReview()
         } else {
             stepIndex += 1
         }
     }
 
-    private func saveCheckIn() {
+    private func prepareCheckInReview() {
         let responses = questions.compactMap { question -> CheckInResponse? in
             guard let selectedIndex = selectedAnswerIndicesByQuestionID[question.id] else {
                 return nil
@@ -330,6 +343,10 @@ struct CheckInView: View {
         }
 
         let record = CheckInRecord(completedAt: .now, responses: responses)
+        reviewDraft = CheckInReviewDraft(record: record)
+    }
+
+    private func applyCheckIn(_ record: CheckInRecord) {
         guard let payloadData = try? JSONEncoder().encode(record),
               let payload = String(data: payloadData, encoding: .utf8) else {
             return
@@ -346,7 +363,115 @@ struct CheckInView: View {
         )
 
         onSave(entry)
+        reviewDraft = nil
         dismiss()
+    }
+}
+
+private struct CheckInReviewDraft: Identifiable {
+    let id = UUID()
+    let record: CheckInRecord
+}
+
+private struct CheckInReviewSheetView: View {
+    let backgroundTheme: AppBackgroundTheme
+    let record: CheckInRecord
+    let onBack: () -> Void
+    let onApply: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppBackgroundView(theme: backgroundTheme)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AppSurfaceCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Review check-in")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .textCase(.uppercase)
+
+                                Text("Confirm your answers before the meter updates.")
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                Text("\(record.responses.count) answers will be saved as one timeline entry.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        ForEach(record.responses) { response in
+                            responseCard(response)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle("Review")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Back", action: onBack)
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Apply", action: onApply)
+                        .fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func responseCard(_ response: CheckInResponse) -> some View {
+        AppSurfaceCard(contentPadding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(response.questionShortTitle)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 8)
+                    Text(response.answerTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(backgroundTheme.glowColor)
+                }
+
+                Text(response.questionPrompt)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(response.changes.prefix(4))) { change in
+                        HStack(spacing: 8) {
+                            Text(change.sinTitle)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text("\(SinFrequencyScale.percentage(for: change.targetProgress))%")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(backgroundTheme.glowColor)
+                                .monospacedDigit()
+                        }
+                    }
+
+                    if response.changes.count > 4 {
+                        Text("+\(response.changes.count - 4) more affected areas")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
     }
 }
 
