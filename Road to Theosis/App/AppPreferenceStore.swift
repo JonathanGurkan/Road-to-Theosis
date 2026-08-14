@@ -210,3 +210,48 @@ final class AppPreferenceStore {
         }
     }
 }
+
+struct GreetingWeatherThresholds: Codable, Equatable {
+    static let defaultWarmThresholdCelsius = 24.0
+    static let defaultColdThresholdCelsius = 10.0
+    static let defaultBreezyThresholdKilometersPerHour = 20.0
+
+    let warmThresholdCelsius: Double
+    let coldThresholdCelsius: Double
+    let breezyThresholdKilometersPerHour: Double
+}
+
+enum TimelineRange: String, CaseIterable, Codable, Identifiable {
+    case always
+    case last7Days
+    case last30Days
+    case last90Days
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .always:
+            return "Always"
+        case .last7Days:
+            return "Last 7 Days"
+        case .last30Days:
+            return "Last 30 Days"
+        case .last90Days:
+            return "Last 90 Days"
+        }
+    }
+
+    func cutoffDate(from date: Date = .now, calendar: Calendar = .current) -> Date? {
+        switch self {
+        case .always:
+            return nil
+        case .last7Days:
+            return calendar.date(byAdding: .day, value: -7, to: date)
+        case .last30Days:
+            return calendar.date(byAdding: .day, value: -30, to: date)
+        case .last90Days:
+            return calendar.date(byAdding: .day, value: -90, to: date)
+        }
+    }
+}
