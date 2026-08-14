@@ -61,7 +61,7 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
+                Text(preferences.isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -94,9 +94,7 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
-                            editingEntry = entry
-                        }
+                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 onDeleteEntry(entry)
@@ -131,7 +129,7 @@ struct TimelineView: View {
     }()
 }
 
-private struct TimelineRow: View {
+struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
 
@@ -272,7 +270,9 @@ private struct TimelineRow: View {
                     progressPercentage: 62,
                     occurredAt: Date().addingTimeInterval(-7200)
                 )
-            ])
+            ]),
+            onUpdateEntry: { _ in },
+            onDeleteEntry: { _ in }
         )
     }
     .environment(AppPreferenceStore())

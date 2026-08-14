@@ -126,15 +126,6 @@ struct HeadwayView: View {
         Array(logEntries.sorted { $0.occurredAt > $1.occurredAt }.prefix(limit))
     }
 
-    private func refreshGreetingWeather() async {
-        guard preferences.isGreetingWeatherEnabled else {
-            greetingWeather = nil
-            return
-        }
-
-        greetingWeather = await greetingWeatherService.currentWeather(thresholds: greetingWeatherThresholds)
-    }
-
     private func simulateDailyProgress() {
         purityCalculationDate = Calendar.current.date(byAdding: .day, value: 1, to: purityCalculationDate) ?? purityCalculationDate
         recalculatePurity()
@@ -1464,7 +1455,7 @@ struct HeadwayView: View {
                                                 .fixedSize(horizontal: false, vertical: true)
                                         }
 
-                                        if isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
+                                        if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
                                             Text("\(entry.prayerDurationText) prayer")
                                                 .font(.caption.weight(.semibold))
                                                 .foregroundStyle(entry.kind.tint)
@@ -1487,96 +1478,11 @@ struct HeadwayView: View {
     }
 
     private func compactRecentActivityRow(for entry: LogEntry) -> some View {
-        Button {
-            editingRecentActivityEntry = entry
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top, spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(entry.kind.tint.opacity(0.14))
-
-                        Image(systemName: entry.kind.symbolName)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(entry.kind.tint)
-                    }
-                    .frame(width: 28, height: 28)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(entry.kind.title)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-
-                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-
-                        Text(entry.encouragementText(showsPrayerTiming: preferences.isPrayerTimingEnabled))
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
-                    Text("\(entry.prayerDurationText) prayer")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(entry.kind.tint)
-                        .lineLimit(1)
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 7)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(entry.kind.tint.opacity(0.8))
-                    .frame(width: 3)
-            }
-        }
-        .buttonStyle(.plain)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
+        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled, showsEditButton: false) {
-            editingRecentActivityEntry = entry
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
+        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {

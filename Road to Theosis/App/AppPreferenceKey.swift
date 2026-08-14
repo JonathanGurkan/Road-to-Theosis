@@ -15,8 +15,12 @@ enum AppPreferenceKey: String, CaseIterable {
     case keepScreenAwakeDuringPrayer
     case prayerTimerCountingMode
     case purityStrictness
+    case greetingWeatherBreezyThresholdKilometersPerHour
+    case greetingWeatherColdThresholdCelsius
+    case greetingWeatherWarmThresholdCelsius
     case showRecentActivity
     case showVerseApplications
+    case timelineRange
     case usesFocusProgressSliders
 
     var storageKey: String { rawValue }
