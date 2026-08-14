@@ -1522,20 +1522,6 @@ struct HeadwayView: View {
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
         TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                onDeleteEntry(entry)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {
