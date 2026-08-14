@@ -8,7 +8,6 @@ struct SettingsView: View {
     let onShowWelcome: () -> Void
     let onDeleteAllData: () -> Void
     let onSaveEntry: (LogEntry) -> Void
-    @State private var isShowingCheckIn = false
 
     var body: some View {
         ZStack {
@@ -116,13 +115,21 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                Section(header: Text("Check-in"), footer: Text("Use this any time to recalibrate the whole purity meter.")) {
-                    Button {
-                        isShowingCheckIn = true
-                    } label: {
-                        Label("Start Check-in", systemImage: "checklist")
-                    }
+                NavigationLink {
+                    CheckInSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        dashboard: dashboard,
+                        onSaveEntry: onSaveEntry
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Check-in",
+                        subtitle: "Weekly reminder and questionnaire",
+                        systemImage: "calendar.badge.checkmark"
+                    )
                 }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -130,13 +137,6 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
-        .fullScreenCover(isPresented: $isShowingCheckIn) {
-            CheckInView(
-                backgroundTheme: $backgroundTheme,
-                dashboard: dashboard,
-                onSave: onSaveEntry
-            )
-        }
     }
 }
 
@@ -170,6 +170,108 @@ private struct SettingsLinkRow: View {
         }
         .contentShape(Rectangle())
         .padding(.vertical, 2)
+    }
+}
+
+private struct CheckInSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
+    let dashboard: DashboardViewModel
+    let onSaveEntry: (LogEntry) -> Void
+    @State private var isShowingCheckIn = false
+
+    private var enabledQuestionCount: Int {
+        preferences.checkInEnabledQuestionIDs.count
+    }
+
+    private var reminderTimeBinding: Binding<Date> {
+        Binding {
+            var components = DateComponents()
+            components.hour = preferences.weeklyCheckInHour
+            components.minute = preferences.weeklyCheckInMinute
+            return Calendar.current.date(from: components) ?? Date()
+        } set: { newValue in
+            let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+            preferences.weeklyCheckInHour = components.hour ?? 9
+            preferences.weeklyCheckInMinute = components.minute ?? 0
+        }
+    }
+
+    var body: some View {
+        @Bindable var preferences = preferences
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Check-in"), footer: Text("Start a check-in whenever you want. The weekly reminder uses the same questionnaire settings below.")) {
+                    Button {
+                        isShowingCheckIn = true
+                    } label: {
+                        Label("Start Check-in", systemImage: "calendar.badge.checkmark")
+                    }
+                }
+
+                Section(header: Text("Questionnaire"), footer: Text("Choose which questions appear. At least one question stays enabled.")) {
+                    HStack {
+                        Text("Active questions")
+                        Spacer()
+                        Text("\(enabledQuestionCount) of \(CheckInQuestionnaire.questions.count)")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ForEach(CheckInQuestionnaire.questions) { question in
+                        Toggle(isOn: questionBinding(for: question.id)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(question.shortTitle)
+                                Text(question.prompt)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Weekly Reminder"), footer: Text("When the app opens on the selected day, it sends a check-in notification instead of opening the check-in immediately.")) {
+                    Toggle("Weekly check-in reminder", isOn: $preferences.isWeeklyCheckInReminderEnabled)
+
+                    if preferences.isWeeklyCheckInReminderEnabled {
+                        Picker("Day", selection: $preferences.weeklyCheckInWeekday) {
+                            ForEach(CheckInWeekday.allCases) { weekday in
+                                Text(weekday.title).tag(weekday)
+                            }
+                        }
+
+                        DatePicker("Time", selection: reminderTimeBinding, displayedComponents: .hourAndMinute)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Check-in")
+        .navigationBarTitleDisplayMode(.large)
+        .fullScreenCover(isPresented: $isShowingCheckIn) {
+            CheckInView(
+                backgroundTheme: $backgroundTheme,
+                dashboard: dashboard,
+                onSave: onSaveEntry
+            )
+        }
+    }
+
+    private func questionBinding(for questionID: String) -> Binding<Bool> {
+        Binding {
+            preferences.checkInEnabledQuestionIDs.contains(questionID)
+        } set: { isEnabled in
+            var ids = preferences.checkInEnabledQuestionIDs
+            if isEnabled {
+                ids.insert(questionID)
+            } else if ids.count > 1 {
+                ids.remove(questionID)
+            }
+            preferences.checkInEnabledQuestionIDs = ids
+        }
     }
 }
 
