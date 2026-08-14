@@ -8,6 +8,7 @@ struct SettingsView: View {
     let onShowWelcome: () -> Void
     let onDeleteAllData: () -> Void
     let onSaveEntry: (LogEntry) -> Void
+    @State private var isShowingCheckIn = false
 
     var body: some View {
         ZStack {
@@ -114,6 +115,14 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                Section(header: Text("Check-in"), footer: Text("Use this any time to recalibrate the whole purity meter.")) {
+                    Button {
+                        isShowingCheckIn = true
+                    } label: {
+                        Label("Start Check-in", systemImage: "checklist")
+                    }
+                }
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -121,6 +130,13 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
+        .fullScreenCover(isPresented: $isShowingCheckIn) {
+            CheckInView(
+                backgroundTheme: $backgroundTheme,
+                dashboard: dashboard,
+                onSave: onSaveEntry
+            )
+        }
     }
 }
 
@@ -513,8 +529,6 @@ private struct AboutSettingsPage: View {
     @State private var hasChangedICloudSyncMode = false
     @State private var isShowingDeleteAllDataConfirmation = false
     private let openMeteoURL = URL(string: "https://open-meteo.com/")
-    @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
-
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
@@ -561,7 +575,7 @@ private struct AboutSettingsPage: View {
                     } label: {
                         Text("Show Onboarding")
                     }
-                    
+
                 }
 
                 Section(header: Text("iCloud"), footer: iCloudFooterText(hasChangedSyncMode: hasChangedICloudSyncMode)) {
