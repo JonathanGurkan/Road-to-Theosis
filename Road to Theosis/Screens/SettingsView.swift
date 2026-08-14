@@ -231,13 +231,13 @@ private struct CheckInSettingsPage: View {
                         Button {
                             preferences.checkInEnabledQuestionIDs = Set(preset.questionIDs)
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(preset.title)
-                                Text(preset.detail)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
+                            QuestionnairePresetRow(
+                                preset: preset,
+                                isSelected: isPresetSelected(preset),
+                                tint: backgroundTheme.glowColor
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
                 }
 
@@ -304,6 +304,10 @@ private struct CheckInSettingsPage: View {
         return formatter
     }()
 
+    private func isPresetSelected(_ preset: CheckInQuestionPreset) -> Bool {
+        preferences.checkInEnabledQuestionIDs == Set(preset.questionIDs)
+    }
+
     private func questionBinding(for questionID: String) -> Binding<Bool> {
         Binding {
             preferences.checkInEnabledQuestionIDs.contains(questionID)
@@ -316,6 +320,37 @@ private struct CheckInSettingsPage: View {
             }
             preferences.checkInEnabledQuestionIDs = ids
         }
+    }
+}
+
+private struct QuestionnairePresetRow: View {
+    let preset: CheckInQuestionPreset
+    let isSelected: Bool
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(preset.title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(preset.detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(isSelected ? tint : Color.secondary.opacity(0.45))
+                .accessibilityHidden(true)
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
     }
 }
 
