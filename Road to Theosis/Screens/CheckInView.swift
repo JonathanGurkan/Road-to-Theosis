@@ -8,6 +8,7 @@ struct CheckInView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferenceStore.self) private var preferences
     @State private var selectedAnswerIndicesByQuestionID: [String: Int] = [:]
+    @State private var skippedQuestionIDs: Set<String> = []
     @State private var stepIndex = 0
     @State private var reviewDraft: CheckInReviewDraft?
 
@@ -45,8 +46,12 @@ struct CheckInView: View {
         stepIndex == questions.count - 1
     }
 
-    private var canAdvance: Bool {
-        currentSelection != nil
+    private var skippedCount: Int {
+        questions.filter { skippedQuestionIDs.contains($0.id) && selectedAnswerIndicesByQuestionID[$0.id] == nil }.count
+    }
+
+    private var firstUnansweredIndex: Int? {
+        questions.firstIndex { selectedAnswerIndicesByQuestionID[$0.id] == nil }
     }
 
     var body: some View {
@@ -130,12 +135,20 @@ struct CheckInView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
-                    Text("\(completionCount) answered")
+                    Text(progressSummaryText)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.orange)
                 }
             }
         }
+    }
+
+    private var progressSummaryText: String {
+        if skippedCount > 0 {
+            return "\(completionCount) answered, \(skippedCount) skipped"
+        }
+
+        return "\(completionCount) answered"
     }
 
     private var progressRail: some View {
@@ -168,14 +181,34 @@ struct CheckInView: View {
 
                 HStack(spacing: 6) {
                     ForEach(questions.indices, id: \.self) { index in
-                        Capsule()
-                            .fill(index < stepIndex ? backgroundTheme.glowColor : (index == stepIndex ? .orange : .primary.opacity(0.12)))
-                            .frame(width: index == stepIndex ? 22 : 8, height: 8)
+                        progressMarker(for: index)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
+    }
+
+    @ViewBuilder
+    private func progressMarker(for index: Int) -> some View {
+        let status = progressStatus(for: index)
+
+        Button {
+            goToQuestion(at: index)
+        } label: {
+            Capsule()
+                .fill(progressMarkerFill(for: status))
+                .frame(width: status == .current ? 22 : 8, height: 8)
+                .overlay {
+                    if status == .skipped {
+                        Capsule()
+                            .strokeBorder(Color.orange.opacity(0.85), lineWidth: 1.5)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Question \(index + 1)")
+        .accessibilityValue(progressAccessibilityValue(for: status))
     }
 
     private var questionCard: some View {
@@ -254,14 +287,12 @@ struct CheckInView: View {
                 Spacer(minLength: 12)
 
                 ActionButtonView(
-                    title: isLastQuestion ? "Review" : "Continue",
-                    icon: isLastQuestion ? "doc.text.magnifyingglass" : "arrow.right",
+                    title: "Next",
+                    icon: "arrow.right",
                     tint: .red
                 ) {
                     advance()
                 }
-                .disabled(!canAdvance)
-                .opacity(canAdvance ? 1 : 0.55)
             }
         }
         .padding(.horizontal, 16)
@@ -276,6 +307,8 @@ struct CheckInView: View {
 
         Button {
             selectedAnswerIndicesByQuestionID[currentQuestion.id] = index
+            skippedQuestionIDs.remove(currentQuestion.id)
+            advanceAfterAnswer()
         } label: {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -316,12 +349,86 @@ struct CheckInView: View {
     }
 
     private func advance() {
-        guard canAdvance else { return }
+        if currentSelection == nil {
+            skippedQuestionIDs.insert(currentQuestion.id)
+        }
 
-        if isLastQuestion {
+        if let firstUnansweredIndex, isLastQuestion || completionCount == questions.count {
+            if firstUnansweredIndex == stepIndex {
+                return
+            }
+
+            stepIndex = firstUnansweredIndex
+        } else if isLastQuestion {
             prepareCheckInReview()
         } else {
             stepIndex += 1
+        }
+    }
+
+    private func goToQuestion(at index: Int) {
+        guard questions.indices.contains(index) else { return }
+
+        if currentSelection == nil {
+            skippedQuestionIDs.insert(currentQuestion.id)
+        }
+
+        stepIndex = index
+    }
+
+    private func advanceAfterAnswer() {
+        if completionCount == questions.count {
+            if isLastQuestion {
+                prepareCheckInReview()
+            } else {
+                stepIndex += 1
+            }
+        } else if isLastQuestion, let firstUnansweredIndex {
+            stepIndex = firstUnansweredIndex
+        } else if !isLastQuestion {
+            stepIndex += 1
+        }
+    }
+
+    private func progressStatus(for index: Int) -> CheckInProgressStatus {
+        if index == stepIndex {
+            return .current
+        }
+
+        if selectedAnswerIndicesByQuestionID[questions[index].id] != nil {
+            return .answered
+        }
+
+        if skippedQuestionIDs.contains(questions[index].id) {
+            return .skipped
+        }
+
+        return .pending
+    }
+
+    private func progressMarkerFill(for status: CheckInProgressStatus) -> Color {
+        switch status {
+        case .answered:
+            return backgroundTheme.glowColor
+        case .current:
+            return .orange
+        case .skipped:
+            return Color.orange.opacity(0.18)
+        case .pending:
+            return Color.primary.opacity(0.12)
+        }
+    }
+
+    private func progressAccessibilityValue(for status: CheckInProgressStatus) -> String {
+        switch status {
+        case .answered:
+            return "Answered"
+        case .current:
+            return "Current"
+        case .skipped:
+            return "Skipped"
+        case .pending:
+            return "Not answered"
         }
     }
 
@@ -371,6 +478,13 @@ struct CheckInView: View {
 private struct CheckInReviewDraft: Identifiable {
     let id = UUID()
     let record: CheckInRecord
+}
+
+private enum CheckInProgressStatus {
+    case answered
+    case current
+    case skipped
+    case pending
 }
 
 private struct CheckInReviewSheetView: View {
