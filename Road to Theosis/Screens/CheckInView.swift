@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct CheckInView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
@@ -50,6 +53,10 @@ struct CheckInView: View {
         questions.filter { skippedQuestionIDs.contains($0.id) && selectedAnswerIndicesByQuestionID[$0.id] == nil }.count
     }
 
+    private var unansweredCount: Int {
+        questions.count - completionCount
+    }
+
     private var firstUnansweredIndex: Int? {
         questions.firstIndex { selectedAnswerIndicesByQuestionID[$0.id] == nil }
     }
@@ -70,16 +77,24 @@ struct CheckInView: View {
                 )
                 .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 16) {
-                        headerCard
-                        progressRail
-                        questionCard
-                        answerCard
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            headerCard
+                                .id(Self.scrollTopID)
+                            progressRail
+                            questionCard
+                            answerCard
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                        .padding(.bottom, 24)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 24)
+                    .onChange(of: stepIndex) { _, _ in
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            proxy.scrollTo(Self.scrollTopID, anchor: .top)
+                        }
+                    }
                 }
             }
             .navigationTitle("Check-in")
@@ -111,6 +126,8 @@ struct CheckInView: View {
             )
         }
     }
+
+    private static let scrollTopID = "check-in-scroll-top"
 
     private var headerCard: some View {
         AppSurfaceCard(contentPadding: 16) {
@@ -185,6 +202,13 @@ struct CheckInView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+
+                HStack(spacing: 12) {
+                    progressLegendItem(title: "Answered", status: .answered)
+                    progressLegendItem(title: "Skipped", status: .skipped)
+                    progressLegendItem(title: "Current", status: .current)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
@@ -209,6 +233,24 @@ struct CheckInView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Question \(index + 1)")
         .accessibilityValue(progressAccessibilityValue(for: status))
+    }
+
+    private func progressLegendItem(title: String, status: CheckInProgressStatus) -> some View {
+        HStack(spacing: 5) {
+            Capsule()
+                .fill(progressMarkerFill(for: status))
+                .frame(width: status == .current ? 16 : 8, height: 8)
+                .overlay {
+                    if status == .skipped {
+                        Capsule()
+                            .strokeBorder(Color.orange.opacity(0.85), lineWidth: 1.5)
+                    }
+                }
+
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var questionCard: some View {
@@ -275,7 +317,7 @@ struct CheckInView: View {
             HStack(spacing: 12) {
                 Button {
                     if stepIndex > 0 {
-                        stepIndex -= 1
+                        goToQuestion(at: stepIndex - 1)
                     }
                 } label: {
                     Text("Back")
@@ -285,6 +327,12 @@ struct CheckInView: View {
                 .disabled(stepIndex == 0)
 
                 Spacer(minLength: 12)
+
+                if unansweredCount > 0 {
+                    Text("\(unansweredCount) left")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
 
                 ActionButtonView(
                     title: "Next",
@@ -306,6 +354,7 @@ struct CheckInView: View {
         let isSelected = currentSelection == index
 
         Button {
+            playSelectionFeedback()
             selectedAnswerIndicesByQuestionID[currentQuestion.id] = index
             skippedQuestionIDs.remove(currentQuestion.id)
             advanceAfterAnswer()
@@ -348,6 +397,12 @@ struct CheckInView: View {
         .buttonStyle(.plain)
     }
 
+    private func playSelectionFeedback() {
+        #if canImport(UIKit)
+        UISelectionFeedbackGenerator().selectionChanged()
+        #endif
+    }
+
     private func advance() {
         if currentSelection == nil {
             skippedQuestionIDs.insert(currentQuestion.id)
@@ -362,14 +417,14 @@ struct CheckInView: View {
         } else if isLastQuestion {
             prepareCheckInReview()
         } else {
-            stepIndex += 1
+            goToQuestion(at: stepIndex + 1, marksCurrentAsSkipped: false)
         }
     }
 
-    private func goToQuestion(at index: Int) {
+    private func goToQuestion(at index: Int, marksCurrentAsSkipped: Bool = true) {
         guard questions.indices.contains(index) else { return }
 
-        if currentSelection == nil {
+        if marksCurrentAsSkipped, currentSelection == nil {
             skippedQuestionIDs.insert(currentQuestion.id)
         }
 
@@ -381,12 +436,12 @@ struct CheckInView: View {
             if isLastQuestion {
                 prepareCheckInReview()
             } else {
-                stepIndex += 1
+                goToQuestion(at: stepIndex + 1, marksCurrentAsSkipped: false)
             }
         } else if isLastQuestion, let firstUnansweredIndex {
             stepIndex = firstUnansweredIndex
         } else if !isLastQuestion {
-            stepIndex += 1
+            goToQuestion(at: stepIndex + 1, marksCurrentAsSkipped: false)
         }
     }
 

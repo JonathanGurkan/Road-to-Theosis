@@ -340,7 +340,10 @@ private struct TimelineRow: View {
                         Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
-                    } else if entry.checkInRecord != nil {
+                    } else if let checkInRecord = entry.checkInRecord {
+                        checkInMetadataPill("\(checkInRecord.responses.count) answers", systemImage: "checklist")
+                        checkInMetadataPill("\(checkInRecord.allChanges.count) areas", systemImage: "slider.horizontal.3")
+
                         Label("View answers", systemImage: "chevron.right.circle")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
@@ -353,6 +356,15 @@ private struct TimelineRow: View {
             }
         }
         .padding(.vertical, 6)
+    }
+
+    private func checkInMetadataPill(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(entry.kind.tint)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(entry.kind.tint.opacity(0.10), in: Capsule())
     }
 
     private static let timeFormatter: DateFormatter = {
