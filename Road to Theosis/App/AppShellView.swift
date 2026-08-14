@@ -35,7 +35,12 @@ struct AppShellView: View {
             }
 
             NavigationStack {
-                TimelineView(backgroundTheme: backgroundThemeBinding, logEntries: $logEntries)
+                TimelineView(
+                    backgroundTheme: backgroundThemeBinding,
+                    logEntries: $logEntries,
+                    onUpdateEntry: { _ in },
+                    onDeleteEntry: deleteEntry
+                )
             }
             .tabItem {
                 Label("Timeline", systemImage: "clock.arrow.circlepath")
@@ -98,6 +103,17 @@ struct AppShellView: View {
         purityCalculationDate = max(purityCalculationDate, entry.occurredAt)
         logEntries.insert(entry, at: 0)
 
+        recalculatePurity()
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
+            modelContext.delete(storedLogEntry)
+            try? modelContext.save()
+        }
+
+        logEntries.removeAll { $0.id == entry.id }
+        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
         recalculatePurity()
     }
 
