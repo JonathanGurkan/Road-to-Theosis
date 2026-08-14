@@ -219,6 +219,21 @@ private struct CheckInSettingsPage: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    ForEach(CheckInQuestionnaire.presets) { preset in
+                        Button {
+                            preferences.checkInEnabledQuestionIDs = Set(preset.questionIDs)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(preset.title)
+                                Text(preset.detail)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Questions"), footer: Text("Fine-tune the active preset question by question.")) {
                     ForEach(CheckInQuestionnaire.questions) { question in
                         Toggle(isOn: questionBinding(for: question.id)) {
                             VStack(alignment: .leading, spacing: 2) {

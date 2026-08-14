@@ -110,7 +110,41 @@ struct CheckInRecord: Codable, Hashable {
     }
 }
 
+struct CheckInQuestionPreset: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let detail: String
+    let questionIDs: [String]
+}
+
 enum CheckInQuestionnaire {
+    static let presets: [CheckInQuestionPreset] = [
+        CheckInQuestionPreset(
+            id: "full",
+            title: "Full check-in",
+            detail: "Use every available question.",
+            questionIDs: defaultQuestionIDs
+        ),
+        CheckInQuestionPreset(
+            id: "shortWeekly",
+            title: "Short weekly check-in",
+            detail: "A balanced weekly pass through the core areas.",
+            questionIDs: ["prayer", "thoughts", "speech", "relationships", "discipline", "witness"]
+        ),
+        CheckInQuestionPreset(
+            id: "prayerPurity",
+            title: "Prayer and purity",
+            detail: "Focus on devotion, trust, thoughts, and sexual purity.",
+            questionIDs: ["prayer", "truth", "trust", "thoughts", "purity"]
+        ),
+        CheckInQuestionPreset(
+            id: "relationshipsSpeech",
+            title: "Relationships and speech",
+            detail: "Focus on words, conflict, mercy, and love toward others.",
+            questionIDs: ["speech", "relationships", "humility", "obedience", "witness"]
+        )
+    ]
+
     static var defaultQuestionIDs: [String] {
         questions.map(\.id)
     }
