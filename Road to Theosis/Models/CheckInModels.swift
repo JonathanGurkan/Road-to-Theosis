@@ -115,6 +115,11 @@ enum CheckInQuestionnaire {
         questions.map(\.id)
     }
 
+    static func questions(for enabledQuestionIDs: Set<String>) -> [CheckInQuestion] {
+        let filteredQuestions = questions.filter { enabledQuestionIDs.contains($0.id) }
+        return filteredQuestions.isEmpty ? questions : filteredQuestions
+    }
+
     static let answerOptions: [CheckInAnswerOption] = [
         .init(title: "Very steady", detail: "This area has been stable and healthy.", targetProgress: 0.94),
         .init(title: "Mostly steady", detail: "Small drift, but the pattern stayed strong.", targetProgress: 0.80),

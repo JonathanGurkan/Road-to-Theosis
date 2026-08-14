@@ -6,10 +6,13 @@ struct CheckInView: View {
     let onSave: (LogEntry) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedAnswerIndices: [Int?]
+    @Environment(AppPreferenceStore.self) private var preferences
+    @State private var selectedAnswerIndicesByQuestionID: [String: Int] = [:]
     @State private var stepIndex = 0
 
-    private let questions = CheckInQuestionnaire.questions
+    private var questions: [CheckInQuestion] {
+        CheckInQuestionnaire.questions(for: preferences.checkInEnabledQuestionIDs)
+    }
 
     init(
         backgroundTheme: Binding<AppBackgroundTheme>,
@@ -19,7 +22,6 @@ struct CheckInView: View {
         self._backgroundTheme = backgroundTheme
         self.dashboard = dashboard
         self.onSave = onSave
-        self._selectedAnswerIndices = State(initialValue: Array(repeating: nil, count: CheckInQuestionnaire.questions.count))
     }
 
     private var currentQuestion: CheckInQuestion {
@@ -27,8 +29,7 @@ struct CheckInView: View {
     }
 
     private var currentSelection: Int? {
-        guard selectedAnswerIndices.indices.contains(stepIndex) else { return nil }
-        return selectedAnswerIndices[stepIndex]
+        selectedAnswerIndicesByQuestionID[currentQuestion.id]
     }
 
     private var currentProgressLabel: String {
@@ -36,7 +37,7 @@ struct CheckInView: View {
     }
 
     private var completionCount: Int {
-        selectedAnswerIndices.compactMap { $0 }.count
+        questions.filter { selectedAnswerIndicesByQuestionID[$0.id] != nil }.count
     }
 
     private var isLastQuestion: Bool {
@@ -87,6 +88,9 @@ struct CheckInView: View {
             .safeAreaInset(edge: .bottom) {
                 footerBar
             }
+        }
+        .onChange(of: questions.count) { _, count in
+            stepIndex = min(stepIndex, max(count - 1, 0))
         }
     }
 
@@ -258,7 +262,7 @@ struct CheckInView: View {
         let isSelected = currentSelection == index
 
         Button {
-            selectedAnswerIndices[stepIndex] = index
+            selectedAnswerIndicesByQuestionID[currentQuestion.id] = index
         } label: {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -309,13 +313,13 @@ struct CheckInView: View {
     }
 
     private func saveCheckIn() {
-        let responses = questions.indices.compactMap { index -> CheckInResponse? in
-            guard let selectedIndex = selectedAnswerIndices[index] else {
+        let responses = questions.compactMap { question -> CheckInResponse? in
+            guard let selectedIndex = selectedAnswerIndicesByQuestionID[question.id] else {
                 return nil
             }
 
             return CheckInQuestionnaire.response(
-                for: questions[index],
+                for: question,
                 selectedOptionIndex: selectedIndex,
                 sections: dashboard.sections
             )
