@@ -10,6 +10,7 @@ final class StoredLogEntry {
     var note: String = ""
     var prayerMinutes: Int = 0
     var prayerDurationSeconds: Int = 0
+    var connectedSinsData: String = "[]"
     var progressPercentage: Int?
     var occurredAt: Date = Date()
     var createdAt: Date = Date()
@@ -23,6 +24,7 @@ final class StoredLogEntry {
         note: String,
         prayerMinutes: Int,
         prayerDurationSeconds: Int,
+        connectedSins: [ConnectedSinReference] = [],
         progressPercentage: Int?,
         occurredAt: Date,
         createdAt: Date = Date(),
@@ -35,6 +37,7 @@ final class StoredLogEntry {
         self.note = note
         self.prayerMinutes = prayerMinutes
         self.prayerDurationSeconds = prayerDurationSeconds
+        self.connectedSinsData = StoredLogEntry.encodeConnectedSins(connectedSins)
         self.progressPercentage = progressPercentage
         self.occurredAt = occurredAt
         self.createdAt = createdAt
@@ -50,9 +53,15 @@ final class StoredLogEntry {
             note: entry.note,
             prayerMinutes: entry.prayerMinutes,
             prayerDurationSeconds: entry.prayerDurationSeconds,
+            connectedSins: entry.connectedSins,
             progressPercentage: entry.progressPercentage,
             occurredAt: entry.occurredAt
         )
+    }
+
+    var connectedSins: [ConnectedSinReference] {
+        get { StoredLogEntry.decodeConnectedSins(from: connectedSinsData) }
+        set { connectedSinsData = StoredLogEntry.encodeConnectedSins(newValue) }
     }
 
     var entry: LogEntry {
@@ -64,8 +73,30 @@ final class StoredLogEntry {
             note: note,
             prayerMinutes: prayerMinutes,
             prayerDurationSeconds: prayerDurationSeconds,
+            connectedSins: connectedSins,
             progressPercentage: progressPercentage,
             occurredAt: occurredAt
         )
+    }
+
+    private static func encodeConnectedSins(_ connectedSins: [ConnectedSinReference]) -> String {
+        guard !connectedSins.isEmpty else { return "[]" }
+
+        do {
+            let data = try JSONEncoder().encode(connectedSins)
+            return String(decoding: data, as: UTF8.self)
+        } catch {
+            return "[]"
+        }
+    }
+
+    private static func decodeConnectedSins(from data: String) -> [ConnectedSinReference] {
+        guard let jsonData = data.data(using: .utf8), !jsonData.isEmpty else { return [] }
+
+        do {
+            return try JSONDecoder().decode([ConnectedSinReference].self, from: jsonData)
+        } catch {
+            return []
+        }
     }
 }

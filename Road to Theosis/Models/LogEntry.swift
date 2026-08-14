@@ -1,6 +1,19 @@
 import SwiftUI
 
 struct LogEntry: Codable, Identifiable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case kind
+        case sectionTitle
+        case sinTitle
+        case note
+        case prayerMinutes
+        case prayerDurationSeconds
+        case connectedSins
+        case progressPercentage
+        case occurredAt
+    }
+
     enum Kind: String, Codable, CaseIterable, Identifiable {
         case prayer
         case quickPrayer
@@ -77,6 +90,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
     let note: String
     let prayerMinutes: Int
     let prayerDurationSeconds: Int
+    let connectedSins: [ConnectedSinReference]
     let progressPercentage: Int?
     let occurredAt: Date
 
@@ -88,6 +102,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
         note: String,
         prayerMinutes: Int,
         prayerDurationSeconds: Int? = nil,
+        connectedSins: [ConnectedSinReference] = [],
         progressPercentage: Int? = nil,
         occurredAt: Date
     ) {
@@ -98,12 +113,65 @@ struct LogEntry: Codable, Identifiable, Equatable {
         self.note = note
         self.prayerMinutes = prayerMinutes
         self.prayerDurationSeconds = prayerDurationSeconds ?? max(prayerMinutes, 0) * 60
+        self.connectedSins = connectedSins
         self.progressPercentage = progressPercentage
         self.occurredAt = occurredAt
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        kind = try container.decode(Kind.self, forKey: .kind)
+        sectionTitle = try container.decode(String.self, forKey: .sectionTitle)
+        sinTitle = try container.decodeIfPresent(String.self, forKey: .sinTitle)
+        note = try container.decode(String.self, forKey: .note)
+        prayerMinutes = try container.decode(Int.self, forKey: .prayerMinutes)
+        prayerDurationSeconds = try container.decodeIfPresent(Int.self, forKey: .prayerDurationSeconds) ?? max(prayerMinutes, 0) * 60
+        connectedSins = try container.decodeIfPresent([ConnectedSinReference].self, forKey: .connectedSins) ?? []
+        progressPercentage = try container.decodeIfPresent(Int.self, forKey: .progressPercentage)
+        occurredAt = try container.decode(Date.self, forKey: .occurredAt)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(sectionTitle, forKey: .sectionTitle)
+        try container.encodeIfPresent(sinTitle, forKey: .sinTitle)
+        try container.encode(note, forKey: .note)
+        try container.encode(prayerMinutes, forKey: .prayerMinutes)
+        try container.encode(prayerDurationSeconds, forKey: .prayerDurationSeconds)
+        if !connectedSins.isEmpty {
+            try container.encode(connectedSins, forKey: .connectedSins)
+        }
+        try container.encodeIfPresent(progressPercentage, forKey: .progressPercentage)
+        try container.encode(occurredAt, forKey: .occurredAt)
+    }
+
     var prayerDurationText: String {
         Self.formatPrayerDuration(seconds: prayerDurationSeconds)
+    }
+
+    var prayerConnectedSins: [ConnectedSinReference] {
+        if !connectedSins.isEmpty {
+            return ConnectedSinReference.ordered(connectedSins)
+        }
+
+        guard isPrayerEntry, let sinTitle else {
+            return []
+        }
+
+        return [ConnectedSinReference(sectionTitle: sectionTitle, sinTitle: sinTitle)]
+    }
+
+    var prayerConnectedSinTitles: [String] {
+        prayerConnectedSins.map(\.displayTitle)
+    }
+
+    var isPrayerEntry: Bool {
+        kind == .prayer || kind == .quickPrayer
     }
 
     static func formatPrayerDuration(seconds: Int) -> String {
@@ -117,9 +185,9 @@ struct LogEntry: Codable, Identifiable, Equatable {
         let remainingSeconds = clampedSeconds % 60
 
         guard remainingSeconds > 0 else {
-            return "\(minutes)m"
+            return "\(minutes) min"
         }
 
-        return "\(minutes)m \(remainingSeconds)s"
+        return "\(minutes) min \(remainingSeconds)s"
     }
 }
