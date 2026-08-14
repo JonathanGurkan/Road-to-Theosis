@@ -244,7 +244,7 @@ private struct CheckInTimelineDetailView: View {
     }()
 }
 
-private struct TimelineRow: View {
+struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
 
