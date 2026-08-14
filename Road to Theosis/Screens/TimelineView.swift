@@ -329,7 +329,7 @@ private struct TimelineRow: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                HStack(spacing: 10) {
+                HStack(alignment: .center, spacing: 10) {
                     if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
                         Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
                             .font(.caption.weight(.semibold))
@@ -347,6 +347,8 @@ private struct TimelineRow: View {
                         Label("View answers", systemImage: "chevron.right.circle")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
                     } else {
                         Label(entry.kind.title, systemImage: entry.kind.symbolName)
                             .font(.caption.weight(.semibold))
@@ -362,6 +364,8 @@ private struct TimelineRow: View {
         Label(title, systemImage: systemImage)
             .font(.caption2.weight(.semibold))
             .foregroundStyle(entry.kind.tint)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(entry.kind.tint.opacity(0.10), in: Capsule())
