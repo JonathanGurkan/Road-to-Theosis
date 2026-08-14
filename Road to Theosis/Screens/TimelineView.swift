@@ -296,18 +296,14 @@ struct TimelineRow: View {
 
                 if let secondaryBadgeIconName {
                     Circle()
-                        .fill(entry.kind.tint.opacity(0.18))
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
-                        )
+                        .fill(entry.kind.tint)
                         .frame(width: secondaryBadgeSize, height: secondaryBadgeSize)
                         .shadow(color: .black.opacity(0.12), radius: 1.2, x: 0, y: 1)
                         .offset(x: badgeOverlapOffset.width, y: badgeOverlapOffset.height)
 
                     Image(systemName: secondaryBadgeIconName)
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(entry.kind.tint.opacity(0.95))
+                        .foregroundStyle(.white)
                         .frame(width: secondaryBadgeSize, height: secondaryBadgeSize)
                         .offset(x: badgeOverlapOffset.width, y: badgeOverlapOffset.height)
                 }
