@@ -6,6 +6,7 @@ import SwiftData
 final class AppPreferenceStore {
     var hasSeenWelcome = false
     var backgroundThemeRaw = AppBackgroundTheme.blood.rawValue
+    var checkInEnabledQuestionIDsRaw = CheckInQuestionnaire.defaultQuestionIDs.joined(separator: ",")
     var compactSinRows = false
     var customDefenseVersesBySin = "{}"
     var enableVerseInventory = true
@@ -18,17 +19,40 @@ final class AppPreferenceStore {
     var isGreetingWeatherEnabled = true
     var isICloudSyncEnabled = false
     var isPrayerTimingEnabled = true
+    var isWeeklyCheckInReminderEnabled = false
     var keepScreenAwakeDuringPrayer = true
+    var lastWeeklyCheckInReminderDay = ""
     var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     var purityStrictnessRaw = PurityStrictness.normal.rawValue
     var showRecentActivity = true
     var showVerseApplications = true
     var timelineRangeRaw = TimelineRange.always.rawValue
     var usesFocusProgressSliders = true
+    var weeklyCheckInHour = 9
+    var weeklyCheckInMinute = 0
+    var weeklyCheckInWeekdayRaw = CheckInWeekday.sunday.rawValue
 
     var backgroundTheme: AppBackgroundTheme {
         get { AppBackgroundTheme(rawValue: backgroundThemeRaw) ?? .blood }
         set { backgroundThemeRaw = newValue.rawValue }
+    }
+
+    var checkInEnabledQuestionIDs: Set<String> {
+        get {
+            let ids = checkInEnabledQuestionIDsRaw
+                .split(separator: ",")
+                .map(String.init)
+            return Set(ids.isEmpty ? CheckInQuestionnaire.defaultQuestionIDs : ids)
+        }
+        set {
+            let orderedIDs = CheckInQuestionnaire.defaultQuestionIDs.filter { newValue.contains($0) }
+            checkInEnabledQuestionIDsRaw = orderedIDs.joined(separator: ",")
+        }
+    }
+
+    var weeklyCheckInWeekday: CheckInWeekday {
+        get { CheckInWeekday(rawValue: weeklyCheckInWeekdayRaw) ?? .sunday }
+        set { weeklyCheckInWeekdayRaw = newValue.rawValue }
     }
 
     var focusSliderStyle: FocusSliderStyle {
@@ -67,6 +91,7 @@ final class AppPreferenceStore {
     var currentValues: [String: String] {
         [
             AppPreferenceKey.backgroundTheme.storageKey: backgroundThemeRaw,
+            AppPreferenceKey.checkInEnabledQuestionIDs.storageKey: checkInEnabledQuestionIDsRaw,
             AppPreferenceKey.compactSinRows.storageKey: String(compactSinRows),
             AppPreferenceKey.customDefenseVersesBySin.storageKey: customDefenseVersesBySin,
             AppPreferenceKey.enableVerseInventory.storageKey: String(enableVerseInventory),
@@ -80,13 +105,18 @@ final class AppPreferenceStore {
             AppPreferenceKey.isGreetingWeatherEnabled.storageKey: String(isGreetingWeatherEnabled),
             AppPreferenceKey.isICloudSyncEnabled.storageKey: String(isICloudSyncEnabled),
             AppPreferenceKey.isPrayerTimingEnabled.storageKey: String(isPrayerTimingEnabled),
+            AppPreferenceKey.isWeeklyCheckInReminderEnabled.storageKey: String(isWeeklyCheckInReminderEnabled),
             AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey: String(keepScreenAwakeDuringPrayer),
+            AppPreferenceKey.lastWeeklyCheckInReminderDay.storageKey: lastWeeklyCheckInReminderDay,
             AppPreferenceKey.prayerTimerCountingMode.storageKey: prayerTimerCountingModeRaw,
             AppPreferenceKey.purityStrictness.storageKey: purityStrictnessRaw,
             AppPreferenceKey.showRecentActivity.storageKey: String(showRecentActivity),
             AppPreferenceKey.showVerseApplications.storageKey: String(showVerseApplications),
             AppPreferenceKey.timelineRange.storageKey: timelineRangeRaw,
-            AppPreferenceKey.usesFocusProgressSliders.storageKey: String(usesFocusProgressSliders)
+            AppPreferenceKey.usesFocusProgressSliders.storageKey: String(usesFocusProgressSliders),
+            AppPreferenceKey.weeklyCheckInHour.storageKey: String(weeklyCheckInHour),
+            AppPreferenceKey.weeklyCheckInMinute.storageKey: String(weeklyCheckInMinute),
+            AppPreferenceKey.weeklyCheckInWeekday.storageKey: String(weeklyCheckInWeekdayRaw)
         ]
     }
 
@@ -132,6 +162,7 @@ final class AppPreferenceStore {
     func reset() {
         hasSeenWelcome = false
         backgroundThemeRaw = AppBackgroundTheme.blood.rawValue
+        checkInEnabledQuestionIDsRaw = CheckInQuestionnaire.defaultQuestionIDs.joined(separator: ",")
         compactSinRows = false
         customDefenseVersesBySin = "{}"
         enableVerseInventory = true
@@ -144,13 +175,18 @@ final class AppPreferenceStore {
         isGreetingWeatherEnabled = true
         isICloudSyncEnabled = false
         isPrayerTimingEnabled = true
+        isWeeklyCheckInReminderEnabled = false
         keepScreenAwakeDuringPrayer = true
+        lastWeeklyCheckInReminderDay = ""
         prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
         purityStrictnessRaw = PurityStrictness.normal.rawValue
         showRecentActivity = true
         showVerseApplications = true
         timelineRangeRaw = TimelineRange.always.rawValue
         usesFocusProgressSliders = true
+        weeklyCheckInHour = 9
+        weeklyCheckInMinute = 0
+        weeklyCheckInWeekdayRaw = CheckInWeekday.sunday.rawValue
     }
 
     func removeLegacyUserDefaults() {
@@ -165,6 +201,8 @@ final class AppPreferenceStore {
         switch key {
         case AppPreferenceKey.backgroundTheme.storageKey:
             backgroundThemeRaw = value
+        case AppPreferenceKey.checkInEnabledQuestionIDs.storageKey:
+            checkInEnabledQuestionIDsRaw = value
         case AppPreferenceKey.compactSinRows.storageKey:
             compactSinRows = value == "true"
         case AppPreferenceKey.customDefenseVersesBySin.storageKey:
@@ -191,8 +229,12 @@ final class AppPreferenceStore {
             isICloudSyncEnabled = value == "true"
         case AppPreferenceKey.isPrayerTimingEnabled.storageKey:
             isPrayerTimingEnabled = value == "true"
+        case AppPreferenceKey.isWeeklyCheckInReminderEnabled.storageKey:
+            isWeeklyCheckInReminderEnabled = value == "true"
         case AppPreferenceKey.keepScreenAwakeDuringPrayer.storageKey:
             keepScreenAwakeDuringPrayer = value == "true"
+        case AppPreferenceKey.lastWeeklyCheckInReminderDay.storageKey:
+            lastWeeklyCheckInReminderDay = value
         case AppPreferenceKey.prayerTimerCountingMode.storageKey:
             prayerTimerCountingModeRaw = value
         case AppPreferenceKey.purityStrictness.storageKey:
@@ -205,6 +247,12 @@ final class AppPreferenceStore {
             timelineRangeRaw = value
         case AppPreferenceKey.usesFocusProgressSliders.storageKey:
             usesFocusProgressSliders = value == "true"
+        case AppPreferenceKey.weeklyCheckInHour.storageKey:
+            weeklyCheckInHour = min(23, max(0, Int(value) ?? 9))
+        case AppPreferenceKey.weeklyCheckInMinute.storageKey:
+            weeklyCheckInMinute = min(59, max(0, Int(value) ?? 0))
+        case AppPreferenceKey.weeklyCheckInWeekday.storageKey:
+            weeklyCheckInWeekdayRaw = CheckInWeekday(rawValue: Int(value) ?? CheckInWeekday.sunday.rawValue)?.rawValue ?? CheckInWeekday.sunday.rawValue
         default:
             break
         }

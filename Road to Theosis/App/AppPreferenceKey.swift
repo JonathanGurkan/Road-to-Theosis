@@ -2,6 +2,7 @@ import Foundation
 
 enum AppPreferenceKey: String, CaseIterable {
     case backgroundTheme
+    case checkInEnabledQuestionIDs
     case compactSinRows
     case customDefenseVersesBySin
     case enableVerseInventory
@@ -13,15 +14,20 @@ enum AppPreferenceKey: String, CaseIterable {
     case hasSeenWelcome
     case homeScreenLayout
     case isGreetingWeatherEnabled
+    case isWeeklyCheckInReminderEnabled
     case isICloudSyncEnabled
     case isPrayerTimingEnabled
     case keepScreenAwakeDuringPrayer
+    case lastWeeklyCheckInReminderDay
     case prayerTimerCountingMode
     case purityStrictness
     case showRecentActivity
     case showVerseApplications
     case timelineRange
     case usesFocusProgressSliders
+    case weeklyCheckInHour
+    case weeklyCheckInMinute
+    case weeklyCheckInWeekday
 
     var storageKey: String { rawValue }
 
@@ -30,10 +36,12 @@ enum AppPreferenceKey: String, CaseIterable {
 
         switch self {
         case .backgroundTheme,
+             .checkInEnabledQuestionIDs,
              .customDefenseVersesBySin,
              .focusSliderStyle,
              .focusedSinReferences,
              .homeScreenLayout,
+             .lastWeeklyCheckInReminderDay,
              .prayerTimerCountingMode,
              .purityStrictness,
              .timelineRange:
@@ -43,6 +51,7 @@ enum AppPreferenceKey: String, CaseIterable {
              .hasSeenWelcome,
              .isGreetingWeatherEnabled,
              .isPrayerTimingEnabled,
+             .isWeeklyCheckInReminderEnabled,
              .keepScreenAwakeDuringPrayer,
              .showRecentActivity,
              .showVerseApplications,
@@ -57,6 +66,11 @@ enum AppPreferenceKey: String, CaseIterable {
              .greetingWeatherWarmThresholdCelsius:
             guard userDefaults.object(forKey: key) != nil else { return nil }
             return String(userDefaults.double(forKey: key))
+        case .weeklyCheckInHour,
+             .weeklyCheckInMinute,
+             .weeklyCheckInWeekday:
+            guard userDefaults.object(forKey: key) != nil else { return nil }
+            return String(userDefaults.integer(forKey: key))
         }
     }
 }

@@ -111,6 +111,10 @@ struct CheckInRecord: Codable, Hashable {
 }
 
 enum CheckInQuestionnaire {
+    static var defaultQuestionIDs: [String] {
+        questions.map(\.id)
+    }
+
     static let answerOptions: [CheckInAnswerOption] = [
         .init(title: "Very steady", detail: "This area has been stable and healthy.", targetProgress: 0.94),
         .init(title: "Mostly steady", detail: "Small drift, but the pattern stayed strong.", targetProgress: 0.80),
