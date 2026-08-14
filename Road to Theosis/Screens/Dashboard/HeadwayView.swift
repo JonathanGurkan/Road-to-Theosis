@@ -1356,12 +1356,7 @@ struct HeadwayView: View {
                     }
 
                     if let entry = entries.first {
-                        compactRecentActivityRow(
-                            title: entry.kind.title,
-                            detail: entry.sinTitle ?? entry.sectionTitle,
-                            icon: entry.kind.symbolName,
-                            tint: entry.kind.tint
-                        )
+                        compactRecentActivityRow(for: entry)
                     } else {
                         compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                     }
@@ -1388,7 +1383,7 @@ struct HeadwayView: View {
                             ForEach(entries) { entry in
                                 compactRecentActivityRow(
                                     title: entry.kind.title,
-                                    detail: entry.sinTitle ?? entry.sectionTitle,
+                                    detail: recentActivityDetail(for: entry),
                                     icon: entry.kind.symbolName,
                                     tint: entry.kind.tint
                                 )
@@ -1427,62 +1422,7 @@ struct HeadwayView: View {
                     } else {
                         VStack(spacing: 0) {
                             ForEach(entries) { entry in
-                                HStack(alignment: .top, spacing: 12) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(entry.kind.tint.opacity(0.14))
-
-                                        Image(systemName: entry.kind.symbolName)
-                                            .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(entry.kind.tint)
-                                    }
-                                    .frame(width: 34, height: 34)
-
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                            Text(entry.kind.title)
-                                                .font(.subheadline.weight(.semibold))
-                                                .foregroundStyle(.primary)
-
-                                            if let sinTitle = entry.sinTitle {
-                                                VStack(alignment: .leading, spacing: 0) {
-                                                    Text(sinTitle)
-                                                        .font(.caption.weight(.semibold))
-                                                        .foregroundStyle(.secondary)
-                                                        .lineLimit(1)
-
-                                                    Text(entry.sectionTitle)
-                                                        .font(.caption2)
-                                                        .foregroundStyle(.secondary)
-                                                }
-                                            } else {
-                                                Text(entry.sectionTitle)
-                                                    .font(.caption.weight(.semibold))
-                                                    .foregroundStyle(.secondary)
-                                            }
-
-                                            Spacer(minLength: 8)
-
-                                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-
-                                        if !entry.note.isEmpty {
-                                            Text(entry.note)
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-
-                                        if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
-                                            Text("\(entry.prayerDurationText) prayer")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(entry.kind.tint)
-                                        }
-                                    }
-                                }
-                                .padding(.vertical, 6)
+                                standardRecentActivityRow(for: entry)
 
                                 if entry.id != entries.last?.id {
                                     Divider()
@@ -1507,10 +1447,69 @@ struct HeadwayView: View {
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        compactRecentActivityRow(for: entry)
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(entry.kind.tint.opacity(0.14))
+
+                Image(systemName: entry.kind.symbolName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(entry.kind.tint)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(entry.kind.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    if let sinTitle = entry.sinTitle {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(sinTitle)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+
+                            Text(entry.sectionTitle)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        Text(entry.sectionTitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                let noteText = recentActivityNoteText(for: entry)
+                if !noteText.isEmpty {
+                    Text(noteText)
+                        .font(entry.kind == .checkIn ? .caption : .footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(entry.kind == .checkIn ? 2 : nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                recentActivityMetadataRow(for: entry)
+            }
+        }
+        .padding(.vertical, 6)
     }
 
     private func recentActivityDetail(for entry: LogEntry) -> String {
+        if let checkInRecord = entry.checkInRecord {
+            return "\(checkInRecord.responses.count) answers • \(checkInRecord.allChanges.count) areas"
+        }
+
         if let sinTitle = entry.sinTitle {
             return sinTitle
         }
@@ -1520,6 +1519,37 @@ struct HeadwayView: View {
         }
 
         return entry.sectionTitle
+    }
+
+    private func recentActivityNoteText(for entry: LogEntry) -> String {
+        entry.checkInRecord?.timelineSummaryText ?? entry.note
+    }
+
+    @ViewBuilder
+    private func recentActivityMetadataRow(for entry: LogEntry) -> some View {
+        if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
+            Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(entry.kind.tint)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        } else if let checkInRecord = entry.checkInRecord {
+            HStack(alignment: .center, spacing: 10) {
+                recentActivityMetadataPill("\(checkInRecord.responses.count) answers", systemImage: "checklist", tint: entry.kind.tint)
+                recentActivityMetadataPill("\(checkInRecord.allChanges.count) areas", systemImage: "slider.horizontal.3", tint: entry.kind.tint)
+            }
+        }
+    }
+
+    private func recentActivityMetadataPill(_ title: String, systemImage: String, tint: Color) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tint)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(tint.opacity(0.10), in: Capsule())
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {
