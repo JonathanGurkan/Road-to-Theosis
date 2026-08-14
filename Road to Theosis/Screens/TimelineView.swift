@@ -185,19 +185,25 @@ struct TimelineRow: View {
         entry.prayerConnectedSins
     }
 
-    private var detailChips: [String] {
-        var chips: [String] = []
+    private struct DetailChip: Identifiable, Hashable {
+        let id = UUID()
+        let text: String
+        let tint: Color?
+    }
+
+    private var detailChips: [DetailChip] {
+        var chips: [DetailChip] = []
 
         if subtitleText == nil, !entry.isPrayerEntry, let contextChip = contextChipText {
-            chips.append(contextChip)
+            chips.append(DetailChip(text: contextChip, tint: nil))
         }
 
         if showsPrayerTiming && entry.isPrayerEntry && entry.prayerDurationSeconds > 0 {
-            chips.append(entry.prayerDurationText)
+            chips.append(DetailChip(text: entry.prayerDurationText, tint: entry.kind.tint))
         }
 
         if let progressPercentage = entry.progressPercentage {
-            chips.append(SinFrequencyScale.label(for: progressPercentage))
+            chips.append(DetailChip(text: SinFrequencyScale.label(for: progressPercentage), tint: nil))
         }
 
         return chips
@@ -360,13 +366,13 @@ struct TimelineRow: View {
 
                 if !detailChips.isEmpty {
                     HStack(spacing: 6) {
-                        ForEach(detailChips, id: \.self) { chip in
-                            Text(chip)
+                        ForEach(detailChips) { chip in
+                            Text(chip.text)
                                 .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(chip.tint ?? .secondary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
-                                .background(Color.primary.opacity(0.08), in: Capsule())
+                                .background((chip.tint ?? .primary).opacity(chip.tint == nil ? 0.08 : 0.16), in: Capsule())
                         }
                     }
                 }
