@@ -409,9 +409,9 @@ struct HeadwayView: View {
                         Button {
                             startCheckIn()
                         } label: {
-                            Label("Check-in", systemImage: "checklist")
+                            Label("Check-in", systemImage: "calendar.badge.checkmark")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.red)
+                                .foregroundStyle(backgroundTheme.glowColor)
                         }
                         Button {
                             isShowingAddView.toggle()
