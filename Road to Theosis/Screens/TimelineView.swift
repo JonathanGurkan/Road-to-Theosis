@@ -263,11 +263,11 @@ struct TimelineRow: View {
     }
 
     private var primaryBadgeSize: CGFloat {
-        if entry.kind == .prayer || entry.kind == .quickPrayer || entry.kind == .note {
-            return 36
-        }
+        36
+    }
 
-        return relatedSinIconName == nil ? 24 : 36
+    private var primaryBadgeIconFont: Font {
+        .system(size: 20, weight: .semibold)
     }
 
     private var secondaryBadgeSize: CGFloat {
@@ -291,7 +291,7 @@ struct TimelineRow: View {
                     .shadow(color: .black.opacity(0.10), radius: 1.5, x: 0, y: 1)
 
                 Image(systemName: primaryBadgeIconName)
-                    .font(entry.kind == .prayer || entry.kind == .quickPrayer ? .system(size: 20, weight: .semibold) : (entry.kind == .note ? .headline.weight(.semibold) : (relatedSinIconName == nil ? .caption2.weight(.semibold) : .headline.weight(.semibold))))
+                    .font(primaryBadgeIconFont)
                     .foregroundStyle(entry.kind.tint)
 
                 if let secondaryBadgeIconName {
