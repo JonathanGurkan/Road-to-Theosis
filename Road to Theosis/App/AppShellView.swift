@@ -3,6 +3,7 @@ import SwiftUI
 
 struct AppShellView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \StoredLogEntry.occurredAt, order: .reverse) private var storedLogEntries: [StoredLogEntry]
     @Query(sort: \StoredAppPreference.updatedAt, order: .reverse) private var storedPreferences: [StoredAppPreference]
     @State private var preferences = AppPreferenceStore()
@@ -10,6 +11,8 @@ struct AppShellView: View {
     @State private var logEntries: [LogEntry] = []
     @State private var purityCalculationDate = Date()
     @State private var isShowingWelcome = false
+    @State private var isShowingWeeklyCheckIn = false
+    private let weeklyCheckInReminderService = WeeklyCheckInReminderService()
 
     private var backgroundThemeBinding: Binding<AppBackgroundTheme> {
         Binding {
@@ -73,6 +76,13 @@ struct AppShellView: View {
                 preferences.hasSeenWelcome = true
             }
         }
+        .fullScreenCover(isPresented: $isShowingWeeklyCheckIn) {
+            CheckInView(
+                backgroundTheme: backgroundThemeBinding,
+                dashboard: dashboard,
+                onSave: saveEntry
+            )
+        }
         .task {
             syncLogEntriesFromStore()
             preferences.load(from: storedPreferences)
@@ -80,8 +90,18 @@ struct AppShellView: View {
                 preferences.removeLegacyUserDefaults()
             }
             recalculatePurity()
+            await notifyForWeeklyCheckInIfDue()
             guard !preferences.hasSeenWelcome else { return }
             isShowingWelcome = true
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task {
+                await notifyForWeeklyCheckInIfDue()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationTapped)) { _ in
+            isShowingWeeklyCheckIn = true
         }
         .onChange(of: storedLogEntries.map(\.updatedAt)) { _, _ in
             syncLogEntriesFromStore()
@@ -169,6 +189,10 @@ struct AppShellView: View {
 
     private func recalculatePurity() {
         dashboard.rebuild(from: logEntries, now: purityCalculationDate, strictness: preferences.purityStrictness)
+    }
+
+    private func notifyForWeeklyCheckInIfDue() async {
+        await weeklyCheckInReminderService.notifyIfDue(preferences: preferences)
     }
 }
 
