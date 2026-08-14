@@ -11,6 +11,7 @@ final class StoredLogEntry {
     var prayerMinutes: Int = 0
     var prayerDurationSeconds: Int = 0
     var progressPercentage: Int?
+    var checkInRecordJSON: String?
     var occurredAt: Date = Date()
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
@@ -24,6 +25,7 @@ final class StoredLogEntry {
         prayerMinutes: Int,
         prayerDurationSeconds: Int,
         progressPercentage: Int?,
+        checkInRecordJSON: String? = nil,
         occurredAt: Date,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -36,6 +38,7 @@ final class StoredLogEntry {
         self.prayerMinutes = prayerMinutes
         self.prayerDurationSeconds = prayerDurationSeconds
         self.progressPercentage = progressPercentage
+        self.checkInRecordJSON = checkInRecordJSON
         self.occurredAt = occurredAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -51,6 +54,7 @@ final class StoredLogEntry {
             prayerMinutes: entry.prayerMinutes,
             prayerDurationSeconds: entry.prayerDurationSeconds,
             progressPercentage: entry.progressPercentage,
+            checkInRecordJSON: entry.checkInRecordJSON,
             occurredAt: entry.occurredAt
         )
     }
@@ -65,6 +69,7 @@ final class StoredLogEntry {
             prayerMinutes: prayerMinutes,
             prayerDurationSeconds: prayerDurationSeconds,
             progressPercentage: progressPercentage,
+            checkInRecordJSON: checkInRecordJSON,
             occurredAt: occurredAt
         )
     }

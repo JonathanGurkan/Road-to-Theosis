@@ -97,6 +97,8 @@ struct DashboardViewModel {
             activeStreak = 0
         case .progressUpdate, .sliderProgressUpdate:
             updateLoggedSinProgress(entry)
+        case .checkIn:
+            break
         }
     }
 
