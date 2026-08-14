@@ -23,6 +23,9 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
+    @State private var isShowingCheckIn = false
+    @State private var greetingWeather: GreetingWeather?
+    private let greetingWeatherService = GreetingWeatherService()
     private let maxFocusedSinCount = 3
 
     private var isDaytime: Bool {
@@ -124,6 +127,19 @@ struct HeadwayView: View {
 
     private func recentEntries(limit: Int) -> [LogEntry] {
         Array(logEntries.sorted { $0.occurredAt > $1.occurredAt }.prefix(limit))
+    }
+
+    private func refreshGreetingWeather() async {
+        guard preferences.isGreetingWeatherEnabled else {
+            greetingWeather = nil
+            return
+        }
+
+        greetingWeather = await greetingWeatherService.currentWeather(thresholds: greetingWeatherThresholds)
+    }
+
+    private func startCheckIn() {
+        isShowingCheckIn = true
     }
 
     private func simulateDailyProgress() {
@@ -396,11 +412,11 @@ struct HeadwayView: View {
                 } else {
                     HStack(spacing: 12) {
                         Button {
-                            simulateDailyProgress()
+                            startCheckIn()
                         } label: {
-                            Text("Sim Day")
+                            Label("Check-in", systemImage: "calendar.badge.checkmark")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.red)
+                                .foregroundStyle(backgroundTheme.glowColor)
                         }
                         Button {
                             isShowingAddView.toggle()
@@ -445,6 +461,15 @@ struct HeadwayView: View {
             ProgressLogSheetView(backgroundTheme: $backgroundTheme, draft: draft) { note in
                 saveProgressLog(draft, note: note)
             }
+        }
+        .fullScreenCover(isPresented: $isShowingCheckIn) {
+            CheckInView(
+                backgroundTheme: $backgroundTheme,
+                dashboard: dashboard,
+                onSave: { entry in
+                    saveEntry(entry)
+                }
+            )
         }
     }
 
@@ -728,7 +753,7 @@ struct HeadwayView: View {
                     .padding(.leading, 38)
             }
 
-            overviewStackedStat(title: "Check-ins", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
+            overviewStackedStat(title: "Loggings", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
 
             Divider()
                 .padding(.leading, 38)
@@ -1336,12 +1361,7 @@ struct HeadwayView: View {
                     }
 
                     if let entry = entries.first {
-                        compactRecentActivityRow(
-                            title: entry.kind.title,
-                            detail: entry.sinTitle ?? entry.sectionTitle,
-                            icon: entry.kind.symbolName,
-                            tint: entry.kind.tint
-                        )
+                        compactRecentActivityRow(for: entry)
                     } else {
                         compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                     }
@@ -1366,12 +1386,7 @@ struct HeadwayView: View {
                             compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                         } else {
                             ForEach(entries) { entry in
-                                compactRecentActivityRow(
-                                    title: entry.kind.title,
-                                    detail: entry.sinTitle ?? entry.sectionTitle,
-                                    icon: entry.kind.symbolName,
-                                    tint: entry.kind.tint
-                                )
+                                compactRecentActivityRow(for: entry)
                             }
                         }
                     }
@@ -1407,62 +1422,7 @@ struct HeadwayView: View {
                     } else {
                         VStack(spacing: 0) {
                             ForEach(entries) { entry in
-                                HStack(alignment: .top, spacing: 12) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(entry.kind.tint.opacity(0.14))
-
-                                        Image(systemName: entry.kind.symbolName)
-                                            .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(entry.kind.tint)
-                                    }
-                                    .frame(width: 34, height: 34)
-
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                            Text(entry.kind.title)
-                                                .font(.subheadline.weight(.semibold))
-                                                .foregroundStyle(.primary)
-
-                                            if let sinTitle = entry.sinTitle {
-                                                VStack(alignment: .leading, spacing: 0) {
-                                                    Text(sinTitle)
-                                                        .font(.caption.weight(.semibold))
-                                                        .foregroundStyle(.secondary)
-                                                        .lineLimit(1)
-
-                                                    Text(entry.sectionTitle)
-                                                        .font(.caption2)
-                                                        .foregroundStyle(.secondary)
-                                                }
-                                            } else {
-                                                Text(entry.sectionTitle)
-                                                    .font(.caption.weight(.semibold))
-                                                    .foregroundStyle(.secondary)
-                                            }
-
-                                            Spacer(minLength: 8)
-
-                                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-
-                                        if !entry.note.isEmpty {
-                                            Text(entry.note)
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-
-                                        if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
-                                            Text("\(entry.prayerDurationText) prayer")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(entry.kind.tint)
-                                        }
-                                    }
-                                }
-                                .padding(.vertical, 6)
+                                standardRecentActivityRow(for: entry)
 
                                 if entry.id != entries.last?.id {
                                     Divider()

@@ -7,6 +7,7 @@ struct TimelineView: View {
     let onUpdateEntry: (LogEntry) -> Void
     let onDeleteEntry: (LogEntry) -> Void
     @State private var editingEntry: LogEntry?
+    @State private var selectedCheckInEntry: LogEntry?
 
     private var timelineRange: TimelineRange {
         preferences.timelineRange
@@ -20,7 +21,7 @@ struct TimelineView: View {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     headerCard
 
-                    if logEntries.isEmpty {
+                    if groupedEntries.isEmpty {
                         emptyState
                     } else {
                         ForEach(groupedEntries, id: \.date) { group in
@@ -35,6 +36,11 @@ struct TimelineView: View {
         }
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(item: $selectedCheckInEntry) { entry in
+            if let record = entry.checkInRecord {
+                CheckInTimelineDetailView(backgroundTheme: backgroundTheme, entry: entry, record: record)
+            }
+        }
     }
 
     private var headerCard: some View {
@@ -61,7 +67,7 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(preferences.isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
+                Text(emptyStateMessage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -95,7 +101,12 @@ struct TimelineView: View {
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
                         TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                guard entry.checkInRecord != nil else { return }
+                                selectedCheckInEntry = entry
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 onDeleteEntry(entry)
                             } label: {
@@ -114,8 +125,10 @@ struct TimelineView: View {
     }
 
     private var groupedEntries: [(date: Date, entries: [LogEntry])] {
-        let sortedEntries = logEntries.sorted { $0.occurredAt > $1.occurredAt }
-        let grouped = Dictionary(grouping: sortedEntries) { Calendar.current.startOfDay(for: $0.occurredAt) }
+        let visibleEntries = logEntries
+            .filter { timelineRange.contains($0.occurredAt) }
+            .sorted { $0.occurredAt > $1.occurredAt }
+        let grouped = Dictionary(grouping: visibleEntries) { Calendar.current.startOfDay(for: $0.occurredAt) }
 
         return grouped
             .map { (date: $0.key, entries: $0.value) }
@@ -129,12 +142,118 @@ struct TimelineView: View {
     }()
 }
 
+private struct CheckInTimelineDetailView: View {
+    let backgroundTheme: AppBackgroundTheme
+    let entry: LogEntry
+    let record: CheckInRecord
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppBackgroundView(theme: backgroundTheme)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AppSurfaceCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Check-in detail")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .textCase(.uppercase)
+
+                                Text(Self.dateFormatter.string(from: record.completedAt))
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(.primary)
+
+                                Text("\(record.responses.count) answers recalibrated \(record.allChanges.count) purity areas.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        ForEach(record.responses) { response in
+                            responseCard(response)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle("Check-in")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func responseCard(_ response: CheckInResponse) -> some View {
+        AppSurfaceCard(contentPadding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(response.questionShortTitle)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 8)
+                    Text(response.answerTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(backgroundTheme.glowColor)
+                }
+
+                Text(response.questionPrompt)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                ForEach(response.changes) { change in
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(change.sinTitle)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Text(change.sectionTitle)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 8)
+                        Text("\(SinFrequencyScale.percentage(for: change.targetProgress))%")
+                            .font(.caption.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(backgroundTheme.glowColor)
+                    }
+                }
+            }
+        }
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        formatter.timeStyle = .short
+        return formatter
+    }()
+}
+
 struct TimelineRow: View {
     let entry: LogEntry
     let showsPrayerTiming: Bool
 
     private var timeText: String {
         Self.timeFormatter.string(from: entry.occurredAt)
+    }
+
+    private var noteText: String {
+        entry.checkInRecord?.timelineSummaryText ?? entry.note
     }
 
     var body: some View {
@@ -202,16 +321,15 @@ struct TimelineRow: View {
                     .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
 
-                if !entry.note.isEmpty {
-                  
-                } else if !entry.note.isEmpty {
-                    Text(entry.note)
-                        .font(.subheadline)
+                if !noteText.isEmpty {
+                    Text(noteText)
+                        .font(entry.kind == .checkIn ? .caption : .subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(entry.kind == .checkIn ? 2 : nil)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                HStack(spacing: 10) {
+                HStack(alignment: .center, spacing: 10) {
                     if showsPrayerTiming && entry.prayerDurationSeconds > 0 {
                         Label("\(entry.prayerDurationText) prayer", systemImage: "hands.sparkles")
                             .font(.caption.weight(.semibold))
@@ -222,6 +340,15 @@ struct TimelineRow: View {
                         Text("Purity set to \(SinFrequencyScale.label(for: progressPercentage))")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(entry.kind.tint)
+                    } else if let checkInRecord = entry.checkInRecord {
+                        checkInMetadataPill("\(checkInRecord.responses.count) answers", systemImage: "checklist")
+                        checkInMetadataPill("\(checkInRecord.allChanges.count) areas", systemImage: "slider.horizontal.3")
+
+                        Label("View answers", systemImage: "chevron.right.circle")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(entry.kind.tint)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
                     } else {
                         Label(entry.kind.title, systemImage: entry.kind.symbolName)
                             .font(.caption.weight(.semibold))
@@ -231,6 +358,17 @@ struct TimelineRow: View {
             }
         }
         .padding(.vertical, 6)
+    }
+
+    private func checkInMetadataPill(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(entry.kind.tint)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(entry.kind.tint.opacity(0.10), in: Capsule())
     }
 
     private static let timeFormatter: DateFormatter = {

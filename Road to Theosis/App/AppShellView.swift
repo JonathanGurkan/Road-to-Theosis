@@ -3,6 +3,7 @@ import SwiftUI
 
 struct AppShellView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \StoredLogEntry.occurredAt, order: .reverse) private var storedLogEntries: [StoredLogEntry]
     @Query(sort: \StoredAppPreference.updatedAt, order: .reverse) private var storedPreferences: [StoredAppPreference]
     @State private var preferences = AppPreferenceStore()
@@ -10,6 +11,8 @@ struct AppShellView: View {
     @State private var logEntries: [LogEntry] = []
     @State private var purityCalculationDate = Date()
     @State private var isShowingWelcome = false
+    @State private var isShowingWeeklyCheckIn = false
+    private let weeklyCheckInReminderService = WeeklyCheckInReminderService()
 
     private var backgroundThemeBinding: Binding<AppBackgroundTheme> {
         Binding {
@@ -38,7 +41,7 @@ struct AppShellView: View {
                 TimelineView(
                     backgroundTheme: backgroundThemeBinding,
                     logEntries: $logEntries,
-                    onUpdateEntry: { _ in },
+                    onUpdateEntry: updateEntry,
                     onDeleteEntry: deleteEntry
                 )
             }
@@ -73,6 +76,13 @@ struct AppShellView: View {
                 preferences.hasSeenWelcome = true
             }
         }
+        .fullScreenCover(isPresented: $isShowingWeeklyCheckIn) {
+            CheckInView(
+                backgroundTheme: backgroundThemeBinding,
+                dashboard: dashboard,
+                onSave: saveEntry
+            )
+        }
         .task {
             syncLogEntriesFromStore()
             preferences.load(from: storedPreferences)
@@ -80,8 +90,24 @@ struct AppShellView: View {
                 preferences.removeLegacyUserDefaults()
             }
             recalculatePurity()
+            await notifyForWeeklyCheckInIfDue()
             guard !preferences.hasSeenWelcome else { return }
             isShowingWelcome = true
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task {
+                await notifyForWeeklyCheckInIfDue()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationTapped)) { _ in
+            preferences.weeklyCheckInSnoozedUntil = 0
+            isShowingWeeklyCheckIn = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationSnoozed)) { _ in
+            Task {
+                await weeklyCheckInReminderService.snooze(preferences: preferences)
+            }
         }
         .onChange(of: storedLogEntries.map(\.updatedAt)) { _, _ in
             syncLogEntriesFromStore()
@@ -106,20 +132,38 @@ struct AppShellView: View {
         recalculatePurity()
     }
 
-    private func deleteEntry(_ entry: LogEntry) {
-        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
-            modelContext.delete(storedLogEntry)
-            try? modelContext.save()
-        }
-
-        logEntries.removeAll { $0.id == entry.id }
-        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
-        recalculatePurity()
-    }
-
     private func syncLogEntriesFromStore() {
         logEntries = storedLogEntries.map(\.entry)
         purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+    }
+
+    private func updateEntry(_ entry: LogEntry) {
+        guard let storedEntry = storedLogEntries.first(where: { $0.id == entry.id }) else { return }
+
+        storedEntry.kindRawValue = entry.kind.rawValue
+        storedEntry.sectionTitle = entry.sectionTitle
+        storedEntry.sinTitle = entry.sinTitle
+        storedEntry.note = entry.note
+        storedEntry.prayerMinutes = entry.prayerMinutes
+        storedEntry.prayerDurationSeconds = entry.prayerDurationSeconds
+        storedEntry.progressPercentage = entry.progressPercentage
+        storedEntry.checkInRecordJSON = entry.checkInRecordJSON
+        storedEntry.occurredAt = entry.occurredAt
+        storedEntry.updatedAt = Date()
+        try? modelContext.save()
+
+        syncLogEntriesFromStore()
+        recalculatePurity()
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        guard let storedEntry = storedLogEntries.first(where: { $0.id == entry.id }) else { return }
+
+        modelContext.delete(storedEntry)
+        try? modelContext.save()
+
+        syncLogEntriesFromStore()
+        recalculatePurity()
     }
 
     private func persistEntry(_ entry: LogEntry) {
@@ -151,6 +195,10 @@ struct AppShellView: View {
 
     private func recalculatePurity() {
         dashboard.rebuild(from: logEntries, now: purityCalculationDate, strictness: preferences.purityStrictness)
+    }
+
+    private func notifyForWeeklyCheckInIfDue() async {
+        await weeklyCheckInReminderService.notifyIfDue(preferences: preferences)
     }
 }
 

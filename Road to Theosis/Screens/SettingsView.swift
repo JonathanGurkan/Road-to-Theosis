@@ -114,6 +114,22 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    CheckInSettingsPage(
+                        backgroundTheme: $backgroundTheme,
+                        dashboard: dashboard,
+                        onSaveEntry: onSaveEntry
+                    )
+                } label: {
+                    SettingsLinkRow(
+                        title: "Check-in",
+                        subtitle: "Weekly reminder and questionnaire",
+                        systemImage: "calendar.badge.checkmark"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -154,6 +170,187 @@ private struct SettingsLinkRow: View {
         }
         .contentShape(Rectangle())
         .padding(.vertical, 2)
+    }
+}
+
+private struct CheckInSettingsPage: View {
+    @Binding var backgroundTheme: AppBackgroundTheme
+    @Environment(AppPreferenceStore.self) private var preferences
+    let dashboard: DashboardViewModel
+    let onSaveEntry: (LogEntry) -> Void
+    @State private var isShowingCheckIn = false
+
+    private var enabledQuestionCount: Int {
+        preferences.checkInEnabledQuestionIDs.count
+    }
+
+    private var snoozeUntilDate: Date? {
+        guard preferences.weeklyCheckInSnoozedUntil > Date().timeIntervalSince1970 else {
+            return nil
+        }
+
+        return Date(timeIntervalSince1970: preferences.weeklyCheckInSnoozedUntil)
+    }
+
+    private var reminderTimeBinding: Binding<Date> {
+        Binding {
+            var components = DateComponents()
+            components.hour = preferences.weeklyCheckInHour
+            components.minute = preferences.weeklyCheckInMinute
+            return Calendar.current.date(from: components) ?? Date()
+        } set: { newValue in
+            let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+            preferences.weeklyCheckInHour = components.hour ?? 9
+            preferences.weeklyCheckInMinute = components.minute ?? 0
+        }
+    }
+
+    var body: some View {
+        @Bindable var preferences = preferences
+        ZStack {
+            AppBackgroundView(theme: backgroundTheme)
+
+            List {
+                Section(header: Text("Check-in"), footer: Text("Start a check-in whenever you want. The weekly reminder uses the same questionnaire settings below.")) {
+                    Button {
+                        isShowingCheckIn = true
+                    } label: {
+                        Label("Start Check-in", systemImage: "calendar.badge.checkmark")
+                    }
+                }
+
+                Section(header: Text("Questionnaire"), footer: Text("Choose which questions appear. At least one question stays enabled.")) {
+                    HStack {
+                        Text("Active questions")
+                        Spacer()
+                        Text("\(enabledQuestionCount) of \(CheckInQuestionnaire.questions.count)")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ForEach(CheckInQuestionnaire.presets) { preset in
+                        Button {
+                            preferences.checkInEnabledQuestionIDs = Set(preset.questionIDs)
+                        } label: {
+                            QuestionnairePresetRow(
+                                preset: preset,
+                                isSelected: isPresetSelected(preset),
+                                tint: backgroundTheme.glowColor
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                Section(header: Text("Questions"), footer: Text("Fine-tune the active preset question by question.")) {
+                    ForEach(CheckInQuestionnaire.questions) { question in
+                        Toggle(isOn: questionBinding(for: question.id)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(question.shortTitle)
+                                Text(question.prompt)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Weekly Reminder"), footer: Text("When the app opens on the selected day, it sends a check-in notification instead of opening the check-in immediately.")) {
+                    Toggle("Weekly check-in reminder", isOn: $preferences.isWeeklyCheckInReminderEnabled)
+
+                    if preferences.isWeeklyCheckInReminderEnabled {
+                        Picker("Day", selection: $preferences.weeklyCheckInWeekday) {
+                            ForEach(CheckInWeekday.allCases) { weekday in
+                                Text(weekday.title).tag(weekday)
+                            }
+                        }
+
+                        DatePicker("Time", selection: reminderTimeBinding, displayedComponents: .hourAndMinute)
+
+                        if let snoozeUntilDate {
+                            HStack {
+                                Text("Snoozed until")
+                                Spacer()
+                                Text(Self.snoozeFormatter.string(from: snoozeUntilDate))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Button {
+                                preferences.weeklyCheckInSnoozedUntil = 0
+                            } label: {
+                                Label("Clear Snooze", systemImage: "bell")
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Check-in")
+        .navigationBarTitleDisplayMode(.large)
+        .fullScreenCover(isPresented: $isShowingCheckIn) {
+            CheckInView(
+                backgroundTheme: $backgroundTheme,
+                dashboard: dashboard,
+                onSave: onSaveEntry
+            )
+        }
+    }
+
+    private static let snoozeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    private func isPresetSelected(_ preset: CheckInQuestionPreset) -> Bool {
+        preferences.checkInEnabledQuestionIDs == Set(preset.questionIDs)
+    }
+
+    private func questionBinding(for questionID: String) -> Binding<Bool> {
+        Binding {
+            preferences.checkInEnabledQuestionIDs.contains(questionID)
+        } set: { isEnabled in
+            var ids = preferences.checkInEnabledQuestionIDs
+            if isEnabled {
+                ids.insert(questionID)
+            } else if ids.count > 1 {
+                ids.remove(questionID)
+            }
+            preferences.checkInEnabledQuestionIDs = ids
+        }
+    }
+}
+
+private struct QuestionnairePresetRow: View {
+    let preset: CheckInQuestionPreset
+    let isSelected: Bool
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(preset.title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(preset.detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(isSelected ? tint : Color.secondary.opacity(0.45))
+                .accessibilityHidden(true)
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
     }
 }
 
@@ -513,8 +710,6 @@ private struct AboutSettingsPage: View {
     @State private var hasChangedICloudSyncMode = false
     @State private var isShowingDeleteAllDataConfirmation = false
     private let openMeteoURL = URL(string: "https://open-meteo.com/")
-    @AppStorage(AppPersistence.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
-
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
@@ -561,7 +756,7 @@ private struct AboutSettingsPage: View {
                     } label: {
                         Text("Show Onboarding")
                     }
-                    
+
                 }
 
                 Section(header: Text("iCloud"), footer: iCloudFooterText(hasChangedSyncMode: hasChangedICloudSyncMode)) {
