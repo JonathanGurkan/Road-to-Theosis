@@ -20,7 +20,7 @@ struct TimelineView: View {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     headerCard
 
-                    if logEntries.isEmpty {
+                    if groupedEntries.isEmpty {
                         emptyState
                     } else {
                         ForEach(groupedEntries, id: \.date) { group in
@@ -61,7 +61,7 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("No log entries yet")
                     .font(.headline.weight(.semibold))
-                Text(isPrayerTimingEnabled ? "Your resistance, losses, notes, and prayer time will appear here once you start logging." : "Your resistance, losses, notes, and prayers will appear here once you start logging.")
+                Text(emptyStateMessage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -94,10 +94,8 @@ struct TimelineView: View {
 
                 VStack(spacing: 0) {
                     ForEach(group.entries) { entry in
-                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
-                            editingEntry = entry
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 onDeleteEntry(entry)
                             } label: {
@@ -116,8 +114,10 @@ struct TimelineView: View {
     }
 
     private var groupedEntries: [(date: Date, entries: [LogEntry])] {
-        let sortedEntries = logEntries.sorted { $0.occurredAt > $1.occurredAt }
-        let grouped = Dictionary(grouping: sortedEntries) { Calendar.current.startOfDay(for: $0.occurredAt) }
+        let visibleEntries = logEntries
+            .filter { timelineRange.contains($0.occurredAt) }
+            .sorted { $0.occurredAt > $1.occurredAt }
+        let grouped = Dictionary(grouping: visibleEntries) { Calendar.current.startOfDay(for: $0.occurredAt) }
 
         return grouped
             .map { (date: $0.key, entries: $0.value) }
@@ -205,8 +205,6 @@ private struct TimelineRow: View {
                 }
 
                 if !entry.note.isEmpty {
-                  
-                } else if !entry.note.isEmpty {
                     Text(entry.note)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -272,7 +270,9 @@ private struct TimelineRow: View {
                     progressPercentage: 62,
                     occurredAt: Date().addingTimeInterval(-7200)
                 )
-            ])
+            ]),
+            onUpdateEntry: { _ in },
+            onDeleteEntry: { _ in }
         )
     }
     .environment(AppPreferenceStore())

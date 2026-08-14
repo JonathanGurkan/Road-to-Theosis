@@ -35,7 +35,12 @@ struct AppShellView: View {
             }
 
             NavigationStack {
-                TimelineView(backgroundTheme: backgroundThemeBinding, logEntries: $logEntries)
+                TimelineView(
+                    backgroundTheme: backgroundThemeBinding,
+                    logEntries: $logEntries,
+                    onUpdateEntry: updateEntry,
+                    onDeleteEntry: deleteEntry
+                )
             }
             .tabItem {
                 Label("Timeline", systemImage: "clock.arrow.circlepath")
@@ -104,6 +109,35 @@ struct AppShellView: View {
     private func syncLogEntriesFromStore() {
         logEntries = storedLogEntries.map(\.entry)
         purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+    }
+
+    private func updateEntry(_ entry: LogEntry) {
+        guard let storedEntry = storedLogEntries.first(where: { $0.id == entry.id }) else { return }
+
+        storedEntry.kindRawValue = entry.kind.rawValue
+        storedEntry.sectionTitle = entry.sectionTitle
+        storedEntry.sinTitle = entry.sinTitle
+        storedEntry.note = entry.note
+        storedEntry.prayerMinutes = entry.prayerMinutes
+        storedEntry.prayerDurationSeconds = entry.prayerDurationSeconds
+        storedEntry.progressPercentage = entry.progressPercentage
+        storedEntry.checkInRecordJSON = entry.checkInRecordJSON
+        storedEntry.occurredAt = entry.occurredAt
+        storedEntry.updatedAt = Date()
+        try? modelContext.save()
+
+        syncLogEntriesFromStore()
+        recalculatePurity()
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        guard let storedEntry = storedLogEntries.first(where: { $0.id == entry.id }) else { return }
+
+        modelContext.delete(storedEntry)
+        try? modelContext.save()
+
+        syncLogEntriesFromStore()
+        recalculatePurity()
     }
 
     private func persistEntry(_ entry: LogEntry) {
