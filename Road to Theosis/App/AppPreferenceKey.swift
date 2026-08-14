@@ -7,6 +7,9 @@ enum AppPreferenceKey: String, CaseIterable {
     case enableVerseInventory
     case focusSliderStyle
     case focusedSinReferences
+    case greetingWeatherBreezyThresholdKilometersPerHour
+    case greetingWeatherColdThresholdCelsius
+    case greetingWeatherWarmThresholdCelsius
     case hasSeenWelcome
     case homeScreenLayout
     case isGreetingWeatherEnabled
@@ -17,6 +20,7 @@ enum AppPreferenceKey: String, CaseIterable {
     case purityStrictness
     case showRecentActivity
     case showVerseApplications
+    case timelineRange
     case usesFocusProgressSliders
 
     var storageKey: String { rawValue }
