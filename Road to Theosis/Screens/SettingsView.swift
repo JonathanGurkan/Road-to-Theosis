@@ -184,6 +184,14 @@ private struct CheckInSettingsPage: View {
         preferences.checkInEnabledQuestionIDs.count
     }
 
+    private var snoozeUntilDate: Date? {
+        guard preferences.weeklyCheckInSnoozedUntil > Date().timeIntervalSince1970 else {
+            return nil
+        }
+
+        return Date(timeIntervalSince1970: preferences.weeklyCheckInSnoozedUntil)
+    }
+
     private var reminderTimeBinding: Binding<Date> {
         Binding {
             var components = DateComponents()
@@ -257,6 +265,21 @@ private struct CheckInSettingsPage: View {
                         }
 
                         DatePicker("Time", selection: reminderTimeBinding, displayedComponents: .hourAndMinute)
+
+                        if let snoozeUntilDate {
+                            HStack {
+                                Text("Snoozed until")
+                                Spacer()
+                                Text(Self.snoozeFormatter.string(from: snoozeUntilDate))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Button {
+                                preferences.weeklyCheckInSnoozedUntil = 0
+                            } label: {
+                                Label("Clear Snooze", systemImage: "bell")
+                            }
+                        }
                     }
                 }
             }
@@ -274,6 +297,12 @@ private struct CheckInSettingsPage: View {
             )
         }
     }
+
+    private static let snoozeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     private func questionBinding(for questionID: String) -> Binding<Bool> {
         Binding {

@@ -3,14 +3,20 @@ import UserNotifications
 
 extension Notification.Name {
     static let weeklyCheckInNotificationTapped = Notification.Name("weeklyCheckInNotificationTapped")
+    static let weeklyCheckInNotificationSnoozed = Notification.Name("weeklyCheckInNotificationSnoozed")
 }
 
 @MainActor
 struct WeeklyCheckInReminderService {
+    static let categoryIdentifier = "weekly-check-in"
+    static let snoozeActionIdentifier = "weekly-check-in-snooze"
     private let notificationIdentifier = "weekly-check-in-reminder"
+    private let snoozedNotificationIdentifier = "weekly-check-in-snoozed-reminder"
+    private let snoozeDuration: TimeInterval = 2 * 60 * 60
 
     func notifyIfDue(preferences: AppPreferenceStore, now: Date = .now, calendar: Calendar = .current) async {
         guard preferences.isWeeklyCheckInReminderEnabled,
+              now.timeIntervalSince1970 >= preferences.weeklyCheckInSnoozedUntil,
               isDue(now: now, preferences: preferences, calendar: calendar) else {
             return
         }
@@ -27,6 +33,7 @@ struct WeeklyCheckInReminderService {
         content.title = "Time for a check-in"
         content.body = "Take a few minutes to recalibrate your weekly check-in."
         content.sound = .default
+        content.categoryIdentifier = Self.categoryIdentifier
         content.userInfo = ["route": "weeklyCheckIn"]
 
         let request = UNNotificationRequest(
@@ -41,6 +48,28 @@ struct WeeklyCheckInReminderService {
         } catch {
             return
         }
+    }
+
+    func snooze(preferences: AppPreferenceStore, now: Date = .now) async {
+        guard await requestNotificationAuthorization() else { return }
+
+        let snoozedUntil = now.addingTimeInterval(snoozeDuration)
+        preferences.weeklyCheckInSnoozedUntil = snoozedUntil.timeIntervalSince1970
+
+        let content = UNMutableNotificationContent()
+        content.title = "Time for a check-in"
+        content.body = "Your check-in reminder is ready again."
+        content.sound = .default
+        content.categoryIdentifier = Self.categoryIdentifier
+        content.userInfo = ["route": "weeklyCheckIn"]
+
+        let request = UNNotificationRequest(
+            identifier: snoozedNotificationIdentifier,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: snoozeDuration, repeats: false)
+        )
+
+        try? await UNUserNotificationCenter.current().add(request)
     }
 
     private func isDue(now: Date, preferences: AppPreferenceStore, calendar: Calendar) -> Bool {

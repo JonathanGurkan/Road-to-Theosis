@@ -8,6 +8,18 @@ final class AppNotificationDelegate: NSObject, UIApplicationDelegate, UNUserNoti
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        let snoozeAction = UNNotificationAction(
+            identifier: WeeklyCheckInReminderService.snoozeActionIdentifier,
+            title: "Remind Later",
+            options: []
+        )
+        let category = UNNotificationCategory(
+            identifier: WeeklyCheckInReminderService.categoryIdentifier,
+            actions: [snoozeAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([category])
         UNUserNotificationCenter.current().delegate = self
         return true
     }
@@ -27,7 +39,11 @@ final class AppNotificationDelegate: NSObject, UIApplicationDelegate, UNUserNoti
             return
         }
 
-        NotificationCenter.default.post(name: .weeklyCheckInNotificationTapped, object: nil)
+        if response.actionIdentifier == WeeklyCheckInReminderService.snoozeActionIdentifier {
+            NotificationCenter.default.post(name: .weeklyCheckInNotificationSnoozed, object: nil)
+        } else {
+            NotificationCenter.default.post(name: .weeklyCheckInNotificationTapped, object: nil)
+        }
     }
 }
 

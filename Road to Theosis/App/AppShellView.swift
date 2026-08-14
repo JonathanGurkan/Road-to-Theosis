@@ -101,7 +101,13 @@ struct AppShellView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationTapped)) { _ in
+            preferences.weeklyCheckInSnoozedUntil = 0
             isShowingWeeklyCheckIn = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationSnoozed)) { _ in
+            Task {
+                await weeklyCheckInReminderService.snooze(preferences: preferences)
+            }
         }
         .onChange(of: storedLogEntries.map(\.updatedAt)) { _, _ in
             syncLogEntriesFromStore()

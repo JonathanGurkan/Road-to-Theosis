@@ -27,6 +27,7 @@ enum AppPreferenceKey: String, CaseIterable {
     case usesFocusProgressSliders
     case weeklyCheckInHour
     case weeklyCheckInMinute
+    case weeklyCheckInSnoozedUntil
     case weeklyCheckInWeekday
 
     var storageKey: String { rawValue }
@@ -68,6 +69,7 @@ enum AppPreferenceKey: String, CaseIterable {
             return String(userDefaults.double(forKey: key))
         case .weeklyCheckInHour,
              .weeklyCheckInMinute,
+             .weeklyCheckInSnoozedUntil,
              .weeklyCheckInWeekday:
             guard userDefaults.object(forKey: key) != nil else { return nil }
             return String(userDefaults.integer(forKey: key))

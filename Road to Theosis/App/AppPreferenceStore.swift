@@ -30,6 +30,7 @@ final class AppPreferenceStore {
     var usesFocusProgressSliders = true
     var weeklyCheckInHour = 9
     var weeklyCheckInMinute = 0
+    var weeklyCheckInSnoozedUntil = 0.0
     var weeklyCheckInWeekdayRaw = CheckInWeekday.sunday.rawValue
 
     var backgroundTheme: AppBackgroundTheme {
@@ -116,6 +117,7 @@ final class AppPreferenceStore {
             AppPreferenceKey.usesFocusProgressSliders.storageKey: String(usesFocusProgressSliders),
             AppPreferenceKey.weeklyCheckInHour.storageKey: String(weeklyCheckInHour),
             AppPreferenceKey.weeklyCheckInMinute.storageKey: String(weeklyCheckInMinute),
+            AppPreferenceKey.weeklyCheckInSnoozedUntil.storageKey: String(weeklyCheckInSnoozedUntil),
             AppPreferenceKey.weeklyCheckInWeekday.storageKey: String(weeklyCheckInWeekdayRaw)
         ]
     }
@@ -186,6 +188,7 @@ final class AppPreferenceStore {
         usesFocusProgressSliders = true
         weeklyCheckInHour = 9
         weeklyCheckInMinute = 0
+        weeklyCheckInSnoozedUntil = 0
         weeklyCheckInWeekdayRaw = CheckInWeekday.sunday.rawValue
     }
 
@@ -251,6 +254,8 @@ final class AppPreferenceStore {
             weeklyCheckInHour = min(23, max(0, Int(value) ?? 9))
         case AppPreferenceKey.weeklyCheckInMinute.storageKey:
             weeklyCheckInMinute = min(59, max(0, Int(value) ?? 0))
+        case AppPreferenceKey.weeklyCheckInSnoozedUntil.storageKey:
+            weeklyCheckInSnoozedUntil = max(0, Double(value) ?? 0)
         case AppPreferenceKey.weeklyCheckInWeekday.storageKey:
             weeklyCheckInWeekdayRaw = CheckInWeekday(rawValue: Int(value) ?? CheckInWeekday.sunday.rawValue)?.rawValue ?? CheckInWeekday.sunday.rawValue
         default:
