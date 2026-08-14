@@ -267,7 +267,7 @@ struct TimelineRow: View {
     }
 
     private var primaryBadgeIconFont: Font {
-        .system(size: 22, weight: .semibold)
+        .system(size: 18, weight: .semibold)
     }
 
     private var secondaryBadgeSize: CGFloat {
