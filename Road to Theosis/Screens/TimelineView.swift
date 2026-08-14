@@ -252,6 +252,10 @@ private struct TimelineRow: View {
         Self.timeFormatter.string(from: entry.occurredAt)
     }
 
+    private var noteText: String {
+        entry.checkInRecord?.timelineSummaryText ?? entry.note
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
@@ -317,10 +321,11 @@ private struct TimelineRow: View {
                     .background(entry.kind.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
 
-                if !entry.note.isEmpty {
-                    Text(entry.note)
-                        .font(.subheadline)
+                if !noteText.isEmpty {
+                    Text(noteText)
+                        .font(entry.kind == .checkIn ? .caption : .subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(entry.kind == .checkIn ? 2 : nil)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 

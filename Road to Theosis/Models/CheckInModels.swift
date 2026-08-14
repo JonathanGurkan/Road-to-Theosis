@@ -78,11 +78,7 @@ struct CheckInResponse: Codable, Hashable, Identifiable {
     }
 
     var summaryText: String {
-        guard let primaryChange else {
-            return "\(questionShortTitle): \(answerTitle)"
-        }
-
-        return "\(questionShortTitle): \(answerTitle) (\(primaryChange.sinTitle) \(SinFrequencyScale.percentage(for: primaryChange.targetProgress))%)"
+        "\(questionShortTitle): \(answerTitle)"
     }
 }
 
@@ -94,6 +90,24 @@ struct CheckInRecord: Codable, Hashable {
         responses
             .map(\.summaryText)
             .joined(separator: " • ")
+    }
+
+    var timelineSummaryText: String {
+        let leadingAnswers = responses
+            .prefix(3)
+            .map(\.summaryText)
+            .joined(separator: ", ")
+        let remainingCount = max(responses.count - 3, 0)
+
+        guard !leadingAnswers.isEmpty else {
+            return "Check-in completed"
+        }
+
+        if remainingCount > 0 {
+            return "\(responses.count) answers: \(leadingAnswers) +\(remainingCount)"
+        }
+
+        return "\(responses.count) answers: \(leadingAnswers)"
     }
 
     var allChanges: [CheckInChange] {

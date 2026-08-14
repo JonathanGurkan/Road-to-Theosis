@@ -463,7 +463,7 @@ struct CheckInView: View {
             kind: .checkIn,
             sectionTitle: "Whole Journey",
             sinTitle: nil,
-            note: record.summaryText,
+            note: record.timelineSummaryText,
             prayerMinutes: 0,
             checkInRecordJSON: payload,
             occurredAt: record.completedAt
