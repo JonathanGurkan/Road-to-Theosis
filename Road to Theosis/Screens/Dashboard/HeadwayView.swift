@@ -28,6 +28,7 @@ struct HeadwayView: View {
     @State private var isShowingCheckIn = false
     @State private var editingRecentActivityEntry: LogEntry?
     @State private var greetingWeather: GreetingWeatherSnapshot?
+    @State private var dashboardTip = Self.randomDashboardTip()
     private let greetingWeatherService = GreetingWeatherService()
     private let maxFocusedSinCount = 3
 
@@ -110,6 +111,31 @@ struct HeadwayView: View {
         Self.subtitleFormatter.string(from: Date())
     }
 
+    private var dashboardTipFooter: some View {
+        Text("Tip: \(dashboardTip)")
+            .font(.footnote)
+            .multilineTextAlignment(.center)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 4)
+            .padding(.horizontal, 12)
+            .accessibilityLabel("Tip. \(dashboardTip)")
+    }
+
+    private static let dashboardTips = [
+        "Name the temptation early, then pray before it grows louder.",
+        "Log small victories too; they help you see where grace is already working.",
+        "When a habit feels urgent, pause for one minute of prayer before choosing.",
+        "Review your recent notes before changing a goal; patterns matter more than one day.",
+        "Choose one focus area for today instead of trying to fight everything at once.",
+        "A short honest check-in is better than waiting for a perfect reflection.",
+        "Pair prayer with a simple action: stand up, drink water, or leave the room.",
+        "Use Scripture defenses before the struggle peaks, not only after it does."
+    ]
+
+    private static func randomDashboardTip() -> String {
+        dashboardTips.randomElement() ?? "Take the next faithful step."
+    }
 
     private var quickActionSubtitle: String {
         guard preferences.isPrayerTimingEnabled else {
@@ -389,6 +415,8 @@ struct HeadwayView: View {
                     if isCustomizingHome {
                         addCardsArea
                     }
+
+                    dashboardTipFooter
                 }
                 .animation(.snappy, value: homeScreenLayout)
                 .animation(.snappy, value: isCustomizingHome)
