@@ -424,7 +424,7 @@ private struct HomeSettingsPage: View {
             .contentMargins(.horizontal, 12, for: .scrollContent)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Home")
+        .navigationTitle("Home Screen")
         .navigationBarTitleDisplayMode(.large)
     }
 }
@@ -546,7 +546,7 @@ private struct PrayerSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Timing"), footer: preferences.isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
+                Section(header: Text("Timer"), footer: preferences.isPrayerTimingEnabled ? Text("Prayer minutes are tracked across the app and appear on the dashboard and timeline.") : Text("Prayer minutes are not tracked while the timer is disabled.")) {
                     Toggle("Enable prayer timing", isOn: $preferences.isPrayerTimingEnabled)
 
                     if preferences.isPrayerTimingEnabled {
@@ -596,10 +596,10 @@ private struct ScriptureSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Verse arsenal"), footer: Text("When you tap on the icon of a sin in the sins list, your verse arsenal shows up. These are verses you note down to use as a counter agains the devil. You can add not only the verse and the bible quote, but also a descriptive note beneath it to, for example, specify what the use is of the verse.")) {
-                    Toggle("Enable verse arsenal", isOn: $preferences.enableVerseInventory)
+                Section(header: Text("Defense Verses"), footer: Text("Tap a sin icon to open saved verses and notes for that struggle.")) {
+                    Toggle("Enable defense verses", isOn: $preferences.enableVerseInventory)
                     if preferences.enableVerseInventory {
-                        Toggle("Show verse desctiptions", isOn: $preferences.showVerseApplications)
+                        Toggle("Show verse notes", isOn: $preferences.showVerseApplications)
                     }
                 }
             }
@@ -678,7 +678,7 @@ private struct WeatherSettingsPage: View {
             .contentMargins(.horizontal, 12, for: .scrollContent)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Weather")
+        .navigationTitle("Greeting Weather")
         .navigationBarTitleDisplayMode(.large)
     }
 
