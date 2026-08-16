@@ -31,52 +31,55 @@ struct WelcomeView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 14) {
-                header
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 14) {
+                    header
 
-                stepRail
-                    .padding(.horizontal, 16)
-
-                TabView(selection: $stepIndex) {
-                    ForEach(steps.indices, id: \.self) { index in
-                        GuideStepCard(
-                            step: steps[index],
-                            stepNumber: index + 1,
-                            stepCount: steps.count
-                        )
-                        .tag(index)
+                    stepRail
                         .padding(.horizontal, 16)
+
+                    TabView(selection: $stepIndex) {
+                        ForEach(steps.indices, id: \.self) { index in
+                            GuideStepCard(
+                                step: steps[index],
+                                stepNumber: index + 1,
+                                stepCount: steps.count
+                            )
+                            .tag(index)
+                            .padding(.horizontal, 16)
+                        }
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(maxWidth: .infinity, minHeight: 610, idealHeight: 650, maxHeight: 700, alignment: .top)
+                    .task(id: stepIndex) {
+                        stepProgress = 0
+
+                        guard stepIndex < steps.count - 1 else { return }
+
+                        withAnimation(.linear(duration: autoAdvanceDuration)) {
+                            stepProgress = 1
+                        }
+
+                        do {
+                            try await Task.sleep(for: .seconds(autoAdvanceDuration))
+                        } catch {
+                            return
+                        }
+
+                        guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
+
+                        withAnimation(.easeInOut(duration: 0.55)) {
+                            stepIndex += 1
+                        }
+                    }
+
+                    footer
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(maxWidth: .infinity, minHeight: 560, maxHeight: .infinity, alignment: .top)
-                .task(id: stepIndex) {
-                    stepProgress = 0
-
-                    guard stepIndex < steps.count - 1 else { return }
-
-                    withAnimation(.linear(duration: autoAdvanceDuration)) {
-                        stepProgress = 1
-                    }
-
-                    do {
-                        try await Task.sleep(for: .seconds(autoAdvanceDuration))
-                    } catch {
-                        return
-                    }
-
-                    guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
-
-                    withAnimation(.easeInOut(duration: 0.55)) {
-                        stepIndex += 1
-                    }
-                }
-
-                footer
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                .padding(.top, 24)
             }
-            .padding(.top, 12)
+            .safeAreaPadding(.top, 8)
         }
     }
 
@@ -109,7 +112,7 @@ struct WelcomeView: View {
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("This quick tour shows you the parts you'll use most, in the same order you'll meet them in the app.")
+                        Text("A short walk-through so you know where everything lives before you start using it for real.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -127,14 +130,14 @@ struct WelcomeView: View {
                 }
 
                 HStack(spacing: 8) {
-                    Label("4 quick steps", systemImage: "list.number")
+                    Label("4 calm steps", systemImage: "list.number")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.red)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Color.red.opacity(0.12), in: Capsule())
 
-                    Label("Friendly and clear", systemImage: "hand.wave.fill")
+                    Label("You stay in control", systemImage: "hand.wave.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 10)
@@ -144,7 +147,7 @@ struct WelcomeView: View {
                     Spacer(minLength: 0)
                 }
 
-                Text("You can come back to this tour later from Settings.")
+                Text("Skip anything you already understand. You can reopen this from Settings whenever you want.")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
             }
@@ -195,7 +198,7 @@ struct WelcomeView: View {
                         .lineLimit(1)
                 }
 
-                Text(stepIndex == steps.count - 1 ? "You're almost ready to start." : "A few taps left, then you'll be inside the app.")
+                Text(stepIndex == steps.count - 1 ? "You're ready to begin." : "Take your time. You can swipe or use the button below.")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
 
@@ -596,62 +599,62 @@ private struct WelcomeStep {
     let preview: AnyView
 
     static let home = WelcomeStep(
-        title: "Start on Home",
+        title: "Begin at Home",
         shortTitle: "Home",
-        subtitle: "Home is your dashboard. It keeps the cards you use most close by and gives you a simple place to start every time.",
+        subtitle: "Home gives you a steady place to land: your focus, recent movement, and the next helpful action.",
         icon: "house.fill",
         tint: .red,
         highlights: [
-            .init(symbol: "square.grid.2x2.fill", title: "Keep important cards close", detail: "Move and resize cards from Settings when you want the layout to feel more personal."),
-            .init(symbol: "bolt.fill", title: "Use quick actions", detail: "Prayer and logging shortcuts stay near the top so you can act quickly."),
-            .init(symbol: "clock.arrow.circlepath", title: "See recent activity", detail: "Your latest entries and current focus stay visible without digging through menus.")
+            .init(symbol: "square.grid.2x2.fill", title: "See what matters first", detail: "Your most useful cards stay easy to reach, and you can rearrange them later."),
+            .init(symbol: "bolt.fill", title: "Act without searching", detail: "Prayer, logging, and check-ins are close by when you need them."),
+            .init(symbol: "clock.arrow.circlepath", title: "Keep context visible", detail: "Recent entries and your current focus stay in view without digging through menus.")
         ],
-        note: "If you want the app to feel more like yours, Home is the best place to start.",
+        note: "Start simple. You can make Home feel more personal once you know what you use most.",
         preview: AnyView(HomeGuidePreview())
     )
 
     static let logging = WelcomeStep(
-        title: "Log what happened",
+        title: "Log the moment",
         shortTitle: "Log",
-        subtitle: "When something happens, record the specific struggle, note what changed, and attach prayer time if you prayed.",
+        subtitle: "When something happens, capture it clearly enough that tomorrow-you can understand it.",
         icon: "square.and.pencil",
         tint: .teal,
         highlights: [
-            .init(symbol: "list.bullet.rectangle", title: "Choose the specific struggle", detail: "Pick the exact issue instead of only a broad category."),
-            .init(symbol: "checkmark.shield.fill", title: "Record the outcome", detail: "Log a victory, a loss, a note, or a purity update."),
-            .init(symbol: "timer", title: "Keep prayer with it", detail: "Prayer time can be attached so the response stays with the log.")
+            .init(symbol: "list.bullet.rectangle", title: "Name it honestly", detail: "Pick the specific struggle instead of leaving it vague."),
+            .init(symbol: "checkmark.shield.fill", title: "Record the outcome", detail: "Save a victory, a loss, a note, or a purity update."),
+            .init(symbol: "timer", title: "Keep prayer attached", detail: "If prayer was part of your response, keep that time with the entry.")
         ],
-        note: "The log screen is designed to catch the moment while it is still fresh.",
+        note: "A short, honest log is enough. This is about clarity, not perfection.",
         preview: AnyView(LoggingGuidePreview())
     )
 
     static let timeline = WelcomeStep(
-        title: "Review the timeline",
+        title: "Notice patterns",
         shortTitle: "Timeline",
-        subtitle: "The timeline gathers prayers, resistance, losses, and notes in time order so patterns are easy to see.",
+        subtitle: "The timeline turns scattered entries into a readable story, grouped by day and ordered by time.",
         icon: "clock.arrow.circlepath",
         tint: .indigo,
         highlights: [
-            .init(symbol: "calendar", title: "Read by day", detail: "Entries are grouped so the story is easier to follow."),
-            .init(symbol: "pencil", title: "Edit details later", detail: "Open a row to adjust something after you remember more."),
-            .init(symbol: "chart.line.uptrend.xyaxis", title: "Watch growth over time", detail: "The timeline shows the shape of the journey, not just isolated moments.")
+            .init(symbol: "calendar", title: "Read the day clearly", detail: "Entries are grouped so the shape of each day is easier to follow."),
+            .init(symbol: "pencil", title: "Adjust details later", detail: "Open a row if you remember more or want to clean something up."),
+            .init(symbol: "chart.line.uptrend.xyaxis", title: "Look for movement", detail: "The timeline helps you see growth, pressure points, and repeated patterns.")
         ],
-        note: "Use the timeline when you want a clean history instead of the more compact Home summary.",
+        note: "This is the place to review without judging yourself in the heat of the moment.",
         preview: AnyView(TimelineGuidePreview())
     )
 
     static let settings = WelcomeStep(
-        title: "Tweak Settings",
+        title: "Make it yours",
         shortTitle: "Settings",
-        subtitle: "Settings is where you tune the app: theme, prayer timing, Home layout, verses, and the support tools behind the scenes.",
+        subtitle: "Settings keeps the personal parts in one place: appearance, prayer timing, layout, verses, and support tools.",
         icon: "gearshape.fill",
         tint: .purple,
         highlights: [
-            .init(symbol: "paintpalette.fill", title: "Choose a calmer look", detail: "Pick a theme that feels easy to read and easy to live with."),
-            .init(symbol: "square.grid.2x2.fill", title: "Reshape Home", detail: "Resize, hide, or rearrange cards from the layout editor."),
-            .init(symbol: "book.fill", title: "Adjust support tools", detail: "Verses, strictness, and related preferences live here too.")
+            .init(symbol: "paintpalette.fill", title: "Choose a calmer look", detail: "Pick a theme that feels easy to read and easy to return to."),
+            .init(symbol: "square.grid.2x2.fill", title: "Shape your Home screen", detail: "Resize, hide, or rearrange cards from the layout editor."),
+            .init(symbol: "book.fill", title: "Tune the support", detail: "Verses, strictness, reminders, and related preferences live here too.")
         ],
-        note: "If you ever want the tour again, you can return to it from Settings.",
+        note: "Nothing has to be perfect on day one. Adjust the app when you notice what helps.",
         preview: AnyView(SettingsGuidePreview())
     )
 }
