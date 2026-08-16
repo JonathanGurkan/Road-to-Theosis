@@ -152,11 +152,19 @@ struct WelcomeView: View {
         AppSurfaceCard(contentPadding: 12) {
             HStack(spacing: 10) {
                 ForEach(steps.indices, id: \.self) { index in
-                    GuideStepRailItem(
-                        step: steps[index],
-                        isSelected: index == stepIndex,
-                        isCompleted: index < stepIndex
-                    )
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            stepIndex = index
+                        }
+                    } label: {
+                        GuideStepRailItem(
+                            step: steps[index],
+                            isSelected: index == stepIndex,
+                            isCompleted: index < stepIndex
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(steps[index].shortTitle), step \(index + 1) of \(steps.count)")
                 }
             }
         }
@@ -196,16 +204,38 @@ struct WelcomeView: View {
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                ActionButtonView(
-                    title: stepIndex == steps.count - 1 ? "Start Exploring" : "Continue Tour",
-                    icon: stepIndex == steps.count - 1 ? "checkmark.circle.fill" : "arrow.right",
-                    tint: steps[stepIndex].tint
-                ) {
-                    advance()
+                HStack(spacing: 10) {
+                    if stepIndex > 0 {
+                        Button {
+                            goBack()
+                        } label: {
+                            Label("Back", systemImage: "chevron.left")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 11)
+                        }
+                        .ifAvailableGlass(tint: steps[stepIndex].tint)
+                    }
+
+                    ActionButtonView(
+                        title: stepIndex == steps.count - 1 ? "Start Exploring" : "Continue",
+                        icon: stepIndex == steps.count - 1 ? "checkmark.circle.fill" : "arrow.right",
+                        tint: steps[stepIndex].tint
+                    ) {
+                        advance()
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
             }
             .animation(.easeInOut(duration: 0.2), value: stepIndex)
+        }
+    }
+
+    private func goBack() {
+        guard stepIndex > 0 else { return }
+
+        withAnimation(.easeInOut) {
+            stepIndex -= 1
         }
     }
 
