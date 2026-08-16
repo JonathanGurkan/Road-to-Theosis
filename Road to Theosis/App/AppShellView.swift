@@ -13,6 +13,7 @@ struct AppShellView: View {
     @State private var isShowingWelcome = false
     @State private var isShowingHelpGuide = false
     @State private var isShowingInitialCheckIn = false
+    @State private var shouldStartInitialCheckInAfterWelcome = false
     @State private var isShowingWeeklyCheckIn = false
     private let weeklyCheckInReminderService = WeeklyCheckInReminderService()
 
@@ -75,7 +76,7 @@ struct AppShellView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .fullScreenCover(isPresented: $isShowingWelcome) {
             WelcomeView(isPresented: $isShowingWelcome) {
-                isShowingInitialCheckIn = true
+                shouldStartInitialCheckInAfterWelcome = true
             }
         }
         .fullScreenCover(isPresented: $isShowingHelpGuide) {
@@ -120,6 +121,13 @@ struct AppShellView: View {
             Task {
                 await notifyForWeeklyCheckInIfDue()
             }
+        }
+        .onChange(of: isShowingWelcome) { _, isPresented in
+            guard !isPresented else { return }
+            startInitialCheckInIfReady()
+        }
+        .onChange(of: shouldStartInitialCheckInAfterWelcome) { _, _ in
+            startInitialCheckInIfReady()
         }
         .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationTapped)) { _ in
             preferences.weeklyCheckInSnoozedUntil = 0
@@ -214,10 +222,18 @@ struct AppShellView: View {
         isShowingWelcome = true
         isShowingHelpGuide = false
         isShowingInitialCheckIn = false
+        shouldStartInitialCheckInAfterWelcome = false
     }
 
     private func recalculatePurity() {
         dashboard.rebuild(from: logEntries, now: purityCalculationDate, strictness: preferences.purityStrictness)
+    }
+
+    private func startInitialCheckInIfReady() {
+        guard shouldStartInitialCheckInAfterWelcome, !isShowingWelcome else { return }
+
+        shouldStartInitialCheckInAfterWelcome = false
+        isShowingInitialCheckIn = true
     }
 
     private func notifyForWeeklyCheckInIfDue() async {
