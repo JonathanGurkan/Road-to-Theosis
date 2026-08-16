@@ -123,23 +123,6 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
-                    DeveloperSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        dashboard: $dashboard,
-                        logEntries: $logEntries,
-                        purityCalculationDate: $purityCalculationDate
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Developer",
-                        subtitle: "Test data, modes, and purity scenarios",
-                        systemImage: "hammer.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                NavigationLink {
                     CheckInSettingsPage(
                         backgroundTheme: $backgroundTheme,
                         dashboard: dashboard,
