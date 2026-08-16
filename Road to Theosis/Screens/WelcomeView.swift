@@ -378,6 +378,7 @@ struct HelpGuideView: View {
     @State private var stepIndex: Int = 0
     @State private var stepProgress: Double = 0
     @State private var isShowingStepDetails = false
+    @State private var footerHeight: CGFloat = 0
     private let autoAdvanceDuration: Double = 12
 
     private let steps: [WelcomeStep] = [
@@ -403,66 +404,78 @@ struct HelpGuideView: View {
             .ignoresSafeArea()
 
             GeometryReader { geometry in
-                VStack(spacing: 14) {
-                    header
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 14) {
+                        header
+                            .padding(.horizontal, 16)
+
+                        stepRail
+                            .padding(.horizontal, 16)
+
+                        CompactGuideStepCard(
+                            step: steps[stepIndex],
+                            stepNumber: stepIndex + 1,
+                            stepCount: steps.count
+                        ) {
+                            isShowingStepDetails = true
+                        }
                         .padding(.horizontal, 16)
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 32)
+                                .onEnded(handleGuideDrag)
+                        )
+                        .task(id: stepIndex) {
+                            stepProgress = 0
 
-                    stepRail
-                        .padding(.horizontal, 16)
+                            guard stepIndex < steps.count - 1 else { return }
 
-                    CompactGuideStepCard(
-                        step: steps[stepIndex],
-                        stepNumber: stepIndex + 1,
-                        stepCount: steps.count
-                    ) {
-                        isShowingStepDetails = true
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-                    .gesture(
-                        DragGesture(minimumDistance: 32)
-                            .onEnded(handleGuideDrag)
-                    )
-                    .task(id: stepIndex) {
-                        stepProgress = 0
+                            withAnimation(.linear(duration: autoAdvanceDuration)) {
+                                stepProgress = 1
+                            }
 
-                        guard stepIndex < steps.count - 1 else { return }
+                            do {
+                                try await Task.sleep(for: .seconds(autoAdvanceDuration))
+                            } catch {
+                                return
+                            }
 
-                        withAnimation(.linear(duration: autoAdvanceDuration)) {
-                            stepProgress = 1
-                        }
+                            guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
 
-                        do {
-                            try await Task.sleep(for: .seconds(autoAdvanceDuration))
-                        } catch {
-                            return
-                        }
-
-                        guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
-
-                        withAnimation(.easeInOut(duration: 0.55)) {
-                            stepIndex += 1
+                            withAnimation(.easeInOut(duration: 0.55)) {
+                                stepIndex += 1
+                            }
                         }
                     }
+                    .padding(.top, guideTopPadding(for: geometry))
+                    .padding(.bottom, guideBottomPadding)
                 }
-                .padding(.top, guideTopPadding(for: geometry))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
         .overlay(alignment: .bottom) {
             footer
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
-                .background(.clear)
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.preference(key: HelpGuideFooterHeightPreferenceKey.self, value: geometry.size.height)
+                    }
+                }
         }
         .sheet(isPresented: $isShowingStepDetails) {
             GuideStepDetailSheet(step: steps[stepIndex], stepNumber: stepIndex + 1, stepCount: steps.count)
+        }
+        .onPreferenceChange(HelpGuideFooterHeightPreferenceKey.self) { height in
+            footerHeight = height
         }
     }
 
     private func guideTopPadding(for geometry: GeometryProxy) -> CGFloat {
         max(24, geometry.safeAreaInsets.top + min(72, geometry.size.height * 0.08))
+    }
+
+    private var guideBottomPadding: CGFloat {
+        max(24, footerHeight + 16)
     }
 
     private var header: some View {
@@ -886,6 +899,14 @@ private struct GuideStepRailItem: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
+    }
+}
+
+private struct HelpGuideFooterHeightPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
