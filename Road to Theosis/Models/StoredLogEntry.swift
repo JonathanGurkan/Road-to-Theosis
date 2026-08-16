@@ -12,6 +12,7 @@ final class StoredLogEntry {
     var prayerDurationSeconds: Int = 0
     var connectedSinsData: String = "[]"
     var progressPercentage: Int?
+    var checkInRecordJSON: String?
     var occurredAt: Date = Date()
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
@@ -26,6 +27,7 @@ final class StoredLogEntry {
         prayerDurationSeconds: Int,
         connectedSins: [ConnectedSinReference] = [],
         progressPercentage: Int?,
+        checkInRecordJSON: String? = nil,
         occurredAt: Date,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -39,6 +41,7 @@ final class StoredLogEntry {
         self.prayerDurationSeconds = prayerDurationSeconds
         self.connectedSinsData = StoredLogEntry.encodeConnectedSins(connectedSins)
         self.progressPercentage = progressPercentage
+        self.checkInRecordJSON = checkInRecordJSON
         self.occurredAt = occurredAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -55,6 +58,7 @@ final class StoredLogEntry {
             prayerDurationSeconds: entry.prayerDurationSeconds,
             connectedSins: entry.connectedSins,
             progressPercentage: entry.progressPercentage,
+            checkInRecordJSON: entry.checkInRecordJSON,
             occurredAt: entry.occurredAt
         )
     }
@@ -75,6 +79,7 @@ final class StoredLogEntry {
             prayerDurationSeconds: prayerDurationSeconds,
             connectedSins: connectedSins,
             progressPercentage: progressPercentage,
+            checkInRecordJSON: checkInRecordJSON,
             occurredAt: occurredAt
         )
     }

@@ -80,8 +80,20 @@ enum PurityCalculator {
             entry.sinTitle == sinTitle &&
             entry.occurredAt <= now
         }
+        let latestProgressBaseline = targetEntries
+            .filter { ($0.kind == .progressUpdate || $0.kind == .sliderProgressUpdate) && $0.progressPercentage != nil }
+            .max { $0.occurredAt < $1.occurredAt }
+        let latestCheckInBaseline = latestCheckInBaseline(
+            for: sectionTitle,
+            sinTitle: sinTitle,
+            entries: entries,
+            now: now
+        )
+        let latestBaseline = [latestProgressBaseline.map { (progress: clamped(Double($0.progressPercentage ?? 0) / 100), date: $0.occurredAt) }, latestCheckInBaseline]
+            .compactMap { $0 }
+            .max { $0.date < $1.date }
 
-        guard !targetEntries.isEmpty else {
+        guard !targetEntries.isEmpty || latestBaseline != nil else {
             return PuritySnapshot(
                 progress: 1,
                 recentLossCount: 0,
@@ -93,14 +105,8 @@ enum PurityCalculator {
                 latestBaselineDate: nil
             )
         }
-
-        let latestBaseline = targetEntries
-            .filter { ($0.kind == .progressUpdate || $0.kind == .sliderProgressUpdate) && $0.progressPercentage != nil }
-            .max { $0.occurredAt < $1.occurredAt }
-        let baselineProgress = latestBaseline
-            .flatMap { $0.progressPercentage }
-            .map { clamped(Double($0) / 100) }
-        let baselineDate = latestBaseline?.occurredAt
+        let baselineProgress = latestBaseline?.progress
+        let baselineDate = latestBaseline?.date
         let calculationStart = baselineDate ?? .distantPast
         let historyStart = calendar.date(byAdding: .day, value: -strictness.historyDays, to: now) ?? now
         let activeStart = max(historyStart, calculationStart)
@@ -219,6 +225,24 @@ enum PurityCalculator {
 
     private static func clamped(_ progress: Double) -> Double {
         min(1, max(0, progress))
+    }
+
+    private static func latestCheckInBaseline(
+        for sectionTitle: String,
+        sinTitle: String,
+        entries: [LogEntry],
+        now: Date
+    ) -> (progress: Double, date: Date)? {
+        for entry in entries.sorted(by: { $0.occurredAt > $1.occurredAt }) where entry.kind == .checkIn && entry.occurredAt <= now {
+            guard let record = entry.checkInRecord,
+                  let change = record.latestChange(for: sectionTitle, sinTitle: sinTitle) else {
+                continue
+            }
+
+            return (progress: change.targetProgress, date: entry.occurredAt)
+        }
+
+        return nil
     }
 }
 

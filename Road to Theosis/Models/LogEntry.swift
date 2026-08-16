@@ -11,6 +11,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
         case prayerDurationSeconds
         case connectedSins
         case progressPercentage
+        case checkInRecordJSON
         case occurredAt
     }
 
@@ -21,6 +22,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
         case loss
         case progressUpdate
         case sliderProgressUpdate
+        case checkIn
         case note
 
         var id: String { rawValue }
@@ -39,6 +41,8 @@ struct LogEntry: Codable, Identifiable, Equatable {
                 return "Progress Set"
             case .sliderProgressUpdate:
                 return "Purity Adjusted"
+            case .checkIn:
+                return "Check-in"
             case .note:
                 return "Note"
             }
@@ -58,6 +62,8 @@ struct LogEntry: Codable, Identifiable, Equatable {
                 return "slider.horizontal.3"
             case .sliderProgressUpdate:
                 return "slider.horizontal.below.rectangle"
+            case .checkIn:
+                return "checklist"
             case .note:
                 return "text.quote"
             }
@@ -77,6 +83,8 @@ struct LogEntry: Codable, Identifiable, Equatable {
                 return .blue
             case .sliderProgressUpdate:
                 return .indigo
+            case .checkIn:
+                return .orange
             case .note:
                 return .blue
             }
@@ -92,6 +100,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
     let prayerDurationSeconds: Int
     let connectedSins: [ConnectedSinReference]
     let progressPercentage: Int?
+    let checkInRecordJSON: String?
     let occurredAt: Date
 
     init(
@@ -104,6 +113,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
         prayerDurationSeconds: Int? = nil,
         connectedSins: [ConnectedSinReference] = [],
         progressPercentage: Int? = nil,
+        checkInRecordJSON: String? = nil,
         occurredAt: Date
     ) {
         self.id = id
@@ -115,6 +125,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
         self.prayerDurationSeconds = prayerDurationSeconds ?? max(prayerMinutes, 0) * 60
         self.connectedSins = connectedSins
         self.progressPercentage = progressPercentage
+        self.checkInRecordJSON = checkInRecordJSON
         self.occurredAt = occurredAt
     }
 
@@ -130,6 +141,7 @@ struct LogEntry: Codable, Identifiable, Equatable {
         prayerDurationSeconds = try container.decodeIfPresent(Int.self, forKey: .prayerDurationSeconds) ?? max(prayerMinutes, 0) * 60
         connectedSins = try container.decodeIfPresent([ConnectedSinReference].self, forKey: .connectedSins) ?? []
         progressPercentage = try container.decodeIfPresent(Int.self, forKey: .progressPercentage)
+        checkInRecordJSON = try container.decodeIfPresent(String.self, forKey: .checkInRecordJSON)
         occurredAt = try container.decode(Date.self, forKey: .occurredAt)
     }
 
@@ -147,11 +159,21 @@ struct LogEntry: Codable, Identifiable, Equatable {
             try container.encode(connectedSins, forKey: .connectedSins)
         }
         try container.encodeIfPresent(progressPercentage, forKey: .progressPercentage)
+        try container.encodeIfPresent(checkInRecordJSON, forKey: .checkInRecordJSON)
         try container.encode(occurredAt, forKey: .occurredAt)
     }
 
     var prayerDurationText: String {
         Self.formatPrayerDuration(seconds: prayerDurationSeconds)
+    }
+
+    var checkInRecord: CheckInRecord? {
+        guard let checkInRecordJSON,
+              let data = checkInRecordJSON.data(using: .utf8) else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(CheckInRecord.self, from: data)
     }
 
     var prayerConnectedSins: [ConnectedSinReference] {

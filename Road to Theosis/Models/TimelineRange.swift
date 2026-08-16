@@ -38,4 +38,12 @@ enum TimelineRange: String, CaseIterable, Identifiable {
             return calendar.date(byAdding: .day, value: -7, to: date)
         }
     }
+
+    func contains(_ date: Date, now: Date = .now, calendar: Calendar = .current) -> Bool {
+        guard let cutoffDate = cutoffDate(from: now, calendar: calendar) else {
+            return true
+        }
+
+        return date >= cutoffDate
+    }
 }

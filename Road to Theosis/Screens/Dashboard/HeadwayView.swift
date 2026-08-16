@@ -25,6 +25,7 @@ struct HeadwayView: View {
     @State var focusedSinIDs: [SinCategory.ID] = []
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
+    @State private var isShowingCheckIn = false
     @State private var editingRecentActivityEntry: LogEntry?
     @State private var greetingWeather: GreetingWeatherSnapshot?
     private let greetingWeatherService = GreetingWeatherService()
@@ -138,6 +139,10 @@ struct HeadwayView: View {
         }
 
         greetingWeather = await greetingWeatherService.currentWeather(thresholds: greetingWeatherThresholds)
+    }
+
+    private func startCheckIn() {
+        isShowingCheckIn = true
     }
 
     private func simulateDailyProgress() {
@@ -410,11 +415,11 @@ struct HeadwayView: View {
                 } else {
                     HStack(spacing: 12) {
                         Button {
-                            simulateDailyProgress()
+                            startCheckIn()
                         } label: {
-                            Text("Sim Day")
+                            Label("Check-in", systemImage: "calendar.badge.checkmark")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.red)
+                                .foregroundStyle(backgroundTheme.glowColor)
                         }
                         Button {
                             isShowingAddView.toggle()
@@ -459,6 +464,15 @@ struct HeadwayView: View {
             ProgressLogSheetView(backgroundTheme: $backgroundTheme, draft: draft) { note in
                 saveProgressLog(draft, note: note)
             }
+        }
+        .fullScreenCover(isPresented: $isShowingCheckIn) {
+            CheckInView(
+                backgroundTheme: $backgroundTheme,
+                dashboard: dashboard,
+                onSave: { entry in
+                    saveEntry(entry)
+                }
+            )
         }
         .sheet(item: $editingRecentActivityEntry) { entry in
             EditLogEntryView(
@@ -753,7 +767,7 @@ struct HeadwayView: View {
                     .padding(.leading, 38)
             }
 
-            overviewStackedStat(title: "Check-ins", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
+            overviewStackedStat(title: "Loggings", value: "\(dashboard.dailyCheckIns)", icon: "checklist")
 
             Divider()
                 .padding(.leading, 38)
@@ -1361,12 +1375,7 @@ struct HeadwayView: View {
                     }
 
                     if let entry = entries.first {
-                        compactRecentActivityRow(
-                            title: entry.kind.title,
-                            detail: entry.sinTitle ?? entry.sectionTitle,
-                            icon: entry.kind.symbolName,
-                            tint: entry.kind.tint
-                        )
+                        compactRecentActivityRow(for: entry)
                     } else {
                         compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                     }
@@ -1391,12 +1400,7 @@ struct HeadwayView: View {
                             compactRecentActivityRow(title: "No logs", detail: "Add one", icon: "clock.arrow.circlepath", tint: backgroundTheme.glowColor)
                         } else {
                             ForEach(entries) { entry in
-                                compactRecentActivityRow(
-                                    title: entry.kind.title,
-                                    detail: entry.sinTitle ?? entry.sectionTitle,
-                                    icon: entry.kind.symbolName,
-                                    tint: entry.kind.tint
-                                )
+                                compactRecentActivityRow(for: entry)
                             }
                         }
                     }
@@ -1521,7 +1525,9 @@ struct HeadwayView: View {
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
+            editingRecentActivityEntry = entry
+        }
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {

@@ -1,21 +1,54 @@
 import SwiftData
 import SwiftUI
 
+private enum AppFullScreenPresentation: Hashable, Identifiable {
+    case welcome
+    case helpGuide
+    case initialCheckIn
+    case initialCalibrationSuccess
+    case weeklyCheckIn
+
+    var id: Self { self }
+}
+
 struct AppShellView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \StoredLogEntry.occurredAt, order: .reverse) private var storedLogEntries: [StoredLogEntry]
     @Query(sort: \StoredAppPreference.updatedAt, order: .reverse) private var storedPreferences: [StoredAppPreference]
     @State private var preferences = AppPreferenceStore()
     @State private var dashboard = DashboardViewModel()
     @State private var logEntries: [LogEntry] = []
     @State private var purityCalculationDate = Date()
-    @State private var isShowingWelcome = false
+    @State private var activeFullScreenPresentation: AppFullScreenPresentation?
+    @State private var shouldStartInitialCheckInAfterWelcome = false
+    private let weeklyCheckInReminderService = WeeklyCheckInReminderService()
 
     private var backgroundThemeBinding: Binding<AppBackgroundTheme> {
         Binding {
             preferences.backgroundTheme
         } set: { newValue in
             preferences.backgroundTheme = newValue
+        }
+    }
+
+    private var welcomePresentationBinding: Binding<Bool> {
+        Binding {
+            activeFullScreenPresentation == .welcome
+        } set: { isPresented in
+            if !isPresented {
+                activeFullScreenPresentation = nil
+            }
+        }
+    }
+
+    private var helpGuidePresentationBinding: Binding<Bool> {
+        Binding {
+            activeFullScreenPresentation == .helpGuide
+        } set: { isPresented in
+            if !isPresented {
+                activeFullScreenPresentation = nil
+            }
         }
     }
 
@@ -54,8 +87,8 @@ struct AppShellView: View {
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
-                    onShowWelcome: {
-                        isShowingWelcome = true
+                    onShowHelpGuide: {
+                        activeFullScreenPresentation = .helpGuide
                     },
                     onDeleteAllData: deleteAllData
                 ) { entry in
@@ -70,10 +103,9 @@ struct AppShellView: View {
         .tint(preferences.backgroundTheme.glowColor)
         .toolbarBackground(.thinMaterial, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        .fullScreenCover(isPresented: $isShowingWelcome) {
-            WelcomeView(isPresented: $isShowingWelcome) {
-                preferences.hasSeenWelcome = true
-            }
+        .fullScreenCover(item: $activeFullScreenPresentation) { presentation in
+            fullScreenPresentationView(for: presentation)
+                .environment(preferences)
         }
         .task {
             syncLogEntriesFromStore()
@@ -82,8 +114,28 @@ struct AppShellView: View {
                 preferences.removeLegacyUserDefaults()
             }
             recalculatePurity()
+            await notifyForWeeklyCheckInIfDue()
             guard !preferences.hasSeenWelcome else { return }
-            isShowingWelcome = true
+            activeFullScreenPresentation = .welcome
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task {
+                await notifyForWeeklyCheckInIfDue()
+            }
+        }
+        .onChange(of: activeFullScreenPresentation) { _, presentation in
+            guard presentation == nil else { return }
+            startInitialCheckInIfReady()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationTapped)) { _ in
+            preferences.weeklyCheckInSnoozedUntil = 0
+            activeFullScreenPresentation = .weeklyCheckIn
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weeklyCheckInNotificationSnoozed)) { _ in
+            Task {
+                await weeklyCheckInReminderService.snooze(preferences: preferences)
+            }
         }
         .onChange(of: storedLogEntries.map(\.updatedAt)) { _, _ in
             syncLogEntriesFromStore()
@@ -108,26 +160,80 @@ struct AppShellView: View {
         recalculatePurity()
     }
 
-    private func deleteEntry(_ entry: LogEntry) {
-        logEntries.removeAll { $0.id == entry.id }
-
-        if let storedLogEntry = storedLogEntries.first(where: { $0.id == entry.id }) {
-            modelContext.delete(storedLogEntry)
-            try? modelContext.save()
+    @ViewBuilder
+    private func fullScreenPresentationView(for presentation: AppFullScreenPresentation) -> some View {
+        switch presentation {
+        case .welcome:
+            WelcomeView(isPresented: welcomePresentationBinding) {
+                shouldStartInitialCheckInAfterWelcome = true
+                activeFullScreenPresentation = nil
+            }
+        case .helpGuide:
+            HelpGuideView(isPresented: helpGuidePresentationBinding) {
+                activeFullScreenPresentation = nil
+            }
+        case .initialCheckIn:
+            CheckInView(
+                backgroundTheme: backgroundThemeBinding,
+                dashboard: dashboard,
+                allowsCancel: false,
+                headerEyebrow: "Initial calibration",
+                headerTitle: "Answer once so the app starts from your real baseline.",
+                headerSubtitle: "This first check-in is required. It creates your starting timeline entry and calibrates the dashboard before you begin.",
+                onSave: saveEntry
+            ) {
+                preferences.hasSeenWelcome = true
+                activeFullScreenPresentation = nil
+                Task { @MainActor in
+                    activeFullScreenPresentation = .initialCalibrationSuccess
+                }
+            }
+        case .initialCalibrationSuccess:
+            OnboardingSuccessView {
+                activeFullScreenPresentation = nil
+            }
+        case .weeklyCheckIn:
+            CheckInView(
+                backgroundTheme: backgroundThemeBinding,
+                dashboard: dashboard,
+                onSave: saveEntry
+            )
         }
-
-        purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
-        recalculatePurity()
-    }
-
-    private func updateEntry(_ entry: LogEntry) {
-        deleteEntry(entry)
-        saveEntry(entry)
     }
 
     private func syncLogEntriesFromStore() {
         logEntries = storedLogEntries.map(\.entry)
         purityCalculationDate = logEntries.map(\.occurredAt).max() ?? Date()
+    }
+
+    private func updateEntry(_ entry: LogEntry) {
+        guard let storedEntry = storedLogEntries.first(where: { $0.id == entry.id }) else { return }
+
+        storedEntry.kindRawValue = entry.kind.rawValue
+        storedEntry.sectionTitle = entry.sectionTitle
+        storedEntry.sinTitle = entry.sinTitle
+        storedEntry.note = entry.note
+        storedEntry.prayerMinutes = entry.prayerMinutes
+        storedEntry.prayerDurationSeconds = entry.prayerDurationSeconds
+        storedEntry.connectedSins = entry.connectedSins
+        storedEntry.progressPercentage = entry.progressPercentage
+        storedEntry.checkInRecordJSON = entry.checkInRecordJSON
+        storedEntry.occurredAt = entry.occurredAt
+        storedEntry.updatedAt = Date()
+        try? modelContext.save()
+
+        syncLogEntriesFromStore()
+        recalculatePurity()
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        guard let storedEntry = storedLogEntries.first(where: { $0.id == entry.id }) else { return }
+
+        modelContext.delete(storedEntry)
+        try? modelContext.save()
+
+        syncLogEntriesFromStore()
+        recalculatePurity()
     }
 
     private func persistEntry(_ entry: LogEntry) {
@@ -154,11 +260,23 @@ struct AppShellView: View {
         logEntries = []
         purityCalculationDate = Date()
         dashboard.rebuild(from: [], now: purityCalculationDate, strictness: preferences.purityStrictness)
-        isShowingWelcome = true
+        shouldStartInitialCheckInAfterWelcome = false
+        activeFullScreenPresentation = .welcome
     }
 
     private func recalculatePurity() {
         dashboard.rebuild(from: logEntries, now: purityCalculationDate, strictness: preferences.purityStrictness)
+    }
+
+    private func startInitialCheckInIfReady() {
+        guard shouldStartInitialCheckInAfterWelcome, activeFullScreenPresentation == nil else { return }
+
+        shouldStartInitialCheckInAfterWelcome = false
+        activeFullScreenPresentation = .initialCheckIn
+    }
+
+    private func notifyForWeeklyCheckInIfDue() async {
+        await weeklyCheckInReminderService.notifyIfDue(preferences: preferences)
     }
 }
 
