@@ -2,6 +2,247 @@ import SwiftUI
 
 struct WelcomeView: View {
     @Binding var isPresented: Bool
+    let onStartCalibration: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var pageIndex = 0
+
+    private let pages: [FeatureOverviewPage] = [
+        .dashboard,
+        .logging,
+        .timeline,
+        .settings
+    ]
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: .blood)
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(colorScheme == .dark ? 0.14 : 0.06),
+                    Color.clear,
+                    Color.red.opacity(0.08)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                overviewHeader
+                    .padding(.horizontal, 16)
+
+                FeatureOverviewCard(page: pages[pageIndex], pageNumber: pageIndex + 1, pageCount: pages.count)
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+
+                overviewFooter
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+            }
+            .padding(.top, 24)
+            .safeAreaPadding(.top, 38)
+        }
+        .interactiveDismissDisabled()
+    }
+
+    private var overviewHeader: some View {
+        AppSurfaceCard(contentPadding: 18) {
+            HStack(alignment: .top, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.red.opacity(colorScheme == .dark ? 0.22 : 0.14))
+
+                    Image(systemName: "sparkles")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.red)
+                }
+                .frame(width: 52, height: 52)
+
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("Welcome to Road to Theosis")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Here is the short version of what the app helps you do. After this, a check-in calibrates your starting point.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var overviewFooter: some View {
+        AppSurfaceCard(contentPadding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    ForEach(pages.indices, id: \.self) { index in
+                        Capsule()
+                            .fill(index == pageIndex ? pages[index].tint : .primary.opacity(0.14))
+                            .frame(width: index == pageIndex ? 24 : 8, height: 8)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                Text("Page \(pageIndex + 1) of \(pages.count)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text(pageIndex == pages.count - 1 ? "Next is the calibration check-in. It is required so the app starts from your real answers." : "Continue through the app overview at your own pace.")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                ActionButtonView(
+                    title: pageIndex == pages.count - 1 ? "Start Calibration" : "Continue",
+                    icon: pageIndex == pages.count - 1 ? "calendar.badge.checkmark" : "arrow.right",
+                    tint: pages[pageIndex].tint
+                ) {
+                    advanceOverview()
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: pageIndex)
+        }
+    }
+
+    private func advanceOverview() {
+        if pageIndex < pages.count - 1 {
+            withAnimation(.easeInOut) {
+                pageIndex += 1
+            }
+        } else {
+            isPresented = false
+            onStartCalibration()
+        }
+    }
+}
+
+private struct FeatureOverviewCard: View {
+    let page: FeatureOverviewPage
+    let pageNumber: Int
+    let pageCount: Int
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        AppSurfaceCard(contentPadding: 0, fillsAvailableHeight: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack(alignment: .topTrailing) {
+                    LinearGradient(
+                        colors: [
+                            page.tint.opacity(colorScheme == .dark ? 0.26 : 0.17),
+                            page.tint.opacity(colorScheme == .dark ? 0.08 : 0.06)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    Image(systemName: page.symbol)
+                        .font(.system(size: 92, weight: .bold))
+                        .foregroundStyle(page.tint.opacity(colorScheme == .dark ? 0.10 : 0.08))
+                        .offset(x: 24, y: -24)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("\(pageNumber)/\(pageCount)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(page.tint)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(page.tint.opacity(0.14), in: Capsule())
+
+                        Image(systemName: page.symbol)
+                            .font(.title.weight(.semibold))
+                            .foregroundStyle(page.tint)
+
+                        Text(page.title)
+                            .font(.title.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(page.subtitle)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(page.points.indices, id: \.self) { index in
+                        GuideBulletRow(highlight: page.points[index], tint: page.tint)
+                    }
+                }
+                .padding(14)
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+}
+
+private struct FeatureOverviewPage {
+    let title: String
+    let subtitle: String
+    let symbol: String
+    let tint: Color
+    let points: [WelcomeHighlight]
+
+    static let dashboard = FeatureOverviewPage(
+        title: "See your day clearly",
+        subtitle: "Home gathers the pieces you need most so the app opens to a calm, useful overview.",
+        symbol: "house.fill",
+        tint: .red,
+        points: [
+            .init(symbol: "scope", title: "Current focus", detail: "Keep the struggle you are watching most closely near the top."),
+            .init(symbol: "bolt.fill", title: "Fast actions", detail: "Start prayer or add a log without digging through screens."),
+            .init(symbol: "square.grid.2x2.fill", title: "Editable layout", detail: "Rearrange the home cards later from Settings.")
+        ]
+    )
+
+    static let logging = FeatureOverviewPage(
+        title: "Record what happened",
+        subtitle: "Logs turn moments into something you can review, pray through, and learn from.",
+        symbol: "square.and.pencil",
+        tint: .teal,
+        points: [
+            .init(symbol: "checkmark.shield.fill", title: "Victories and losses", detail: "Save the outcome without writing more than you need."),
+            .init(symbol: "text.quote", title: "Notes when useful", detail: "Add context when it helps you understand the pattern."),
+            .init(symbol: "timer", title: "Prayer time", detail: "Keep prayer connected to the moment it answered.")
+        ]
+    )
+
+    static let timeline = FeatureOverviewPage(
+        title: "Review your patterns",
+        subtitle: "The timeline keeps prayers, notes, check-ins, and logs in order so your progress is easier to read.",
+        symbol: "clock.arrow.circlepath",
+        tint: .indigo,
+        points: [
+            .init(symbol: "calendar", title: "Grouped by day", detail: "See what happened without piecing it together yourself."),
+            .init(symbol: "pencil", title: "Editable entries", detail: "Clean up details later when you remember more."),
+            .init(symbol: "chart.line.uptrend.xyaxis", title: "Visible movement", detail: "Notice repeated pressure points and real growth.")
+        ]
+    )
+
+    static let settings = FeatureOverviewPage(
+        title: "Tune the app around you",
+        subtitle: "Settings keeps the personal choices together: theme, strictness, reminders, Scripture, and help.",
+        symbol: "gearshape.fill",
+        tint: .purple,
+        points: [
+            .init(symbol: "paintpalette.fill", title: "Theme", detail: "Pick the look that is easiest to read and return to."),
+            .init(symbol: "calendar.badge.checkmark", title: "Check-ins", detail: "Choose reminders and which questions appear."),
+            .init(symbol: "questionmark.circle.fill", title: "Help guide", detail: "Open the guide any time after setup.")
+        ]
+    )
+}
+
+struct HelpGuideView: View {
+    @Binding var isPresented: Bool
     let onFinish: () -> Void
     @Environment(\.colorScheme) private var colorScheme
 
@@ -101,12 +342,12 @@ struct WelcomeView: View {
                     .frame(width: 52, height: 52)
 
                     VStack(alignment: .leading, spacing: 7) {
-                        Text("Welcome to Road to Theosis")
+                        Text("Road to Theosis Guide")
                             .font(.title2.weight(.semibold))
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("A short walk-through so you know where everything lives before you start using it for real.")
+                        Text("A reusable guide to the screens and tools you can come back to whenever you need a refresher.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -115,7 +356,7 @@ struct WelcomeView: View {
                     Spacer(minLength: 0)
 
                     if stepIndex < steps.count - 1 {
-                        Button("Skip tour") {
+                        Button("Close") {
                             finish()
                         }
                         .font(.subheadline.weight(.semibold))
@@ -141,7 +382,7 @@ struct WelcomeView: View {
                     Spacer(minLength: 0)
                 }
 
-                Text("Skip anything you already understand. You can reopen this from Settings whenever you want.")
+                Text("Use this guide as a reference. Closing it never changes your setup or calibration.")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
             }
@@ -788,6 +1029,10 @@ private struct WelcomeHighlight {
     let detail: String
 }
 
-#Preview {
-    WelcomeView(isPresented: .constant(true), onFinish: {})
+#Preview("Welcome") {
+    WelcomeView(isPresented: .constant(true), onStartCalibration: {})
+}
+
+#Preview("Help Guide") {
+    HelpGuideView(isPresented: .constant(true), onFinish: {})
 }
