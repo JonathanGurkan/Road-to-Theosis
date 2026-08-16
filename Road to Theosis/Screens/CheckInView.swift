@@ -19,6 +19,7 @@ struct CheckInView: View {
     @State private var skippedQuestionIDs: Set<String> = []
     @State private var stepIndex = 0
     @State private var reviewDraft: CheckInReviewDraft?
+    @State private var footerHeight: CGFloat = 0
 
     private var questions: [CheckInQuestion] {
         CheckInQuestionnaire.questions(for: preferences.checkInEnabledQuestionIDs)
@@ -103,7 +104,7 @@ struct CheckInView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 16)
-                        .padding(.bottom, 24)
+                        .padding(.bottom, scrollContentBottomPadding)
                     }
                     .onChange(of: stepIndex) { _, _ in
                         withAnimation(.easeInOut(duration: 0.22)) {
@@ -126,6 +127,9 @@ struct CheckInView: View {
             .safeAreaInset(edge: .bottom) {
                 footerBar
             }
+            .onPreferenceChange(CheckInFooterHeightPreferenceKey.self) { height in
+                footerHeight = height
+            }
         }
         .interactiveDismissDisabled(!allowsCancel)
         .onChange(of: questions.count) { _, count in
@@ -146,6 +150,10 @@ struct CheckInView: View {
     }
 
     private static let scrollTopID = "check-in-scroll-top"
+
+    private var scrollContentBottomPadding: CGFloat {
+        max(24, footerHeight + 16)
+    }
 
     private var headerCard: some View {
         AppSurfaceCard(contentPadding: 16) {
@@ -364,7 +372,11 @@ struct CheckInView: View {
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
-        .background(.clear)
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: CheckInFooterHeightPreferenceKey.self, value: geometry.size.height)
+            }
+        }
     }
 
     @ViewBuilder
@@ -560,6 +572,14 @@ private enum CheckInProgressStatus {
     case current
     case skipped
     case pending
+}
+
+private struct CheckInFooterHeightPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
 }
 
 private struct CheckInReviewSheetView: View {
