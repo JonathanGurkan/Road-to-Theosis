@@ -14,7 +14,7 @@ struct WelcomeView: View {
     ]
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             AppBackgroundView(theme: .blood)
 
             LinearGradient(
@@ -295,7 +295,7 @@ struct HelpGuideView: View {
     ]
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             AppBackgroundView(theme: .blood)
 
             LinearGradient(
@@ -309,53 +309,55 @@ struct HelpGuideView: View {
             )
             .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 14) {
-                    header
-
-                    stepRail
-                        .padding(.horizontal, 16)
-
-                    GuideStepCard(
-                        step: steps[stepIndex],
-                        stepNumber: stepIndex + 1,
-                        stepCount: steps.count
-                    )
+            VStack(spacing: 14) {
+                header
                     .padding(.horizontal, 16)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-                    .gesture(
-                        DragGesture(minimumDistance: 32)
-                            .onEnded(handleGuideDrag)
-                    )
-                    .task(id: stepIndex) {
-                        stepProgress = 0
 
-                        guard stepIndex < steps.count - 1 else { return }
+                stepRail
+                    .padding(.horizontal, 16)
 
-                        withAnimation(.linear(duration: autoAdvanceDuration)) {
-                            stepProgress = 1
-                        }
+                CompactGuideStepCard(
+                    step: steps[stepIndex],
+                    stepNumber: stepIndex + 1,
+                    stepCount: steps.count
+                )
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+                .gesture(
+                    DragGesture(minimumDistance: 32)
+                        .onEnded(handleGuideDrag)
+                )
+                .task(id: stepIndex) {
+                    stepProgress = 0
 
-                        do {
-                            try await Task.sleep(for: .seconds(autoAdvanceDuration))
-                        } catch {
-                            return
-                        }
+                    guard stepIndex < steps.count - 1 else { return }
 
-                        guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
-
-                        withAnimation(.easeInOut(duration: 0.55)) {
-                            stepIndex += 1
-                        }
+                    withAnimation(.linear(duration: autoAdvanceDuration)) {
+                        stepProgress = 1
                     }
 
-                    footer
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
+                    do {
+                        try await Task.sleep(for: .seconds(autoAdvanceDuration))
+                    } catch {
+                        return
+                    }
+
+                    guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
+
+                    withAnimation(.easeInOut(duration: 0.55)) {
+                        stepIndex += 1
+                    }
                 }
-                .padding(.top, 24)
             }
-            .safeAreaPadding(.top, 8)
+            .padding(.top, 150)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .overlay(alignment: .bottom) {
+            footer
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .background(.clear)
         }
     }
 
@@ -561,35 +563,6 @@ private struct GuideStepCard: View {
 
                 VStack(alignment: .leading, spacing: 18) {
                     step.preview
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("What to notice")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            ForEach(step.highlights.indices, id: \.self) { index in
-                                GuideBulletRow(highlight: step.highlights[index], tint: step.tint)
-                            }
-                        }
-                    }
-
-                    if let note = step.note {
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: "heart.text.square.fill")
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(step.tint)
-                                .frame(width: 24)
-
-                            Text(note)
-                                .font(.callout.weight(.medium))
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(12)
-                        .background(step.tint.opacity(colorScheme == .dark ? 0.12 : 0.09), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    }
                 }
             }
         }
@@ -655,6 +628,81 @@ private struct GuideStepCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+}
+
+private struct CompactGuideStepCard: View {
+    let step: WelcomeStep
+    let stepNumber: Int
+    let stepCount: Int
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        AppSurfaceCard(contentPadding: 16) {
+            VStack(alignment: .leading, spacing: 16) {
+                ZStack(alignment: .topTrailing) {
+                    LinearGradient(
+                        colors: [
+                            step.tint.opacity(colorScheme == .dark ? 0.28 : 0.18),
+                            step.tint.opacity(colorScheme == .dark ? 0.08 : 0.06),
+                            Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.02)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    Image(systemName: step.icon)
+                        .font(.system(size: 94, weight: .bold))
+                        .foregroundStyle(step.tint.opacity(colorScheme == .dark ? 0.10 : 0.08))
+                        .offset(x: 20, y: -20)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(spacing: 8) {
+                            Text("Step \(stepNumber)")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+
+                            Text("\(stepNumber)/\(stepCount)")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(step.tint)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(step.tint.opacity(0.14), in: Capsule())
+                        }
+
+                        ZStack {
+                            Circle()
+                                .fill(step.tint.opacity(colorScheme == .dark ? 0.18 : 0.14))
+                            Image(systemName: step.icon)
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(step.tint)
+                        }
+                        .frame(width: 56, height: 56)
+
+                        Text(step.title)
+                            .font(.title.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(step.subtitle)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(step.highlights.indices, id: \.self) { index in
+                        GuideBulletRow(highlight: step.highlights[index], tint: step.tint)
+                    }
+                }
+            }
+        }
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.04), radius: 14, x: 0, y: 8)
     }
 }
 
