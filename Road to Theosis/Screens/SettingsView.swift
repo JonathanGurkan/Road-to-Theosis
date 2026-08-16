@@ -14,146 +14,128 @@ struct SettingsView: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                NavigationLink {
-                    AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Appearance",
-                        subtitle: "Themes and background tone",
-                        systemImage: "paintbrush"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section("Dashboard") {
+                    NavigationLink {
+                        HomeSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Home Screen",
+                            subtitle: "Activity cards and dashboard density",
+                            systemImage: "house.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    HomeSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Home",
-                        subtitle: "Feed density and activity cards",
-                        systemImage: "house.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    NavigationLink {
+                        AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Appearance",
+                            subtitle: "Theme and background tone",
+                            systemImage: "paintbrush"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    TimelineSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Timeline",
-                        subtitle: "History range and log visibility",
-                        systemImage: "clock.arrow.circlepath"
-                    )
+                    NavigationLink {
+                        WeatherSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Greeting Weather",
+                            subtitle: "Local conditions in the welcome card",
+                            systemImage: "cloud.sun.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                NavigationLink {
-                    PuritySettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        dashboard: $dashboard,
-                        logEntries: logEntries,
-                        purityCalculationDate: purityCalculationDate
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Purity",
-                        subtitle: "Strictness and clean-time standard",
-                        systemImage: "chart.bar.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section("Practice") {
+                    NavigationLink {
+                        CheckInSettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            dashboard: dashboard,
+                            onSaveEntry: onSaveEntry
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Check-in",
+                            subtitle: "Weekly reminder and questionnaire",
+                            systemImage: "calendar.badge.checkmark"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    PrayerSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        onSaveEntry: onSaveEntry
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Prayer",
-                        subtitle: "Quiet mode and timer behavior",
-                        systemImage: "hands.sparkles"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    NavigationLink {
+                        PrayerSettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            onSaveEntry: onSaveEntry
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Prayer",
+                            subtitle: "Timer and session behavior",
+                            systemImage: "hands.sparkles"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Scripture",
-                        subtitle: "Defense verses and explanations",
-                        systemImage: "book.fill"
-                    )
+                    NavigationLink {
+                        ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Scripture",
+                            subtitle: "Defense verses and explanations",
+                            systemImage: "book.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                NavigationLink {
-                    WeatherSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Weather",
-                        subtitle: "Local conditions for greetings",
-                        systemImage: "cloud.sun.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section("Progress") {
+                    NavigationLink {
+                        PuritySettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            dashboard: $dashboard,
+                            logEntries: logEntries,
+                            purityCalculationDate: purityCalculationDate
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Purity",
+                            subtitle: "Strictness and clean-time standard",
+                            systemImage: "chart.bar.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    AboutSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        onShowHelpGuide: onShowHelpGuide,
-                        onDeleteAllData: onDeleteAllData
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "About",
-                        subtitle: "App version and notes",
-                        systemImage: "info.circle.fill"
-                    )
+                    NavigationLink {
+                        TimelineSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Timeline",
+                            subtitle: "History range and log visibility",
+                            systemImage: "clock.arrow.circlepath"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                NavigationLink {
-                    DeveloperSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        dashboard: $dashboard,
-                        logEntries: $logEntries,
-                        purityCalculationDate: $purityCalculationDate
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Developer",
-                        subtitle: "Test data, modes, and purity scenarios",
-                        systemImage: "hammer.fill"
-                    )
+                Section("Support") {
+                    NavigationLink {
+                        AboutSettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            onShowHelpGuide: onShowHelpGuide,
+                            onDeleteAllData: onDeleteAllData
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "About & Data",
+                            subtitle: "Version, help, sync, and reset options",
+                            systemImage: "info.circle.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-
-                NavigationLink {
-                    CheckInSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        dashboard: dashboard,
-                        onSaveEntry: onSaveEntry
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Check-in",
-                        subtitle: "Weekly reminder and questionnaire",
-                        systemImage: "calendar.badge.checkmark"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -161,6 +143,13 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private extension View {
+    func settingsMenuRowStyle() -> some View {
+        listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
     }
 }
 
@@ -435,7 +424,7 @@ private struct HomeSettingsPage: View {
             .contentMargins(.horizontal, 12, for: .scrollContent)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Home")
+        .navigationTitle("Home Screen")
         .navigationBarTitleDisplayMode(.large)
     }
 }
@@ -557,7 +546,7 @@ private struct PrayerSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Timing"), footer: preferences.isPrayerTimingEnabled ? Text("The prayer timer is enabled accros the app. You can track prayer minutes with this feature and see a record of the total time on you dashboard as well as on the timeline.") : Text("The prayer timer is disables accros the app. This means that prayer minutes are not tracked which helps you put the focus truly on God and on God alone.")) {
+                Section(header: Text("Timer"), footer: preferences.isPrayerTimingEnabled ? Text("Prayer minutes are tracked across the app and appear on the dashboard and timeline.") : Text("Prayer minutes are not tracked while the timer is disabled.")) {
                     Toggle("Enable prayer timing", isOn: $preferences.isPrayerTimingEnabled)
 
                     if preferences.isPrayerTimingEnabled {
@@ -607,10 +596,10 @@ private struct ScriptureSettingsPage: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                Section(header: Text("Verse arsenal"), footer: Text("When you tap on the icon of a sin in the sins list, your verse arsenal shows up. These are verses you note down to use as a counter agains the devil. You can add not only the verse and the bible quote, but also a descriptive note beneath it to, for example, specify what the use is of the verse.")) {
-                    Toggle("Enable verse arsenal", isOn: $preferences.enableVerseInventory)
+                Section(header: Text("Defense Verses"), footer: Text("Tap a sin icon to open saved verses and notes for that struggle.")) {
+                    Toggle("Enable defense verses", isOn: $preferences.enableVerseInventory)
                     if preferences.enableVerseInventory {
-                        Toggle("Show verse desctiptions", isOn: $preferences.showVerseApplications)
+                        Toggle("Show verse notes", isOn: $preferences.showVerseApplications)
                     }
                 }
             }
@@ -689,7 +678,7 @@ private struct WeatherSettingsPage: View {
             .contentMargins(.horizontal, 12, for: .scrollContent)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Weather")
+        .navigationTitle("Greeting Weather")
         .navigationBarTitleDisplayMode(.large)
     }
 
@@ -807,15 +796,6 @@ private struct AboutSettingsPage: View {
                         Label("Delete All Data", systemImage: "trash.fill")
                     }
                 }
-                
-                Section("Help") {
-                    Button {
-                        //Add logic to show a list of hidden tips and tricks
-                    } label: {
-                        Text("Tips and Tricks")
-                            .foregroundColor(.primary)
-                    }
-                }
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
@@ -840,284 +820,6 @@ private struct AboutSettingsPage: View {
             await iCloudStatus.monitorAccountChanges()
         }
     }
-}
-
-private struct DeveloperSettingsPage: View {
-    @Binding var backgroundTheme: AppBackgroundTheme
-    @Binding var dashboard: DashboardViewModel
-    @Binding var logEntries: [LogEntry]
-    @Binding var purityCalculationDate: Date
-    @Environment(AppPreferenceStore.self) private var preferences
-    @State private var selectedSectionIndex = 0
-    @State private var selectedItemIndex = 0
-
-    private var selectedStrictness: PurityStrictness {
-        preferences.purityStrictness
-    }
-
-    private var scenarios: [DeveloperPurityScenario] {
-        let historyDays = selectedStrictness.historyDays
-        let weeklyLossCount = max(1, Int((Double(historyDays) / 7).rounded()))
-        let oftenLossCount = max(weeklyLossCount + 1, Int((Double(historyDays) * 2.2 / 7).rounded()))
-        let dailyLossCount = max(oftenLossCount + 1, Int((Double(historyDays) * 3.8 / 7).rounded()))
-        let rockBottomLossCount = max(dailyLossCount + 1, Int((Double(historyDays) * 5.5 / 7).rounded()))
-
-        return [
-            .init(title: "Rock bottom", detail: "Very high loss rate in \(historyDays)d", lossDayOffsets: dayOffsets(count: rockBottomLossCount, within: historyDays)),
-            .init(title: "Daily", detail: "Daily-level loss rate in \(historyDays)d", lossDayOffsets: dayOffsets(count: dailyLossCount, within: historyDays)),
-            .init(title: "Often", detail: "Several weekly losses in \(historyDays)d", lossDayOffsets: dayOffsets(count: oftenLossCount, within: historyDays)),
-            .init(title: "Weekly", detail: "About weekly in \(historyDays)d", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays)),
-            .init(title: "Occasional", detail: "A few monthly equivalents", lossDayOffsets: dayOffsets(count: max(1, weeklyLossCount / 2), within: historyDays)),
-            .init(title: "Clean window", detail: "Last loss just outside \(historyDays)d", lossDayOffsets: [historyDays + 1]),
-            .init(title: "Pure", detail: "Last loss past \(selectedStrictness.pureAfterDays)d", lossDayOffsets: [selectedStrictness.pureAfterDays + 1]),
-            .init(title: "Prayer boost", detail: "Weekly losses plus prayer", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), prayerDayOffsets: dayOffsets(count: 6, within: historyDays)),
-            .init(title: "Resistance only", detail: "Resistance without purity penalty", lossDayOffsets: [], resistanceDayOffsets: dayOffsets(count: 6, within: historyDays)),
-            .init(title: "Mixed history", detail: "Weekly losses plus resistance", lossDayOffsets: dayOffsets(count: weeklyLossCount, within: historyDays), resistanceDayOffsets: dayOffsets(count: 4, within: historyDays))
-        ]
-    }
-
-    private var selectedSection: SinSection? {
-        guard dashboard.sections.indices.contains(selectedSectionIndex) else { return nil }
-        return dashboard.sections[selectedSectionIndex]
-    }
-
-    private var selectedItem: SinCategory? {
-        guard let selectedSection, selectedSection.items.indices.contains(selectedItemIndex) else { return nil }
-        return selectedSection.items[selectedItemIndex]
-    }
-
-    private var selectedLevelText: String {
-        guard let selectedSection, let selectedItem else { return "No sin selected" }
-        let snapshot = PurityCalculator.snapshot(
-            sectionTitle: selectedSection.title,
-            sinTitle: selectedItem.title,
-            entries: logEntries,
-            now: purityCalculationDate,
-            strictness: selectedStrictness,
-            qualifiesForPrayerBoost: selectedItem.qualifiesForPrayerPurityBoost
-        )
-        let cleanText = snapshot.cleanDayCount.map { "Clean \($0)d" } ?? "No history"
-        let prayerText = selectedItem.qualifiesForPrayerPurityBoost ? " | Prayer +\(SinFrequencyScale.percentage(for: snapshot.prayerPurityBoost))%" : ""
-        return "\(SinFrequencyScale.label(for: selectedItem.progress)) | Losses \(snapshot.recentLossCount) | Resistance \(snapshot.recentResistanceCount) | \(cleanText)\(prayerText)"
-    }
-
-    private func dayOffsets(count: Int, within days: Int) -> [Int] {
-        guard count > 0 else { return [] }
-        guard count > 1 else { return [0] }
-
-        let maxOffset = max(0, days - 1)
-        return (0..<count).map { index in
-            Int((Double(index) / Double(count - 1) * Double(maxOffset)).rounded())
-        }
-    }
-
-    var body: some View {
-        ZStack {
-            AppBackgroundView(theme: backgroundTheme)
-
-            List {
-                Section(header: Text("Target Sin"), footer: Text(selectedLevelText)) {
-                    Picker("Section", selection: $selectedSectionIndex) {
-                        ForEach(dashboard.sections.indices, id: \.self) { index in
-                            Text(dashboard.sections[index].title).tag(index)
-                        }
-                    }
-                    .onChange(of: selectedSectionIndex) { _, _ in
-                        selectedItemIndex = 0
-                    }
-
-                    if let selectedSection {
-                        Picker("Sin", selection: $selectedItemIndex) {
-                            ForEach(selectedSection.items.indices, id: \.self) { index in
-                                Text(selectedSection.items[index].title).tag(index)
-                            }
-                        }
-                    }
-                }
-
-                Section(header: Text("Purity Scenarios"), footer: Text("Scenarios replace selected-sin logs and developer prayer scenario logs, then recalculate purity from the seeded history.")) {
-                    ForEach(scenarios) { scenario in
-                        Button {
-                            applyScenario(scenario)
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(scenario.title)
-                                        .foregroundStyle(.primary)
-                                    Text(scenario.detail)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
-                }
-
-                Section(header: Text("Test Clock"), footer: Text("Jump the calculation date to verify that old losses age into Rare, Clean window, and Pure.")) {
-                    HStack {
-                        Text("Calculation date")
-                        Spacer()
-                        Text(Self.dateFormatter.string(from: purityCalculationDate))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Button("Advance 1 day") {
-                        advanceCalculationDate(by: 1)
-                    }
-
-                    Button("Advance 7 days") {
-                        advanceCalculationDate(by: 7)
-                    }
-
-                    Button("Advance 30 days") {
-                        advanceCalculationDate(by: 30)
-                    }
-
-                    Button("Reset to today") {
-                        purityCalculationDate = Date()
-                        recalculatePurity()
-                    }
-                }
-
-                Section(header: Text("Live Logs"), footer: Text("These buttons create normal timeline entries and update dashboard stats.")) {
-                    Button("Log loss now") {
-                        addLiveEntry(kind: .loss)
-                    }
-
-                    Button("Log resistance now") {
-                        addLiveEntry(kind: .victory)
-                    }
-
-                    Button("Log quick prayer now") {
-                        addLiveEntry(kind: .quickPrayer, prayerMinutes: 1)
-                    }
-                }
-
-                Section(header: Text("Reset")) {
-                    Button(role: .destructive) {
-                        clearSelectedSinLogs()
-                    } label: {
-                        Label("Clear Selected Sin Logs", systemImage: "eraser")
-                    }
-
-                    Button(role: .destructive) {
-                        logEntries.removeAll()
-                        dashboard = DashboardViewModel()
-                        purityCalculationDate = Date()
-                    } label: {
-                        Label("Reset Dashboard Test State", systemImage: "arrow.counterclockwise")
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .contentMargins(.horizontal, 12, for: .scrollContent)
-            .scrollContentBackground(.hidden)
-        }
-        .navigationTitle("Developer")
-        .navigationBarTitleDisplayMode(.large)
-    }
-
-    private func applyScenario(_ scenario: DeveloperPurityScenario) {
-        guard let selectedSection, let selectedItem else { return }
-        removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
-        removeDeveloperPrayerScenarioEntries()
-
-        let lossEntries = scenario.lossDayOffsets.compactMap { dayOffset in
-            scenarioEntry(kind: .loss, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
-        }
-        let resistanceEntries = scenario.resistanceDayOffsets.compactMap { dayOffset in
-            scenarioEntry(kind: .victory, dayOffset: dayOffset, sectionTitle: selectedSection.title, sinTitle: selectedItem.title, title: scenario.title)
-        }
-        let prayerEntries = scenario.prayerDayOffsets.compactMap { dayOffset in
-            scenarioEntry(kind: .quickPrayer, dayOffset: dayOffset, sectionTitle: "Prayer", sinTitle: nil, title: scenario.title)
-        }
-
-        let seededEntries = lossEntries + resistanceEntries + prayerEntries
-        logEntries.insert(contentsOf: seededEntries.sorted { $0.occurredAt > $1.occurredAt }, at: 0)
-        recalculatePurity()
-    }
-
-    private func scenarioEntry(kind: LogEntry.Kind, dayOffset: Int, sectionTitle: String, sinTitle: String?, title: String) -> LogEntry? {
-        Calendar.current.date(byAdding: .day, value: -dayOffset, to: purityCalculationDate).map { date in
-            LogEntry(
-                kind: kind,
-                sectionTitle: sectionTitle,
-                sinTitle: sinTitle,
-                note: "Developer scenario: \(title)",
-                prayerMinutes: 0,
-                occurredAt: date
-            )
-        }
-    }
-
-    private func addLiveEntry(kind: LogEntry.Kind, prayerMinutes: Int = 0) {
-        guard let selectedSection, let selectedItem else { return }
-        let entry = LogEntry(
-            kind: kind,
-            sectionTitle: selectedSection.title,
-            sinTitle: selectedItem.title,
-            note: "Developer test log",
-            prayerMinutes: prayerMinutes,
-            occurredAt: purityCalculationDate
-        )
-
-        logEntries.insert(entry, at: 0)
-        dashboard.record(entry)
-        recalculatePurity()
-    }
-
-    private func advanceCalculationDate(by days: Int) {
-        purityCalculationDate = Calendar.current.date(byAdding: .day, value: days, to: purityCalculationDate) ?? purityCalculationDate
-        recalculatePurity()
-    }
-
-    private func clearSelectedSinLogs() {
-        guard let selectedSection, let selectedItem else { return }
-        removeEntriesForSelectedSin(sectionTitle: selectedSection.title, sinTitle: selectedItem.title)
-        recalculatePurity()
-    }
-
-    private func recalculatePurity() {
-        dashboard.recalculatePurity(from: logEntries, now: purityCalculationDate, strictness: selectedStrictness)
-    }
-
-    private func removeEntriesForSelectedSin(sectionTitle: String, sinTitle: String) {
-        logEntries.removeAll { entry in
-            entry.sectionTitle == sectionTitle && entry.sinTitle == sinTitle
-        }
-    }
-
-    private func removeDeveloperPrayerScenarioEntries() {
-        logEntries.removeAll { entry in
-            (entry.kind == .prayer || entry.kind == .quickPrayer) &&
-            entry.sectionTitle == "Prayer" &&
-            entry.note.hasPrefix("Developer scenario:")
-        }
-    }
-
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter
-    }()
-
-}
-
-private struct DeveloperPurityScenario: Identifiable {
-    let title: String
-    let detail: String
-    let lossDayOffsets: [Int]
-    var resistanceDayOffsets: [Int] = []
-    var prayerDayOffsets: [Int] = []
-
-    var id: String { title }
 }
 
 private struct ThemeRow: View {
