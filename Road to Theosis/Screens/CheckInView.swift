@@ -7,6 +7,11 @@ struct CheckInView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let dashboard: DashboardViewModel
     let onSave: (LogEntry) -> Void
+    let allowsCancel: Bool
+    let headerEyebrow: String
+    let headerTitle: String
+    let headerSubtitle: String
+    let onComplete: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferenceStore.self) private var preferences
@@ -14,6 +19,7 @@ struct CheckInView: View {
     @State private var skippedQuestionIDs: Set<String> = []
     @State private var stepIndex = 0
     @State private var reviewDraft: CheckInReviewDraft?
+    @State private var footerHeight: CGFloat = 0
 
     private var questions: [CheckInQuestion] {
         CheckInQuestionnaire.questions(for: preferences.checkInEnabledQuestionIDs)
@@ -22,11 +28,21 @@ struct CheckInView: View {
     init(
         backgroundTheme: Binding<AppBackgroundTheme>,
         dashboard: DashboardViewModel,
-        onSave: @escaping (LogEntry) -> Void
+        allowsCancel: Bool = true,
+        headerEyebrow: String = "Whole-life recalibration",
+        headerTitle: String = "Answer honestly and the meter updates right away.",
+        headerSubtitle: String = "This is a broad check-in across prayer, speech, purity, relationships, and discipline. It creates one timeline entry with the answers and the recalculated changes.",
+        onSave: @escaping (LogEntry) -> Void,
+        onComplete: (() -> Void)? = nil
     ) {
         self._backgroundTheme = backgroundTheme
         self.dashboard = dashboard
         self.onSave = onSave
+        self.allowsCancel = allowsCancel
+        self.headerEyebrow = headerEyebrow
+        self.headerTitle = headerTitle
+        self.headerSubtitle = headerSubtitle
+        self.onComplete = onComplete
     }
 
     private var currentQuestion: CheckInQuestion {
@@ -88,7 +104,7 @@ struct CheckInView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 16)
-                        .padding(.bottom, 24)
+                        .padding(.bottom, scrollContentBottomPadding)
                     }
                     .onChange(of: stepIndex) { _, _ in
                         withAnimation(.easeInOut(duration: 0.22)) {
@@ -100,16 +116,22 @@ struct CheckInView: View {
             .navigationTitle("Check-in")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                if allowsCancel {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
             }
             .safeAreaInset(edge: .bottom) {
                 footerBar
             }
+            .onPreferenceChange(CheckInFooterHeightPreferenceKey.self) { height in
+                footerHeight = height
+            }
         }
+        .interactiveDismissDisabled(!allowsCancel)
         .onChange(of: questions.count) { _, count in
             stepIndex = min(stepIndex, max(count - 1, 0))
         }
@@ -129,20 +151,24 @@ struct CheckInView: View {
 
     private static let scrollTopID = "check-in-scroll-top"
 
+    private var scrollContentBottomPadding: CGFloat {
+        max(24, footerHeight + 16)
+    }
+
     private var headerCard: some View {
         AppSurfaceCard(contentPadding: 16) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Whole-life recalibration")
+                Text(headerEyebrow)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
 
-                Text("Answer honestly and the meter updates right away.")
+                Text(headerTitle)
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("This is a broad check-in across prayer, speech, purity, relationships, and discipline. It creates one timeline entry with the answers and the recalculated changes.")
+                Text(headerSubtitle)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -314,38 +340,43 @@ struct CheckInView: View {
 
     private var footerBar: some View {
         AppSurfaceCard(contentPadding: 14) {
-            HStack(spacing: 12) {
-                Button {
-                    if stepIndex > 0 {
-                        goToQuestion(at: stepIndex - 1)
-                    }
-                } label: {
-                    Text("Back")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(stepIndex > 0 ? .primary : .secondary)
-                }
-                .disabled(stepIndex == 0)
-
-                Spacer(minLength: 12)
-
+            VStack(alignment: .leading, spacing: 10) {
                 if unansweredCount > 0 {
                     Text("\(unansweredCount) left")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
 
-                ActionButtonView(
-                    title: "Next",
-                    icon: "arrow.right",
-                    tint: .red
-                ) {
-                    advance()
+                HStack(spacing: 10) {
+                    ActionButtonView(
+                        title: "Back",
+                        icon: "chevron.left",
+                        tint: backgroundTheme.glowColor
+                    ) {
+                        guard stepIndex > 0 else { return }
+                        goToQuestion(at: stepIndex - 1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .disabled(stepIndex == 0)
+
+                    ActionButtonView(
+                        title: "Next",
+                        icon: "arrow.right",
+                        tint: .red
+                    ) {
+                        advance()
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
-        .background(.clear)
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: CheckInFooterHeightPreferenceKey.self, value: geometry.size.height)
+            }
+        }
     }
 
     @ViewBuilder
@@ -525,6 +556,7 @@ struct CheckInView: View {
         )
 
         onSave(entry)
+        onComplete?()
         reviewDraft = nil
         dismiss()
     }
@@ -540,6 +572,14 @@ private enum CheckInProgressStatus {
     case current
     case skipped
     case pending
+}
+
+private struct CheckInFooterHeightPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
 }
 
 private struct CheckInReviewSheetView: View {
@@ -644,10 +684,23 @@ private struct CheckInReviewSheetView: View {
     }
 }
 
-#Preview {
+#Preview("Check-in") {
     CheckInView(
         backgroundTheme: .constant(.blood),
         dashboard: DashboardViewModel()
     ) { _ in }
+    .environment(AppPreferenceStore())
+}
+
+#Preview("Initial Calibration") {
+    CheckInView(
+        backgroundTheme: .constant(.blood),
+        dashboard: DashboardViewModel(),
+        allowsCancel: false,
+        headerEyebrow: "Initial calibration",
+        headerTitle: "Answer once so the app starts from your real baseline.",
+        headerSubtitle: "This first check-in is required. It creates your starting timeline entry and calibrates the dashboard before you begin.",
+        onSave: { _ in }
+    )
     .environment(AppPreferenceStore())
 }
