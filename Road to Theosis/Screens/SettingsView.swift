@@ -5,7 +5,7 @@ struct SettingsView: View {
     @Binding var dashboard: DashboardViewModel
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
-    let onShowWelcome: () -> Void
+    let onShowHelpGuide: () -> Void
     let onDeleteAllData: () -> Void
     let onSaveEntry: (LogEntry) -> Void
 
@@ -85,7 +85,7 @@ struct SettingsView: View {
                 NavigationLink {
                     AboutSettingsPage(
                         backgroundTheme: $backgroundTheme,
-                        onShowWelcome: onShowWelcome,
+                        onShowHelpGuide: onShowHelpGuide,
                         onDeleteAllData: onDeleteAllData
                     )
                 } label: {
@@ -704,7 +704,7 @@ private struct WeatherThresholdSlider: View {
 private struct AboutSettingsPage: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     @Environment(AppPreferenceStore.self) private var preferences
-    let onShowWelcome: () -> Void
+    let onShowHelpGuide: () -> Void
     let onDeleteAllData: () -> Void
     @State private var iCloudStatus = ICloudAccountStatusViewModel()
     @State private var hasChangedICloudSyncMode = false
@@ -752,9 +752,9 @@ private struct AboutSettingsPage: View {
                     }
                     
                     Button {
-                        onShowWelcome()
+                        onShowHelpGuide()
                     } label: {
-                        Text("Show Onboarding")
+                        Label("Open Help Guide", systemImage: "questionmark.circle.fill")
                     }
 
                 }
@@ -1182,7 +1182,7 @@ private struct SettingsNoteRow: View {
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
-            onShowWelcome: {},
+            onShowHelpGuide: {},
             onDeleteAllData: {},
             onSaveEntry: { _ in }
         )

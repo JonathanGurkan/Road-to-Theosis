@@ -11,6 +11,8 @@ struct AppShellView: View {
     @State private var logEntries: [LogEntry] = []
     @State private var purityCalculationDate = Date()
     @State private var isShowingWelcome = false
+    @State private var isShowingHelpGuide = false
+    @State private var isShowingInitialCheckIn = false
     @State private var isShowingWeeklyCheckIn = false
     private let weeklyCheckInReminderService = WeeklyCheckInReminderService()
 
@@ -55,8 +57,8 @@ struct AppShellView: View {
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
-                    onShowWelcome: {
-                        isShowingWelcome = true
+                    onShowHelpGuide: {
+                        isShowingHelpGuide = true
                     },
                     onDeleteAllData: deleteAllData
                 ) { entry in
@@ -73,7 +75,26 @@ struct AppShellView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .fullScreenCover(isPresented: $isShowingWelcome) {
             WelcomeView(isPresented: $isShowingWelcome) {
+                isShowingInitialCheckIn = true
+            }
+        }
+        .fullScreenCover(isPresented: $isShowingHelpGuide) {
+            HelpGuideView(isPresented: $isShowingHelpGuide) {
+                isShowingHelpGuide = false
+            }
+        }
+        .fullScreenCover(isPresented: $isShowingInitialCheckIn) {
+            CheckInView(
+                backgroundTheme: backgroundThemeBinding,
+                dashboard: dashboard,
+                allowsCancel: false,
+                headerEyebrow: "Initial calibration",
+                headerTitle: "Answer once so the app starts from your real baseline.",
+                headerSubtitle: "This first check-in is required. It creates your starting timeline entry and calibrates the dashboard before you begin.",
+                onSave: saveEntry
+            ) {
                 preferences.hasSeenWelcome = true
+                isShowingInitialCheckIn = false
             }
         }
         .fullScreenCover(isPresented: $isShowingWeeklyCheckIn) {
@@ -191,6 +212,8 @@ struct AppShellView: View {
         purityCalculationDate = Date()
         dashboard.rebuild(from: [], now: purityCalculationDate, strictness: preferences.purityStrictness)
         isShowingWelcome = true
+        isShowingHelpGuide = false
+        isShowingInitialCheckIn = false
     }
 
     private func recalculatePurity() {
