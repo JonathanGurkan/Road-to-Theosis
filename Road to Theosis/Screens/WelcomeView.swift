@@ -309,49 +309,51 @@ struct HelpGuideView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 14) {
-                header
+            GeometryReader { geometry in
+                VStack(spacing: 14) {
+                    header
+                        .padding(.horizontal, 16)
+
+                    stepRail
+                        .padding(.horizontal, 16)
+
+                    CompactGuideStepCard(
+                        step: steps[stepIndex],
+                        stepNumber: stepIndex + 1,
+                        stepCount: steps.count
+                    )
                     .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .gesture(
+                        DragGesture(minimumDistance: 32)
+                            .onEnded(handleGuideDrag)
+                    )
+                    .task(id: stepIndex) {
+                        stepProgress = 0
 
-                stepRail
-                    .padding(.horizontal, 16)
+                        guard stepIndex < steps.count - 1 else { return }
 
-                CompactGuideStepCard(
-                    step: steps[stepIndex],
-                    stepNumber: stepIndex + 1,
-                    stepCount: steps.count
-                )
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .transition(.opacity.combined(with: .move(edge: .trailing)))
-                .gesture(
-                    DragGesture(minimumDistance: 32)
-                        .onEnded(handleGuideDrag)
-                )
-                .task(id: stepIndex) {
-                    stepProgress = 0
+                        withAnimation(.linear(duration: autoAdvanceDuration)) {
+                            stepProgress = 1
+                        }
 
-                    guard stepIndex < steps.count - 1 else { return }
+                        do {
+                            try await Task.sleep(for: .seconds(autoAdvanceDuration))
+                        } catch {
+                            return
+                        }
 
-                    withAnimation(.linear(duration: autoAdvanceDuration)) {
-                        stepProgress = 1
-                    }
+                        guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
 
-                    do {
-                        try await Task.sleep(for: .seconds(autoAdvanceDuration))
-                    } catch {
-                        return
-                    }
-
-                    guard !Task.isCancelled, stepIndex < steps.count - 1 else { return }
-
-                    withAnimation(.easeInOut(duration: 0.55)) {
-                        stepIndex += 1
+                        withAnimation(.easeInOut(duration: 0.55)) {
+                            stepIndex += 1
+                        }
                     }
                 }
+                .padding(.top, guideTopPadding(for: geometry))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .padding(.top, 150)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .overlay(alignment: .bottom) {
             footer
@@ -359,6 +361,10 @@ struct HelpGuideView: View {
                 .padding(.bottom, 12)
                 .background(.clear)
         }
+    }
+
+    private func guideTopPadding(for geometry: GeometryProxy) -> CGFloat {
+        max(24, geometry.safeAreaInsets.top + min(72, geometry.size.height * 0.08))
     }
 
     private var header: some View {
