@@ -84,49 +84,20 @@ struct WelcomeView: View {
     }
 
     private var overviewFooter: some View {
-        AppSurfaceCard(contentPadding: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    ForEach(pages.indices, id: \.self) { index in
-                        Capsule()
-                            .fill(index == pageIndex ? pages[index].tint : .primary.opacity(0.14))
-                            .frame(width: index == pageIndex ? 24 : 8, height: 8)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                Text("Page \(pageIndex + 1) of \(pages.count)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text(pageIndex == pages.count - 1 ? "Next is the calibration check-in. It is required so the app starts from your real answers." : "Continue through the app overview at your own pace.")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 10) {
-                    if pageIndex > 0 {
-                        ActionButtonView(
-                            title: "Back",
-                            icon: "chevron.left",
-                            tint: pages[pageIndex].tint
-                        ) {
-                            goBackOverview()
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-
-                    ActionButtonView(
-                        title: pageIndex == pages.count - 1 ? "Start Calibration" : "Continue",
-                        icon: pageIndex == pages.count - 1 ? "calendar.badge.checkmark" : "arrow.right",
-                        tint: pages[pageIndex].tint
-                    ) {
-                        advanceOverview()
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .animation(.easeInOut(duration: 0.2), value: pageIndex)
-        }
+        OnboardingPagerFooter(
+            tint: pages[pageIndex].tint,
+            pageColors: pages.map(\.tint),
+            selectedIndex: pageIndex,
+            pageLabel: "Page \(pageIndex + 1) of \(pages.count)",
+            currentTitle: nil,
+            message: pageIndex == pages.count - 1 ? "Next is the calibration check-in. It is required so the app starts from your real answers." : "Continue through the app overview at your own pace.",
+            showsBackButton: pageIndex > 0,
+            forwardTitle: pageIndex == pages.count - 1 ? "Start Calibration" : "Continue",
+            forwardIcon: pageIndex == pages.count - 1 ? "calendar.badge.checkmark" : "arrow.right",
+            onBack: goBackOverview,
+            onForward: advanceOverview
+        )
+        .animation(.easeInOut(duration: 0.2), value: pageIndex)
     }
 
     private func goBackOverview() {
@@ -165,60 +136,167 @@ private struct FeatureOverviewCard: View {
     let page: FeatureOverviewPage
     let pageNumber: Int
     let pageCount: Int
+
+    var body: some View {
+        OnboardingFeatureCard(
+            title: page.title,
+            subtitle: page.subtitle,
+            symbol: page.symbol,
+            tint: page.tint,
+            badgeText: "\(pageNumber)/\(pageCount)",
+            highlights: page.points
+        )
+    }
+}
+
+private struct OnboardingPagerFooter: View {
+    let tint: Color
+    let pageColors: [Color]
+    let selectedIndex: Int
+    let pageLabel: String
+    let currentTitle: String?
+    let message: String
+    let showsBackButton: Bool
+    let forwardTitle: String
+    let forwardIcon: String
+    var dotProgress: Double?
+    let onBack: () -> Void
+    let onForward: () -> Void
+
+    var body: some View {
+        AppSurfaceCard(contentPadding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                OnboardingProgressDots(
+                    colors: pageColors,
+                    selectedIndex: selectedIndex,
+                    activeProgress: dotProgress
+                )
+
+                HStack {
+                    Text(pageLabel)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    if let currentTitle {
+                        Spacer(minLength: 8)
+
+                        Text(currentTitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(tint)
+                            .lineLimit(1)
+                    }
+                }
+
+                Text(message)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 10) {
+                    if showsBackButton {
+                        ActionButtonView(title: "Back", icon: "chevron.left", tint: tint, action: onBack)
+                            .frame(maxWidth: .infinity)
+                    }
+
+                    ActionButtonView(title: forwardTitle, icon: forwardIcon, tint: tint, action: onForward)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+}
+
+private struct OnboardingProgressDots: View {
+    let colors: [Color]
+    let selectedIndex: Int
+    let activeProgress: Double?
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(colors.indices, id: \.self) { index in
+                Capsule()
+                    .fill(index == selectedIndex ? colors[index] : .primary.opacity(0.14))
+                    .frame(width: index == selectedIndex ? 24 : 8, height: 8)
+                    .overlay(alignment: .leading) {
+                        if index == selectedIndex, let activeProgress {
+                            Capsule()
+                                .fill(colorScheme == .dark ? .white : .primary)
+                                .frame(width: 24 * activeProgress, height: 8)
+                        }
+                    }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
+private struct OnboardingFeatureCard: View {
+    let title: String
+    let subtitle: String
+    let symbol: String
+    let tint: Color
+    let badgeText: String
+    let highlights: [WelcomeHighlight]
+    var isCompact = false
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         AppSurfaceCard(contentPadding: 16) {
-            VStack(alignment: .leading, spacing: 14) {
-                ZStack(alignment: .topTrailing) {
-                    LinearGradient(
-                        colors: [
-                            page.tint.opacity(colorScheme == .dark ? 0.26 : 0.17),
-                            page.tint.opacity(colorScheme == .dark ? 0.08 : 0.06)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-
-                    Image(systemName: page.symbol)
-                        .font(.system(size: 92, weight: .bold))
-                        .foregroundStyle(page.tint.opacity(colorScheme == .dark ? 0.10 : 0.08))
-                        .offset(x: 24, y: -24)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("\(pageNumber)/\(pageCount)")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(page.tint)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(page.tint.opacity(0.14), in: Capsule())
-
-                        Image(systemName: page.symbol)
-                            .font(.title.weight(.semibold))
-                            .foregroundStyle(page.tint)
-
-                        Text(page.title)
-                            .font(.title.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(page.subtitle)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            VStack(alignment: .leading, spacing: isCompact ? 16 : 14) {
+                hero
 
                 VStack(alignment: .leading, spacing: 10) {
-                    ForEach(page.points.indices, id: \.self) { index in
-                        GuideBulletRow(highlight: page.points[index], tint: page.tint)
+                    ForEach(highlights.indices, id: \.self) { index in
+                        GuideBulletRow(highlight: highlights[index], tint: tint)
                     }
                 }
             }
         }
+    }
+
+    private var hero: some View {
+        ZStack(alignment: .topTrailing) {
+            LinearGradient(
+                colors: [
+                    tint.opacity(colorScheme == .dark ? 0.28 : 0.18),
+                    tint.opacity(colorScheme == .dark ? 0.08 : 0.06),
+                    Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.02)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Image(systemName: symbol)
+                .font(.system(size: isCompact ? 94 : 92, weight: .bold))
+                .foregroundStyle(tint.opacity(colorScheme == .dark ? 0.10 : 0.08))
+                .offset(x: isCompact ? 20 : 24, y: isCompact ? -20 : -24)
+
+            VStack(alignment: .leading, spacing: isCompact ? 14 : 12) {
+                Text(badgeText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(tint.opacity(0.14), in: Capsule())
+
+                Image(systemName: symbol)
+                    .font(.title.weight(.semibold))
+                    .foregroundStyle(tint)
+
+                Text(title)
+                    .font(.title.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(subtitle)
+                    .font(isCompact ? .callout : .body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(isCompact ? 18 : 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -461,63 +539,21 @@ struct HelpGuideView: View {
     }
 
     private var footer: some View {
-        AppSurfaceCard(contentPadding: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    ForEach(steps.indices, id: \.self) { index in
-                        Capsule()
-                            .fill(index == stepIndex ? steps[index].tint : .primary.opacity(0.14))
-                            .frame(width: index == stepIndex ? 24 : 8, height: 8)
-                            .overlay(alignment: .leading) {
-                                if index == stepIndex {
-                                    Capsule()
-                                        .fill(colorScheme == .dark ? .white : .primary)
-                                        .frame(width: 24 * stepProgress, height: 8)
-                                }
-                            }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                HStack {
-                    Text("Step \(stepIndex + 1) of \(steps.count)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 8)
-                    Text(steps[stepIndex].shortTitle)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(steps[stepIndex].tint)
-                        .lineLimit(1)
-                }
-
-                Text(stepIndex == steps.count - 1 ? "You're ready to begin." : "Take your time. Use the controls below when you're ready.")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 10) {
-                    if stepIndex > 0 {
-                        ActionButtonView(
-                            title: "Back",
-                            icon: "chevron.left",
-                            tint: steps[stepIndex].tint
-                        ) {
-                            goBack()
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-
-                    ActionButtonView(
-                        title: stepIndex == steps.count - 1 ? "Start Exploring" : "Continue",
-                        icon: stepIndex == steps.count - 1 ? "checkmark.circle.fill" : "arrow.right",
-                        tint: steps[stepIndex].tint
-                    ) {
-                        advance()
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .animation(.easeInOut(duration: 0.2), value: stepIndex)
-        }
+        OnboardingPagerFooter(
+            tint: steps[stepIndex].tint,
+            pageColors: steps.map(\.tint),
+            selectedIndex: stepIndex,
+            pageLabel: "Step \(stepIndex + 1) of \(steps.count)",
+            currentTitle: steps[stepIndex].shortTitle,
+            message: stepIndex == steps.count - 1 ? "You're ready to begin." : "Take your time. Use the controls below when you're ready.",
+            showsBackButton: stepIndex > 0,
+            forwardTitle: stepIndex == steps.count - 1 ? "Start Exploring" : "Continue",
+            forwardIcon: stepIndex == steps.count - 1 ? "checkmark.circle.fill" : "arrow.right",
+            dotProgress: stepProgress,
+            onBack: goBack,
+            onForward: advance
+        )
+        .animation(.easeInOut(duration: 0.2), value: stepIndex)
     }
 
     private func goBack() {
@@ -644,70 +680,15 @@ private struct CompactGuideStepCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        AppSurfaceCard(contentPadding: 16) {
-            VStack(alignment: .leading, spacing: 16) {
-                ZStack(alignment: .topTrailing) {
-                    LinearGradient(
-                        colors: [
-                            step.tint.opacity(colorScheme == .dark ? 0.28 : 0.18),
-                            step.tint.opacity(colorScheme == .dark ? 0.08 : 0.06),
-                            Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.02)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-
-                    Image(systemName: step.icon)
-                        .font(.system(size: 94, weight: .bold))
-                        .foregroundStyle(step.tint.opacity(colorScheme == .dark ? 0.10 : 0.08))
-                        .offset(x: 20, y: -20)
-
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(spacing: 8) {
-                            Text("Step \(stepNumber)")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .textCase(.uppercase)
-
-                            Text("\(stepNumber)/\(stepCount)")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(step.tint)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(step.tint.opacity(0.14), in: Capsule())
-                        }
-
-                        ZStack {
-                            Circle()
-                                .fill(step.tint.opacity(colorScheme == .dark ? 0.18 : 0.14))
-                            Image(systemName: step.icon)
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(step.tint)
-                        }
-                        .frame(width: 56, height: 56)
-
-                        Text(step.title)
-                            .font(.title.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(step.subtitle)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(step.highlights.indices, id: \.self) { index in
-                        GuideBulletRow(highlight: step.highlights[index], tint: step.tint)
-                    }
-                }
-            }
-        }
+        OnboardingFeatureCard(
+            title: step.title,
+            subtitle: step.subtitle,
+            symbol: step.icon,
+            tint: step.tint,
+            badgeText: "Step \(stepNumber) / \(stepCount)",
+            highlights: step.highlights,
+            isCompact: true
+        )
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.04), radius: 14, x: 0, y: 8)
     }
 }
