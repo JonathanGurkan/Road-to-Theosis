@@ -38,19 +38,13 @@ struct WelcomeView: View {
                     stepRail
                         .padding(.horizontal, 16)
 
-                    TabView(selection: $stepIndex) {
-                        ForEach(steps.indices, id: \.self) { index in
-                            GuideStepCard(
-                                step: steps[index],
-                                stepNumber: index + 1,
-                                stepCount: steps.count
-                            )
-                            .tag(index)
-                            .padding(.horizontal, 16)
-                        }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(maxWidth: .infinity, minHeight: 610, idealHeight: 650, maxHeight: 700, alignment: .top)
+                    GuideStepCard(
+                        step: steps[stepIndex],
+                        stepNumber: stepIndex + 1,
+                        stepCount: steps.count
+                    )
+                    .padding(.horizontal, 16)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
                     .task(id: stepIndex) {
                         stepProgress = 0
 
@@ -198,7 +192,7 @@ struct WelcomeView: View {
                         .lineLimit(1)
                 }
 
-                Text(stepIndex == steps.count - 1 ? "You're ready to begin." : "Take your time. You can swipe or use the button below.")
+                Text(stepIndex == steps.count - 1 ? "You're ready to begin." : "Take your time. Use the controls below when you're ready.")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
 
@@ -238,48 +232,11 @@ private struct GuideStepCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        AppSurfaceCard(contentPadding: 16) {
-            ScrollView(showsIndicators: false) {
+        AppSurfaceCard(contentPadding: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                stepHero
+
                 VStack(alignment: .leading, spacing: 18) {
-                    HStack(alignment: .center, spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(step.tint.opacity(colorScheme == .dark ? 0.16 : 0.12))
-                            Image(systemName: step.icon)
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(step.tint)
-                        }
-                        .frame(width: 56, height: 56)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 8) {
-                                Text("Step \(stepNumber)")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
-
-                                Text("\(stepNumber)/\(stepCount)")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(step.tint)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(step.tint.opacity(0.12), in: Capsule())
-                            }
-
-                            Text(step.title)
-                                .font(.largeTitle.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                            Text(step.subtitle)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Spacer(minLength: 0)
-                    }
-
                     step.preview
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -296,16 +253,86 @@ private struct GuideStepCard: View {
                     }
 
                     if let note = step.note {
-                        Text(note)
-                            .font(.callout.weight(.medium))
-                            .foregroundStyle(step.tint)
-                            .padding(.top, 2)
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: "heart.text.square.fill")
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(step.tint)
+                                .frame(width: 24)
+
+                            Text(note)
+                                .font(.callout.weight(.medium))
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(12)
+                        .background(step.tint.opacity(colorScheme == .dark ? 0.12 : 0.09), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
             }
         }
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.04), radius: 14, x: 0, y: 8)
+    }
+
+    private var stepHero: some View {
+        ZStack(alignment: .topTrailing) {
+            LinearGradient(
+                colors: [
+                    step.tint.opacity(colorScheme == .dark ? 0.28 : 0.18),
+                    step.tint.opacity(colorScheme == .dark ? 0.08 : 0.06),
+                    Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.02)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Image(systemName: step.icon)
+                .font(.system(size: 112, weight: .bold))
+                .foregroundStyle(step.tint.opacity(colorScheme == .dark ? 0.10 : 0.08))
+                .offset(x: 22, y: -22)
+
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    Text("Step \(stepNumber)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text("\(stepNumber)/\(stepCount)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(step.tint)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(step.tint.opacity(0.14), in: Capsule())
+                }
+
+                HStack(alignment: .top, spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(step.tint.opacity(colorScheme == .dark ? 0.18 : 0.14))
+                        Image(systemName: step.icon)
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(step.tint)
+                    }
+                    .frame(width: 58, height: 58)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(step.title)
+                            .font(.title.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(step.subtitle)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
