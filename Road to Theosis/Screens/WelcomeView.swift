@@ -444,6 +444,13 @@ private struct HomeGuidePreview: View {
                     .background(Color.red.opacity(0.12), in: Capsule())
             }
 
+            GuideStatusStrip(
+                title: "Today",
+                value: "Prayer logged",
+                symbol: "checkmark.seal.fill",
+                tint: .green
+            )
+
             HStack(spacing: 10) {
                 GuidePreviewTile(title: "Greeting", subtitle: "Daily welcome", symbol: "sun.max.fill", tint: .yellow)
                 GuidePreviewTile(title: "Quick actions", subtitle: "Prayer + log", symbol: "bolt.fill", tint: .orange)
@@ -475,6 +482,13 @@ private struct LoggingGuidePreview: View {
                     .background(Color.red.opacity(0.12), in: Capsule())
             }
 
+            GuideStatusStrip(
+                title: "Helpful pace",
+                value: "About 30 sec",
+                symbol: "timer",
+                tint: .teal
+            )
+
             VStack(spacing: 8) {
                 GuideActionLine(symbol: "list.bullet.rectangle", title: "Pick the sin", detail: "Choose the exact issue, not just the broad category.", tint: .teal)
                 GuideActionLine(symbol: "checkmark.shield.fill", title: "Mark what happened", detail: "Save a victory, loss, note, or purity update.", tint: .red)
@@ -501,6 +515,13 @@ private struct TimelineGuidePreview: View {
                     .background(Color.red.opacity(0.12), in: Capsule())
             }
 
+            GuideStatusStrip(
+                title: "Today",
+                value: "3 entries",
+                symbol: "calendar",
+                tint: .indigo
+            )
+
             VStack(spacing: 8) {
                 TimelinePreviewRow(title: "Prayer", detail: "8 min prayer session", symbol: "hands.sparkles.fill", tint: .cyan)
                 TimelinePreviewRow(title: "Loss", detail: "Criticism in the morning", symbol: "xmark.circle.fill", tint: .orange)
@@ -526,12 +547,57 @@ private struct SettingsGuidePreview: View {
                     .background(Color.red.opacity(0.12), in: Capsule())
             }
 
+            GuideStatusStrip(
+                title: "Personal setup",
+                value: "Editable anytime",
+                symbol: "slider.horizontal.3",
+                tint: .purple
+            )
+
             VStack(spacing: 8) {
                 GuideActionLine(symbol: "paintpalette.fill", title: "Change the theme", detail: "Pick the atmosphere that feels easiest to read.", tint: .purple)
                 GuideActionLine(symbol: "square.grid.2x2.fill", title: "Reshape the home screen", detail: "Reorder, resize, or hide cards from the layout editor.", tint: .red)
                 GuideActionLine(symbol: "book.fill", title: "Manage your tools", detail: "Verses, strictness, and other support settings live here too.", tint: .green)
             }
         }
+    }
+}
+
+private struct GuideStatusStrip: View {
+    let title: String
+    let value: String
+    let symbol: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.16))
+                Image(systemName: symbol)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: 28, height: 28)
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(tint.opacity(0.14), lineWidth: 1)
+        )
     }
 }
 
