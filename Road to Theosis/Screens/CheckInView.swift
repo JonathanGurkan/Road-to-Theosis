@@ -332,32 +332,36 @@ struct CheckInView: View {
 
     private var footerBar: some View {
         AppSurfaceCard(contentPadding: 14) {
-            HStack(spacing: 12) {
-                Button {
-                    if stepIndex > 0 {
-                        goToQuestion(at: stepIndex - 1)
-                    }
-                } label: {
-                    Text("Back")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(stepIndex > 0 ? .primary : .secondary)
-                }
-                .disabled(stepIndex == 0)
-
-                Spacer(minLength: 12)
-
+            VStack(alignment: .leading, spacing: 10) {
                 if unansweredCount > 0 {
                     Text("\(unansweredCount) left")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
 
-                ActionButtonView(
-                    title: "Next",
-                    icon: "arrow.right",
-                    tint: .red
-                ) {
-                    advance()
+                HStack(spacing: 10) {
+                    Button {
+                        if stepIndex > 0 {
+                            goToQuestion(at: stepIndex - 1)
+                        }
+                    } label: {
+                        Label("Back", systemImage: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(stepIndex > 0 ? .primary : .secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 11)
+                    }
+                    .ifAvailableGlass(tint: backgroundTheme.glowColor)
+                    .disabled(stepIndex == 0)
+
+                    ActionButtonView(
+                        title: "Next",
+                        icon: "arrow.right",
+                        tint: .red
+                    ) {
+                        advance()
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
