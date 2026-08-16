@@ -39,6 +39,18 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
                 NavigationLink {
+                    TimelineSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Timeline",
+                        subtitle: "History range and log visibility",
+                        systemImage: "clock.arrow.circlepath"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
                     PuritySettingsPage(
                         backgroundTheme: $backgroundTheme,
                         dashboard: $dashboard,
@@ -77,6 +89,18 @@ struct SettingsView: View {
                         title: "Scripture",
                         subtitle: "Defense verses and explanations",
                         systemImage: "book.fill"
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
+                NavigationLink {
+                    WeatherSettingsPage(backgroundTheme: $backgroundTheme)
+                } label: {
+                    SettingsLinkRow(
+                        title: "Weather",
+                        subtitle: "Local conditions for greetings",
+                        systemImage: "cloud.sun.fill"
                     )
                 }
                 .listRowBackground(Color.clear)
@@ -709,7 +733,6 @@ private struct AboutSettingsPage: View {
     @State private var iCloudStatus = ICloudAccountStatusViewModel()
     @State private var hasChangedICloudSyncMode = false
     @State private var isShowingDeleteAllDataConfirmation = false
-    private let openMeteoURL = URL(string: "https://open-meteo.com/")
     private var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"

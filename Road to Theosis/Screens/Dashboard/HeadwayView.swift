@@ -12,6 +12,8 @@ struct HeadwayView: View {
     @Binding var logEntries: [LogEntry]
     @Binding var purityCalculationDate: Date
     let onSaveEntry: (LogEntry) -> Void
+    let onUpdateEntry: (LogEntry) -> Void
+    let onDeleteEntry: (LogEntry) -> Void
     @State var isShowingAddView = false
     @State var isShowingQuickPrayer = false
     @State var isShowingPrayerTimer = false
@@ -24,7 +26,8 @@ struct HeadwayView: View {
     @State private var focusWidgetPageID: SinCategory.ID?
     @State private var isShowingModeToggleLabel = false
     @State private var isShowingCheckIn = false
-    @State private var greetingWeather: GreetingWeather?
+    @State private var editingRecentActivityEntry: LogEntry?
+    @State private var greetingWeather: GreetingWeatherSnapshot?
     private let greetingWeatherService = GreetingWeatherService()
     private let maxFocusedSinCount = 3
 
@@ -468,6 +471,17 @@ struct HeadwayView: View {
                 dashboard: dashboard,
                 onSave: { entry in
                     saveEntry(entry)
+                }
+            )
+        }
+        .sheet(item: $editingRecentActivityEntry) { entry in
+            EditLogEntryView(
+                backgroundTheme: $backgroundTheme,
+                entry: entry,
+                onSave: onUpdateEntry,
+                onDelete: {
+                    onDeleteEntry(entry)
+                    editingRecentActivityEntry = nil
                 }
             )
         }
@@ -1426,7 +1440,7 @@ struct HeadwayView: View {
 
                                 if entry.id != entries.last?.id {
                                     Divider()
-                                        .padding(.leading, 46)
+                                        .padding(.leading, 32)
                                 }
                             }
                         }
@@ -1438,11 +1452,82 @@ struct HeadwayView: View {
     }
 
     private func compactRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+        Button {
+            editingRecentActivityEntry = entry
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(entry.kind.tint.opacity(0.14))
+
+                        Image(systemName: entry.kind.symbolName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(entry.kind.tint)
+                    }
+                    .frame(width: 28, height: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(entry.kind.title)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            Text(Self.activityTimeFormatter.string(from: entry.occurredAt))
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
+                        Text(entry.sinTitle ?? entry.sectionTitle)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                if preferences.isPrayerTimingEnabled && entry.prayerDurationSeconds > 0 {
+                    Text("\(entry.prayerDurationText) prayer")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(entry.kind.tint)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(entry.kind.tint.opacity(0.8))
+                    .frame(width: 3)
+            }
+        }
+        .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                onDeleteEntry(entry)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                onDeleteEntry(entry)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 
     private func standardRecentActivityRow(for entry: LogEntry) -> some View {
-        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled)
+        TimelineRow(entry: entry, showsPrayerTiming: preferences.isPrayerTimingEnabled) {
+            editingRecentActivityEntry = entry
+        }
     }
 
     private func compactRecentActivityRow(title: String, detail: String, icon: String, tint: Color) -> some View {
@@ -1509,7 +1594,9 @@ struct HeadwayView: View {
             dashboard: .constant(DashboardViewModel()),
             logEntries: .constant([]),
             purityCalculationDate: .constant(Date()),
-            onSaveEntry: { _ in }
+            onSaveEntry: { _ in },
+            onUpdateEntry: { _ in },
+            onDeleteEntry: { _ in }
         )
     }
     .environment(AppPreferenceStore())

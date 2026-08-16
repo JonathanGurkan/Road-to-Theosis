@@ -11,6 +11,7 @@ struct PrayerTimerView: View {
     @State private var elapsedSeconds: Int = 0
     @State private var isRunning = true
     @State private var prayerNote = ""
+    @State private var connectedPrayerSins: Set<ConnectedSinReference> = []
     @State private var startedAt = Date()
     @State private var hasStartedSession = false
     @State private var hasStoppedSession = false
@@ -203,6 +204,12 @@ struct PrayerTimerView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                PrayerSinPickerView(
+                    title: "Connected sins",
+                    subtitle: "Attach one or more sins to this prayer session.",
+                    selectedReferences: $connectedPrayerSins
+                )
+
                 TextEditor(text: $prayerNote)
                     .frame(minHeight: 170)
                     .padding(12)
@@ -302,6 +309,7 @@ struct PrayerTimerView: View {
             note: prayerNote.trimmingCharacters(in: .whitespacesAndNewlines),
             prayerMinutes: savedPrayerMinutes,
             prayerDurationSeconds: elapsedSeconds,
+            connectedSins: ConnectedSinReference.ordered(connectedPrayerSins),
             occurredAt: startedAt
         )
 

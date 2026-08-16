@@ -14,6 +14,7 @@ struct AddLoggingView: View {
     @State private var includePrayerMinutes = false
     @State private var prayerMinutes: Int = 0
     @State private var occurredAt = Date()
+    @State private var connectedPrayerSins: Set<ConnectedSinReference> = []
     @State private var isShowingTimedPrayer = false
 
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
@@ -128,6 +129,7 @@ struct AddLoggingView: View {
                             }
                         } else if entryMode == .quickPrayer {
                             quickPrayerCard
+                            connectedPrayerSinsCard
                             if preferences.isPrayerTimingEnabled {
                                 timedPrayerCard
                             }
@@ -166,6 +168,10 @@ struct AddLoggingView: View {
             if newValue != .sin {
                 includePrayerMinutes = false
                 prayerMinutes = 0
+            }
+
+            if newValue != .quickPrayer {
+                connectedPrayerSins.removeAll()
             }
         }
         .onChange(of: preferences.isPrayerTimingEnabled) { _, isEnabled in
@@ -373,6 +379,14 @@ struct AddLoggingView: View {
         }
     }
 
+    private var connectedPrayerSinsCard: some View {
+        PrayerSinPickerView(
+            title: "Connected sins",
+            subtitle: "Attach one or more sins to this prayer session.",
+            selectedReferences: $connectedPrayerSins
+        )
+    }
+
     private var timedPrayerCard: some View {
         AppSurfaceCard {
             VStack(alignment: .leading, spacing: 12) {
@@ -458,6 +472,7 @@ struct AddLoggingView: View {
                 sinTitle: nil,
                 note: trimmedNote,
                 prayerMinutes: 0,
+                connectedSins: ConnectedSinReference.ordered(connectedPrayerSins),
                 occurredAt: occurredAt
             )
             onSave(entry)

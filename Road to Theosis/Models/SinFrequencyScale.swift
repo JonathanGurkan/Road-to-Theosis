@@ -180,10 +180,12 @@ enum PurityCalculator {
                 return false
             }
 
-            let isGeneralPrayer = entry.kind == .prayer || entry.kind == .quickPrayer
+            let isGeneralPrayer = entry.isPrayerEntry
             let isPrayerAttachedToTarget = entry.sectionTitle == sectionTitle &&
-                entry.sinTitle == sinTitle &&
-                entry.prayerDurationSeconds > 0
+                entry.prayerDurationSeconds > 0 &&
+                (entry.sinTitle == sinTitle || entry.prayerConnectedSins.contains(where: {
+                    $0.sectionTitle == sectionTitle && $0.sinTitle == sinTitle
+                }))
 
             return isGeneralPrayer || isPrayerAttachedToTarget
         }

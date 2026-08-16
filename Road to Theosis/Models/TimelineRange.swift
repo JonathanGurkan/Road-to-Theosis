@@ -1,36 +1,49 @@
 import Foundation
 
 enum TimelineRange: String, CaseIterable, Identifiable {
-    case week
-    case month
-    case ninetyDays
     case always
+    case ninetyDays
+    case thirtyDays
+    case fourteenDays
+    case sevenDays
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .week:
-            return "Past Week"
-        case .month:
-            return "Past Month"
-        case .ninetyDays:
-            return "Past 90 Days"
         case .always:
-            return "All Time"
+            return "Always"
+        case .ninetyDays:
+            return "90 days"
+        case .thirtyDays:
+            return "30 days"
+        case .fourteenDays:
+            return "14 days"
+        case .sevenDays:
+            return "7 days"
+        }
+    }
+
+    func cutoffDate(from date: Date, calendar: Calendar) -> Date? {
+        switch self {
+        case .always:
+            return nil
+        case .ninetyDays:
+            return calendar.date(byAdding: .day, value: -90, to: date)
+        case .thirtyDays:
+            return calendar.date(byAdding: .day, value: -30, to: date)
+        case .fourteenDays:
+            return calendar.date(byAdding: .day, value: -14, to: date)
+        case .sevenDays:
+            return calendar.date(byAdding: .day, value: -7, to: date)
         }
     }
 
     func contains(_ date: Date, now: Date = .now, calendar: Calendar = .current) -> Bool {
-        switch self {
-        case .week:
-            return date >= calendar.date(byAdding: .day, value: -7, to: now) ?? now
-        case .month:
-            return date >= calendar.date(byAdding: .month, value: -1, to: now) ?? now
-        case .ninetyDays:
-            return date >= calendar.date(byAdding: .day, value: -90, to: now) ?? now
-        case .always:
+        guard let cutoffDate = cutoffDate(from: now, calendar: calendar) else {
             return true
         }
+
+        return date >= cutoffDate
     }
 }

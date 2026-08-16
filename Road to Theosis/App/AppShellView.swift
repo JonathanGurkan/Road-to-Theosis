@@ -60,7 +60,9 @@ struct AppShellView: View {
                     dashboard: $dashboard,
                     logEntries: $logEntries,
                     purityCalculationDate: $purityCalculationDate,
-                    onSaveEntry: saveEntry
+                    onSaveEntry: saveEntry,
+                    onUpdateEntry: updateEntry,
+                    onDeleteEntry: deleteEntry
                 )
             }
             .tabItem {
@@ -213,6 +215,7 @@ struct AppShellView: View {
         storedEntry.note = entry.note
         storedEntry.prayerMinutes = entry.prayerMinutes
         storedEntry.prayerDurationSeconds = entry.prayerDurationSeconds
+        storedEntry.connectedSins = entry.connectedSins
         storedEntry.progressPercentage = entry.progressPercentage
         storedEntry.checkInRecordJSON = entry.checkInRecordJSON
         storedEntry.occurredAt = entry.occurredAt

@@ -21,9 +21,9 @@ enum AppPreferenceKey: String, CaseIterable {
     case lastWeeklyCheckInReminderDay
     case prayerTimerCountingMode
     case purityStrictness
+    case timelineRange
     case showRecentActivity
     case showVerseApplications
-    case timelineRange
     case usesFocusProgressSliders
     case weeklyCheckInHour
     case weeklyCheckInMinute
