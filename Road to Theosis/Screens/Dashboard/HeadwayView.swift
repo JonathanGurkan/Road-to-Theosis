@@ -123,18 +123,30 @@ struct HeadwayView: View {
     }
 
     private static let dashboardTips = [
-        "Name the temptation early, then pray before it grows louder.",
-        "Log small victories too; they help you see where grace is already working.",
-        "When a habit feels urgent, pause for one minute of prayer before choosing.",
-        "Review your recent notes before changing a goal; patterns matter more than one day.",
-        "Choose one focus area for today instead of trying to fight everything at once.",
-        "A short honest check-in is better than waiting for a perfect reflection.",
-        "Pair prayer with a simple action: stand up, drink water, or leave the room.",
-        "Use Scripture defenses before the struggle peaks, not only after it does."
+        "Long-press any dashboard widget to start editing your home screen.",
+        "Use Edit on the dashboard to reorder, resize, remove, or add widgets.",
+        "Add the Focus Watch widget to keep your weakest areas visible throughout the day.",
+        "Tap a suggested focus area to pin it to today's Focus Watch widget.",
+        "Tap a sin icon to open its saved defense verses and notes.",
+        "Swipe a focus row to quickly log a victory or a stumble.",
+        "Open a recent activity item to edit its note, time, or log type.",
+        "Use the plus button to log a prayer, victory, stumble, or note from anywhere on the dashboard.",
+        "Resize dashboard widgets in Edit mode to make important tools larger or more compact.",
+        "Remove a dashboard widget in Edit mode; you can add it back later from Add Widgets.",
+        "The Focus Watch widget suggests struggles with the lowest current progress first.",
+        "The recent activity card only shows your latest logs; the Timeline keeps the fuller history.",
+        "The Timeline filter can hide older logs without deleting them.",
+        "Swipe a Timeline entry to delete it, or tap it to make changes.",
+        "Use Check-in to turn a weekly reflection into normal timeline entries.",
+        "Enable weekly check-ins in Settings to get a recurring reflection reminder.",
+        "Turn on prayer timing in Settings if you want prayer minutes shown on your dashboard.",
+        "Set prayer timing to background mode if you want the timer to keep counting outside the app.",
+        "Turn on compact sin rows in Home Screen settings when you want more focus areas visible at once.",
+        "Change the Timeline range in Settings when you want a shorter or longer history view."
     ]
 
     private static func randomDashboardTip() -> String {
-        dashboardTips.randomElement() ?? "Take the next faithful step."
+        dashboardTips.randomElement() ?? "Long-press a dashboard widget to customize your home screen."
     }
 
     private var quickActionSubtitle: String {
