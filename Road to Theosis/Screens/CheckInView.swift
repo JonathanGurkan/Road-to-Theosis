@@ -663,10 +663,23 @@ private struct CheckInReviewSheetView: View {
     }
 }
 
-#Preview {
+#Preview("Check-in") {
     CheckInView(
         backgroundTheme: .constant(.blood),
         dashboard: DashboardViewModel()
     ) { _ in }
+    .environment(AppPreferenceStore())
+}
+
+#Preview("Initial Calibration") {
+    CheckInView(
+        backgroundTheme: .constant(.blood),
+        dashboard: DashboardViewModel(),
+        allowsCancel: false,
+        headerEyebrow: "Initial calibration",
+        headerTitle: "Answer once so the app starts from your real baseline.",
+        headerSubtitle: "This first check-in is required. It creates your starting timeline entry and calibrates the dashboard before you begin.",
+        onSave: { _ in }
+    )
     .environment(AppPreferenceStore())
 }
