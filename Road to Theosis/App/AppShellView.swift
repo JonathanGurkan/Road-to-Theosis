@@ -5,6 +5,7 @@ private enum AppFullScreenPresentation: Hashable, Identifiable {
     case welcome
     case helpGuide
     case initialCheckIn
+    case initialCalibrationSuccess
     case weeklyCheckIn
 
     var id: Self { self }
@@ -180,6 +181,13 @@ struct AppShellView: View {
                 onSave: saveEntry
             ) {
                 preferences.hasSeenWelcome = true
+                activeFullScreenPresentation = nil
+                Task { @MainActor in
+                    activeFullScreenPresentation = .initialCalibrationSuccess
+                }
+            }
+        case .initialCalibrationSuccess:
+            OnboardingSuccessView {
                 activeFullScreenPresentation = nil
             }
         case .weeklyCheckIn:

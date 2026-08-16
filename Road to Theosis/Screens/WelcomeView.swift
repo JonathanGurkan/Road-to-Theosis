@@ -612,6 +612,76 @@ struct HelpGuideView: View {
     }
 }
 
+struct OnboardingSuccessView: View {
+    let onContinue: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView(theme: .blood)
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(colorScheme == .dark ? 0.16 : 0.08),
+                    Color.clear,
+                    Color.green.opacity(0.10)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Spacer(minLength: 20)
+
+                AppSurfaceCard(contentPadding: 18) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.green.opacity(colorScheme == .dark ? 0.22 : 0.16))
+
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.largeTitle.weight(.semibold))
+                                .foregroundStyle(.green)
+                        }
+                        .frame(width: 72, height: 72)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Calibration Complete")
+                                .font(.title.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            Text("Your starting check-in is saved. The dashboard now has a real baseline, and you can adjust settings or keep logging from here.")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            GuideBulletRow(
+                                highlight: .init(symbol: "house.fill", title: "Dashboard calibrated", detail: "Your first answers are reflected in the app's starting state."),
+                                tint: .green
+                            )
+
+                            GuideBulletRow(
+                                highlight: .init(symbol: "clock.arrow.circlepath", title: "Timeline started", detail: "The check-in was saved as your first whole-journey entry."),
+                                tint: .teal
+                            )
+                        }
+                    }
+                }
+
+                ActionButtonView(title: "Enter App", icon: "arrow.right", tint: .green, action: onContinue)
+
+                Spacer(minLength: 20)
+            }
+            .padding(.horizontal, 16)
+        }
+        .interactiveDismissDisabled()
+    }
+}
+
 private struct GuideStepCard: View {
     let step: WelcomeStep
     let stepNumber: Int
