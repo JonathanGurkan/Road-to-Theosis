@@ -28,21 +28,27 @@ struct WelcomeView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                overviewHeader
-                    .padding(.horizontal, 16)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 14) {
+                    overviewHeader
 
                 FeatureOverviewCard(page: pages[pageIndex], pageNumber: pageIndex + 1, pageCount: pages.count)
-                    .padding(.horizontal, 16)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
-
-                overviewFooter
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                    .gesture(
+                        DragGesture(minimumDistance: 32)
+                            .onEnded(handleOverviewDrag)
+                    )
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 150)
             }
-            .padding(.top, 24)
-            .safeAreaPadding(.top, 38)
+        }
+        .safeAreaInset(edge: .bottom) {
+            overviewFooter
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .background(.clear)
         }
         .interactiveDismissDisabled()
     }
@@ -97,15 +103,38 @@ struct WelcomeView: View {
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                ActionButtonView(
-                    title: pageIndex == pages.count - 1 ? "Start Calibration" : "Continue",
-                    icon: pageIndex == pages.count - 1 ? "calendar.badge.checkmark" : "arrow.right",
-                    tint: pages[pageIndex].tint
-                ) {
-                    advanceOverview()
+                HStack(spacing: 10) {
+                    if pageIndex > 0 {
+                        Button {
+                            goBackOverview()
+                        } label: {
+                            Label("Back", systemImage: "chevron.left")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 11)
+                        }
+                        .ifAvailableGlass(tint: pages[pageIndex].tint)
+                    }
+
+                    ActionButtonView(
+                        title: pageIndex == pages.count - 1 ? "Start Calibration" : "Continue",
+                        icon: pageIndex == pages.count - 1 ? "calendar.badge.checkmark" : "arrow.right",
+                        tint: pages[pageIndex].tint
+                    ) {
+                        advanceOverview()
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: pageIndex)
+        }
+    }
+
+    private func goBackOverview() {
+        guard pageIndex > 0 else { return }
+
+        withAnimation(.easeInOut) {
+            pageIndex -= 1
         }
     }
 
@@ -119,6 +148,18 @@ struct WelcomeView: View {
             onStartCalibration()
         }
     }
+
+    private func handleOverviewDrag(_ value: DragGesture.Value) {
+        let horizontalAmount = value.translation.width
+        let verticalAmount = value.translation.height
+        guard abs(horizontalAmount) > abs(verticalAmount) else { return }
+
+        if horizontalAmount < -44 {
+            advanceOverview()
+        } else if horizontalAmount > 44 {
+            goBackOverview()
+        }
+    }
 }
 
 private struct FeatureOverviewCard: View {
@@ -128,8 +169,8 @@ private struct FeatureOverviewCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        AppSurfaceCard(contentPadding: 0, fillsAvailableHeight: true) {
-            VStack(alignment: .leading, spacing: 0) {
+        AppSurfaceCard(contentPadding: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 ZStack(alignment: .topTrailing) {
                     LinearGradient(
                         colors: [
@@ -177,9 +218,6 @@ private struct FeatureOverviewCard: View {
                         GuideBulletRow(highlight: page.points[index], tint: page.tint)
                     }
                 }
-                .padding(14)
-
-                Spacer(minLength: 0)
             }
         }
     }
@@ -248,7 +286,7 @@ struct HelpGuideView: View {
 
     @State private var stepIndex: Int = 0
     @State private var stepProgress: Double = 0
-    private let autoAdvanceDuration: Double = 8
+    private let autoAdvanceDuration: Double = 12
 
     private let steps: [WelcomeStep] = [
         .home,
@@ -286,6 +324,10 @@ struct HelpGuideView: View {
                     )
                     .padding(.horizontal, 16)
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .gesture(
+                        DragGesture(minimumDistance: 32)
+                            .onEnded(handleGuideDrag)
+                    )
                     .task(id: stepIndex) {
                         stepProgress = 0
 
@@ -494,6 +536,18 @@ struct HelpGuideView: View {
         isPresented = false
         onFinish()
     }
+
+    private func handleGuideDrag(_ value: DragGesture.Value) {
+        let horizontalAmount = value.translation.width
+        let verticalAmount = value.translation.height
+        guard abs(horizontalAmount) > abs(verticalAmount) else { return }
+
+        if horizontalAmount < -44 {
+            advance()
+        } else if horizontalAmount > 44 {
+            goBack()
+        }
+    }
 }
 
 private struct GuideStepCard: View {
@@ -503,8 +557,8 @@ private struct GuideStepCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        AppSurfaceCard(contentPadding: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+        AppSurfaceCard(contentPadding: 16) {
+            VStack(alignment: .leading, spacing: 16) {
                 stepHero
 
                 VStack(alignment: .leading, spacing: 18) {
@@ -539,7 +593,6 @@ private struct GuideStepCard: View {
                         .background(step.tint.opacity(colorScheme == .dark ? 0.12 : 0.09), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
-                .padding(16)
             }
         }
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.04), radius: 14, x: 0, y: 8)
