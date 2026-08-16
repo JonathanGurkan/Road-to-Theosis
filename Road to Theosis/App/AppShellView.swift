@@ -102,6 +102,7 @@ struct AppShellView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .fullScreenCover(item: $activeFullScreenPresentation) { presentation in
             fullScreenPresentationView(for: presentation)
+                .environment(preferences)
         }
         .task {
             syncLogEntriesFromStore()
