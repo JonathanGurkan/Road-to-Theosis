@@ -340,18 +340,15 @@ struct CheckInView: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button {
-                        if stepIndex > 0 {
-                            goToQuestion(at: stepIndex - 1)
-                        }
-                    } label: {
-                        Label("Back", systemImage: "chevron.left")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(stepIndex > 0 ? .primary : .secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
+                    ActionButtonView(
+                        title: "Back",
+                        icon: "chevron.left",
+                        tint: backgroundTheme.glowColor
+                    ) {
+                        guard stepIndex > 0 else { return }
+                        goToQuestion(at: stepIndex - 1)
                     }
-                    .ifAvailableGlass(tint: backgroundTheme.glowColor)
+                    .frame(maxWidth: .infinity)
                     .disabled(stepIndex == 0)
 
                     ActionButtonView(

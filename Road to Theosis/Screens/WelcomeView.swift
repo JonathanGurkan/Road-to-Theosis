@@ -105,15 +105,14 @@ struct WelcomeView: View {
 
                 HStack(spacing: 10) {
                     if pageIndex > 0 {
-                        Button {
+                        ActionButtonView(
+                            title: "Back",
+                            icon: "chevron.left",
+                            tint: pages[pageIndex].tint
+                        ) {
                             goBackOverview()
-                        } label: {
-                            Label("Back", systemImage: "chevron.left")
-                                .font(.subheadline.weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 11)
                         }
-                        .ifAvailableGlass(tint: pages[pageIndex].tint)
+                        .frame(maxWidth: .infinity)
                     }
 
                     ActionButtonView(
@@ -489,15 +488,14 @@ struct HelpGuideView: View {
 
                 HStack(spacing: 10) {
                     if stepIndex > 0 {
-                        Button {
+                        ActionButtonView(
+                            title: "Back",
+                            icon: "chevron.left",
+                            tint: steps[stepIndex].tint
+                        ) {
                             goBack()
-                        } label: {
-                            Label("Back", systemImage: "chevron.left")
-                                .font(.subheadline.weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 11)
                         }
-                        .ifAvailableGlass(tint: steps[stepIndex].tint)
+                        .frame(maxWidth: .infinity)
                     }
 
                     ActionButtonView(
