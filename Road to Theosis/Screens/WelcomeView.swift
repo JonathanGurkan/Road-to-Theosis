@@ -238,6 +238,8 @@ private struct OnboardingFeatureCard: View {
     let badgeText: String
     let highlights: [WelcomeHighlight]
     var isCompact = false
+    var detailsTitle: String?
+    var onShowDetails: (() -> Void)?
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -249,6 +251,18 @@ private struct OnboardingFeatureCard: View {
                     ForEach(highlights.indices, id: \.self) { index in
                         GuideBulletRow(highlight: highlights[index], tint: tint)
                     }
+                }
+
+                if let detailsTitle, let onShowDetails {
+                    Button(action: onShowDetails) {
+                        Label(detailsTitle, systemImage: "rectangle.stack.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(tint)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 11)
+                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -363,6 +377,7 @@ struct HelpGuideView: View {
 
     @State private var stepIndex: Int = 0
     @State private var stepProgress: Double = 0
+    @State private var isShowingStepDetails = false
     private let autoAdvanceDuration: Double = 12
 
     private let steps: [WelcomeStep] = [
@@ -399,7 +414,9 @@ struct HelpGuideView: View {
                         step: steps[stepIndex],
                         stepNumber: stepIndex + 1,
                         stepCount: steps.count
-                    )
+                    ) {
+                        isShowingStepDetails = true
+                    }
                     .padding(.horizontal, 16)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
@@ -438,6 +455,9 @@ struct HelpGuideView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
                 .background(.clear)
+        }
+        .sheet(isPresented: $isShowingStepDetails) {
+            GuideStepDetailSheet(step: steps[stepIndex], stepNumber: stepIndex + 1, stepCount: steps.count)
         }
     }
 
@@ -677,6 +697,7 @@ private struct CompactGuideStepCard: View {
     let step: WelcomeStep
     let stepNumber: Int
     let stepCount: Int
+    let onShowDetails: () -> Void
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -687,9 +708,52 @@ private struct CompactGuideStepCard: View {
             tint: step.tint,
             badgeText: "Step \(stepNumber) / \(stepCount)",
             highlights: step.highlights,
-            isCompact: true
+            isCompact: true,
+            detailsTitle: "Learn More",
+            onShowDetails: onShowDetails
         )
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.04), radius: 14, x: 0, y: 8)
+    }
+}
+
+private struct GuideStepDetailSheet: View {
+    let step: WelcomeStep
+    let stepNumber: Int
+    let stepCount: Int
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppBackgroundView(theme: .blood)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        GuideStepCard(step: step, stepNumber: stepNumber, stepCount: stepCount)
+
+                        if let note = step.note {
+                            AppSurfaceCard(contentPadding: 14) {
+                                Label(note, systemImage: "lightbulb.fill")
+                                    .font(.footnote.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle(step.shortTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
