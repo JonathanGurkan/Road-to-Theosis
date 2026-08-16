@@ -790,15 +790,6 @@ private struct AboutSettingsPage: View {
                         Label("Delete All Data", systemImage: "trash.fill")
                     }
                 }
-                
-                Section("Help") {
-                    Button {
-                        //Add logic to show a list of hidden tips and tricks
-                    } label: {
-                        Text("Tips and Tricks")
-                            .foregroundColor(.primary)
-                    }
-                }
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
