@@ -7,6 +7,11 @@ struct CheckInView: View {
     @Binding var backgroundTheme: AppBackgroundTheme
     let dashboard: DashboardViewModel
     let onSave: (LogEntry) -> Void
+    let allowsCancel: Bool
+    let headerEyebrow: String
+    let headerTitle: String
+    let headerSubtitle: String
+    let onComplete: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferenceStore.self) private var preferences
@@ -22,11 +27,21 @@ struct CheckInView: View {
     init(
         backgroundTheme: Binding<AppBackgroundTheme>,
         dashboard: DashboardViewModel,
-        onSave: @escaping (LogEntry) -> Void
+        allowsCancel: Bool = true,
+        headerEyebrow: String = "Whole-life recalibration",
+        headerTitle: String = "Answer honestly and the meter updates right away.",
+        headerSubtitle: String = "This is a broad check-in across prayer, speech, purity, relationships, and discipline. It creates one timeline entry with the answers and the recalculated changes.",
+        onSave: @escaping (LogEntry) -> Void,
+        onComplete: (() -> Void)? = nil
     ) {
         self._backgroundTheme = backgroundTheme
         self.dashboard = dashboard
         self.onSave = onSave
+        self.allowsCancel = allowsCancel
+        self.headerEyebrow = headerEyebrow
+        self.headerTitle = headerTitle
+        self.headerSubtitle = headerSubtitle
+        self.onComplete = onComplete
     }
 
     private var currentQuestion: CheckInQuestion {
@@ -100,9 +115,11 @@ struct CheckInView: View {
             .navigationTitle("Check-in")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                if allowsCancel {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
             }
@@ -110,6 +127,7 @@ struct CheckInView: View {
                 footerBar
             }
         }
+        .interactiveDismissDisabled(!allowsCancel)
         .onChange(of: questions.count) { _, count in
             stepIndex = min(stepIndex, max(count - 1, 0))
         }
@@ -132,17 +150,17 @@ struct CheckInView: View {
     private var headerCard: some View {
         AppSurfaceCard(contentPadding: 16) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Whole-life recalibration")
+                Text(headerEyebrow)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
 
-                Text("Answer honestly and the meter updates right away.")
+                Text(headerTitle)
                     .font(.title.weight(.semibold))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("This is a broad check-in across prayer, speech, purity, relationships, and discipline. It creates one timeline entry with the answers and the recalculated changes.")
+                Text(headerSubtitle)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -525,6 +543,7 @@ struct CheckInView: View {
         )
 
         onSave(entry)
+        onComplete?()
         reviewDraft = nil
         dismiss()
     }
