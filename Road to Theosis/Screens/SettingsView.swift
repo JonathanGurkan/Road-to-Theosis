@@ -14,129 +14,128 @@ struct SettingsView: View {
             AppBackgroundView(theme: backgroundTheme)
 
             List {
-                NavigationLink {
-                    AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Appearance",
-                        subtitle: "Themes and background tone",
-                        systemImage: "paintbrush"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section("Dashboard") {
+                    NavigationLink {
+                        HomeSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Home Screen",
+                            subtitle: "Activity cards and dashboard density",
+                            systemImage: "house.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    HomeSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Home",
-                        subtitle: "Feed density and activity cards",
-                        systemImage: "house.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    NavigationLink {
+                        AppearanceSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Appearance",
+                            subtitle: "Theme and background tone",
+                            systemImage: "paintbrush"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    TimelineSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Timeline",
-                        subtitle: "History range and log visibility",
-                        systemImage: "clock.arrow.circlepath"
-                    )
+                    NavigationLink {
+                        WeatherSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Greeting Weather",
+                            subtitle: "Local conditions in the welcome card",
+                            systemImage: "cloud.sun.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                NavigationLink {
-                    PuritySettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        dashboard: $dashboard,
-                        logEntries: logEntries,
-                        purityCalculationDate: purityCalculationDate
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Purity",
-                        subtitle: "Strictness and clean-time standard",
-                        systemImage: "chart.bar.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section("Practice") {
+                    NavigationLink {
+                        CheckInSettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            dashboard: dashboard,
+                            onSaveEntry: onSaveEntry
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Check-in",
+                            subtitle: "Weekly reminder and questionnaire",
+                            systemImage: "calendar.badge.checkmark"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    PrayerSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        onSaveEntry: onSaveEntry
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Prayer",
-                        subtitle: "Quiet mode and timer behavior",
-                        systemImage: "hands.sparkles"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    NavigationLink {
+                        PrayerSettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            onSaveEntry: onSaveEntry
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Prayer",
+                            subtitle: "Timer and session behavior",
+                            systemImage: "hands.sparkles"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Scripture",
-                        subtitle: "Defense verses and explanations",
-                        systemImage: "book.fill"
-                    )
+                    NavigationLink {
+                        ScriptureSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Scripture",
+                            subtitle: "Defense verses and explanations",
+                            systemImage: "book.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                NavigationLink {
-                    WeatherSettingsPage(backgroundTheme: $backgroundTheme)
-                } label: {
-                    SettingsLinkRow(
-                        title: "Weather",
-                        subtitle: "Local conditions for greetings",
-                        systemImage: "cloud.sun.fill"
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section("Progress") {
+                    NavigationLink {
+                        PuritySettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            dashboard: $dashboard,
+                            logEntries: logEntries,
+                            purityCalculationDate: purityCalculationDate
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Purity",
+                            subtitle: "Strictness and clean-time standard",
+                            systemImage: "chart.bar.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
 
-                NavigationLink {
-                    AboutSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        onShowHelpGuide: onShowHelpGuide,
-                        onDeleteAllData: onDeleteAllData
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "About",
-                        subtitle: "App version and notes",
-                        systemImage: "info.circle.fill"
-                    )
+                    NavigationLink {
+                        TimelineSettingsPage(backgroundTheme: $backgroundTheme)
+                    } label: {
+                        SettingsLinkRow(
+                            title: "Timeline",
+                            subtitle: "History range and log visibility",
+                            systemImage: "clock.arrow.circlepath"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
 
-                NavigationLink {
-                    CheckInSettingsPage(
-                        backgroundTheme: $backgroundTheme,
-                        dashboard: dashboard,
-                        onSaveEntry: onSaveEntry
-                    )
-                } label: {
-                    SettingsLinkRow(
-                        title: "Check-in",
-                        subtitle: "Weekly reminder and questionnaire",
-                        systemImage: "calendar.badge.checkmark"
-                    )
+                Section("Support") {
+                    NavigationLink {
+                        AboutSettingsPage(
+                            backgroundTheme: $backgroundTheme,
+                            onShowHelpGuide: onShowHelpGuide,
+                            onDeleteAllData: onDeleteAllData
+                        )
+                    } label: {
+                        SettingsLinkRow(
+                            title: "About & Data",
+                            subtitle: "Version, help, sync, and reset options",
+                            systemImage: "info.circle.fill"
+                        )
+                    }
+                    .settingsMenuRowStyle()
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
             }
             .listStyle(.insetGrouped)
             .contentMargins(.horizontal, 12, for: .scrollContent)
@@ -144,6 +143,13 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private extension View {
+    func settingsMenuRowStyle() -> some View {
+        listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
     }
 }
 
