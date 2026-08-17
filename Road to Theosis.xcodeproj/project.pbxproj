@@ -304,9 +304,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jagblue.RoadToTheosis;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				PRODUCT_NAME = RoadToTheosis;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -354,9 +351,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jagblue.RoadToTheosis;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = JonathanGurkan.C1VP0G0X.MyApp;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = JonathanGurkan.C1VP0G0X.MyApp;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = JonathanGurkan.C1VP0G0X.MyApp;
 				PRODUCT_NAME = RoadToTheosis;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
