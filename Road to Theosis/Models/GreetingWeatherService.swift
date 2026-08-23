@@ -23,6 +23,12 @@ enum GreetingWeatherCondition: String, Equatable, Sendable {
 
 @MainActor
 final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
+    private struct CachedWeather {
+        let snapshot: GreetingWeatherSnapshot
+        let thresholds: GreetingWeatherThresholds
+        let fetchedAt: Date
+    }
+
     private enum WeatherError: Error {
         case locationUnavailable
         case locationAccessDenied
@@ -45,9 +51,12 @@ final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    private static let cacheLifetime: TimeInterval = 30 * 60
+
     private let locationManager = CLLocationManager()
     private var authorizationContinuation: CheckedContinuation<Void, Never>?
     private var locationContinuation: CheckedContinuation<CLLocation, Error>?
+    private var cachedWeather: CachedWeather?
 
     override init() {
         super.init()
@@ -56,9 +65,18 @@ final class GreetingWeatherService: NSObject, CLLocationManagerDelegate {
     }
 
     func currentWeather(thresholds: GreetingWeatherThresholds) async -> GreetingWeatherSnapshot? {
+        let now = Date()
+        if let cachedWeather,
+           cachedWeather.thresholds == thresholds,
+           now.timeIntervalSince(cachedWeather.fetchedAt) < Self.cacheLifetime {
+            return cachedWeather.snapshot
+        }
+
         do {
             let location = try await currentLocation()
-            return try await fetchWeather(for: location, thresholds: thresholds)
+            let snapshot = try await fetchWeather(for: location, thresholds: thresholds)
+            cachedWeather = CachedWeather(snapshot: snapshot, thresholds: thresholds, fetchedAt: now)
+            return snapshot
         } catch {
             return nil
         }
