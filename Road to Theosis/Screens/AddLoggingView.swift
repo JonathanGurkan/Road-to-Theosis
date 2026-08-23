@@ -502,13 +502,8 @@ private struct SectionChip: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
             .background {
-                let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-                if #available(iOS 26.0, *) {
-                    shape.fill(tint.opacity(isSelected ? 0.16 : 0.08))
-                        .glassEffect(.regular, in: shape)
-                } else {
-                    shape.fill(tint.opacity(isSelected ? 0.18 : 0.10))
-                }
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(tint.opacity(isSelected ? 0.18 : 0.10))
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -555,13 +550,8 @@ private struct SinChip: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
             .background {
-                let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-                if #available(iOS 26.0, *) {
-                    shape.fill(category.tint.opacity(isSelected ? 0.16 : 0.08))
-                        .glassEffect(.regular, in: shape)
-                } else {
-                    shape.fill(category.tint.opacity(isSelected ? 0.18 : 0.10))
-                }
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(category.tint.opacity(isSelected ? 0.18 : 0.10))
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)

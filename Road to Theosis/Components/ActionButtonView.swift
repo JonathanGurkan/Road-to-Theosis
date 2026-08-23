@@ -18,13 +18,8 @@ struct ActionButtonView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 11)
             .background {
-                let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-                if #available(iOS 26.0, *) {
-                    shape.fill(tint.opacity(colorScheme == .dark ? 0.08 : 0.12))
-                        .glassEffect(.regular, in: shape)
-                } else {
-                    shape.fill(tint.opacity(colorScheme == .dark ? 0.14 : 0.12))
-                }
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(tint.opacity(colorScheme == .dark ? 0.14 : 0.12))
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
