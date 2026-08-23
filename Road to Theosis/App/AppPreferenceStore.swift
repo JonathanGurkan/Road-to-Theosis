@@ -18,7 +18,7 @@ final class AppPreferenceStore {
     var isGreetingWeatherEnabled = true
     var isICloudSyncEnabled = false
     var isPrayerTimingEnabled = true
-    var keepScreenAwakeDuringPrayer = true
+    var keepScreenAwakeDuringPrayer = false
     var prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
     var purityStrictnessRaw = PurityStrictness.normal.rawValue
     var showRecentActivity = true
@@ -150,7 +150,7 @@ final class AppPreferenceStore {
         isGreetingWeatherEnabled = true
         isICloudSyncEnabled = false
         isPrayerTimingEnabled = true
-        keepScreenAwakeDuringPrayer = true
+        keepScreenAwakeDuringPrayer = false
         prayerTimerCountingModeRaw = PrayerTimerCountingMode.foreground.rawValue
         purityStrictnessRaw = PurityStrictness.normal.rawValue
         showRecentActivity = true
