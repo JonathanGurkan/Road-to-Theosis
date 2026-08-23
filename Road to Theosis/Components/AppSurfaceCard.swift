@@ -23,21 +23,17 @@ struct AppSurfaceCard<Content: View>: View {
             )
             .padding(contentPadding)
             .background {
-                if colorScheme == .dark {
-                    if #available(iOS 26.0, *) {
-                        shape.fill(.clear)
-                            .glassEffect(.regular, in: shape)
-                    } else {
-                        shape.fill(.ultraThinMaterial)
-                    }
-                } else {
-                    shape.fill(Color(uiColor: .secondarySystemBackground).opacity(0.92))
-                }
+                shape.fill(cardFillColor)
             }
             .overlay(
                 shape.strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.05), radius: colorScheme == .dark ? 14 : 10, x: 0, y: colorScheme == .dark ? 8 : 4)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: colorScheme == .dark ? 7 : 5, x: 0, y: colorScheme == .dark ? 4 : 2)
+    }
+
+    private var cardFillColor: Color {
+        Color(uiColor: colorScheme == .dark ? .secondarySystemBackground : .systemBackground)
+            .opacity(colorScheme == .dark ? 0.82 : 0.94)
     }
 }
 

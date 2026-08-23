@@ -23,7 +23,6 @@ struct AppBackgroundView: View {
                 endRadius: colorScheme == .dark ? 420 : 520
             )
             .blendMode(colorScheme == .dark ? .screen : .plusLighter)
-            .blur(radius: colorScheme == .dark ? 8 : 6)
             .offset(x: 84, y: colorScheme == .dark ? -116 : -96)
 
             RadialGradient(
@@ -33,7 +32,6 @@ struct AppBackgroundView: View {
                 endRadius: colorScheme == .dark ? 360 : 440
             )
             .blendMode(colorScheme == .dark ? .overlay : .softLight)
-            .blur(radius: colorScheme == .dark ? 18 : 12)
             .offset(x: -92, y: colorScheme == .dark ? 118 : 104)
 
             LinearGradient(
