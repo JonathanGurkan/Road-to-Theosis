@@ -1,5 +1,4 @@
 import SwiftUI
-import Combine
 import UIKit
 
 struct PrayerTimerView: View {
@@ -16,24 +15,29 @@ struct PrayerTimerView: View {
     @State private var hasStoppedSession = false
     @State private var isShowingDiscardConfirmation = false
 
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     private var prayerTimerCountingMode: PrayerTimerCountingMode {
         preferences.prayerTimerCountingMode
     }
 
     private var currentElapsedSeconds: Int {
-        switch prayerTimerCountingMode {
-        case .foreground:
-            return elapsedSeconds
-        case .background:
-            guard isRunning else { return elapsedSeconds }
-            return max(0, Int(Date().timeIntervalSince(startedAt)))
-        }
+        guard isRunning else { return elapsedSeconds }
+        return max(0, Int(Date().timeIntervalSince(startedAt)))
+    }
+
+    private var timerTaskID: String {
+        [
+            String(isRunning),
+            String(scenePhase == .active),
+            prayerTimerCountingMode.rawValue
+        ].joined(separator: "|")
+    }
+
+    private var shouldTickVisibleTimer: Bool {
+        isRunning && scenePhase == .active && prayerTimerCountingMode == .foreground
     }
 
     private var shouldKeepScreenAwake: Bool {
-        prayerTimerCountingMode == .foreground && preferences.keepScreenAwakeDuringPrayer
+        isRunning && scenePhase == .active && prayerTimerCountingMode == .foreground && preferences.keepScreenAwakeDuringPrayer
     }
 
     var body: some View {
@@ -64,22 +68,24 @@ struct PrayerTimerView: View {
         .interactiveDismissDisabled(isRunning)
         .onAppear {
             startSessionIfNeeded()
-            if shouldKeepScreenAwake {
-                UIApplication.shared.isIdleTimerDisabled = true
-            }
+            updateIdleTimerState()
         }
         .onDisappear {
-            if shouldKeepScreenAwake {
-                UIApplication.shared.isIdleTimerDisabled = false
-            }
+            UIApplication.shared.isIdleTimerDisabled = false
         }
-        .onReceive(timer) { _ in
-            guard isRunning else { return }
-            tickElapsedSeconds()
+        .task(id: timerTaskID) {
+            await tickVisibleTimerIfNeeded()
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active, isRunning else { return }
+        .onChange(of: scenePhase) { _, _ in
             refreshElapsedSeconds()
+            updateIdleTimerState()
+        }
+        .onChange(of: preferences.keepScreenAwakeDuringPrayer) { _, _ in
+            updateIdleTimerState()
+        }
+        .onChange(of: preferences.prayerTimerCountingModeRaw) { _, _ in
+            refreshElapsedSeconds()
+            updateIdleTimerState()
         }
         .confirmationDialog(
             "Discard prayer session?",
@@ -263,34 +269,38 @@ struct PrayerTimerView: View {
 
     private func stopSession() {
         refreshElapsedSeconds()
-        elapsedSeconds = currentElapsedSeconds
         isRunning = false
         hasStoppedSession = true
-
-        if shouldKeepScreenAwake {
-            UIApplication.shared.isIdleTimerDisabled = false
-        }
+        UIApplication.shared.isIdleTimerDisabled = false
     }
 
-    private func tickElapsedSeconds() {
-        switch prayerTimerCountingMode {
-        case .foreground:
-            elapsedSeconds += 1
-        case .background:
+    private func tickVisibleTimerIfNeeded() async {
+        guard shouldTickVisibleTimer else { return }
+
+        while shouldTickVisibleTimer {
+            do {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                return
+            }
+
+            guard shouldTickVisibleTimer else { return }
             refreshElapsedSeconds()
         }
     }
 
     private func refreshElapsedSeconds() {
-        guard prayerTimerCountingMode == .background else { return }
+        guard isRunning else { return }
         elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt)))
+    }
+
+    private func updateIdleTimerState() {
+        UIApplication.shared.isIdleTimerDisabled = shouldKeepScreenAwake
     }
 
     private func discardSession() {
         isRunning = false
-        if shouldKeepScreenAwake {
-            UIApplication.shared.isIdleTimerDisabled = false
-        }
+        UIApplication.shared.isIdleTimerDisabled = false
         dismiss()
     }
 
