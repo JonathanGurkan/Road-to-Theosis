@@ -111,15 +111,21 @@ final class AppPreferenceStore {
 
     @discardableResult
     func mirrorCurrentPreferences(into modelContext: ModelContext, storedPreferences: [StoredAppPreference]) -> Bool {
+        var didChangeStoredPreferences = false
+
         for (key, value) in currentValues {
             if let storedPreference = storedPreferences.first(where: { $0.key == key }) {
                 guard storedPreference.value != value else { continue }
                 storedPreference.value = value
                 storedPreference.updatedAt = Date()
+                didChangeStoredPreferences = true
             } else {
                 modelContext.insert(StoredAppPreference(key: key, value: value))
+                didChangeStoredPreferences = true
             }
         }
+
+        guard didChangeStoredPreferences else { return false }
 
         do {
             try modelContext.save()
